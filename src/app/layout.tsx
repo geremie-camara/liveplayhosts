@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Become a Live Play Host | LivePlayHosts",
+  title: "Become a LivePlay Host | LivePlayHosts",
   description:
-    "Join the Live Play Hosts community. Share your passion, engage with audiences, and earn money as a professional live host.",
-  keywords: "live hosting, live streaming, host jobs, content creator, live play",
+    "Join the LivePlay Hosts community. Share your passion, engage with audiences, and earn money as a professional live host.",
+  keywords: "live hosting, live streaming, host jobs, content creator, liveplay",
   openGraph: {
-    title: "Become a Live Play Host | LivePlayHosts",
+    title: "Become a LivePlay Host | LivePlayHosts",
     description:
-      "Join the Live Play Hosts community. Share your passion, engage with audiences, and earn money as a professional live host.",
+      "Join the LivePlay Hosts community. Share your passion, engage with audiences, and earn money as a professional live host.",
     type: "website",
   },
 };

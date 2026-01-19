@@ -400,7 +400,7 @@ export default function ApplicationForm() {
           })}
           rows={5}
           className="input-field resize-none"
-          placeholder="Share your background in hosting, live streaming, or content creation. Include any relevant skills, achievements, or experience that would make you a great Live Play Host."
+          placeholder="Share your background in hosting, live streaming, or content creation. Include any relevant skills, achievements, or experience that would make you a great LivePlay Host."
         />
         {errors.experience && (
           <p className="mt-1 text-sm text-red-600">{errors.experience.message}</p>

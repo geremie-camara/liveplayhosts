@@ -50,7 +50,7 @@ export default function Home() {
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight drop-shadow-lg">
               Become a{" "}
-              <span className="text-secondary">Live Play</span>{" "}
+              <span className="text-secondary">LivePlay</span>{" "}
               <span className="text-secondary">Host</span>
             </h1>
             <p className="mt-6 text-xl md:text-2xl text-gray-100 leading-relaxed drop-shadow">
@@ -297,10 +297,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-2xl font-bold mb-4 md:mb-0">
-              Live Play<span className="text-secondary">Hosts</span>
+              LivePlay <span className="text-secondary">Hosts</span>
             </div>
             <div className="text-gray-400 text-sm">
-              &copy; {new Date().getFullYear()} Live Play Hosts. All rights reserved.
+              © 2026 LivePlay Services. All rights reserved.
             </div>
           </div>
         </div>
