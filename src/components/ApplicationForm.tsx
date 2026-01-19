@@ -110,8 +110,8 @@ export default function ApplicationForm() {
 
       setSubmitStatus("submitting");
 
-      // Submit form data
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/apply`, {
+      // Submit form data to our API
+      const response = await fetch("/api/hosts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -119,7 +119,7 @@ export default function ApplicationForm() {
         body: JSON.stringify({
           ...data,
           videoReelUrl: videoUrl,
-          submittedAt: new Date().toISOString(),
+          source: "application", // Marks this as a public application
         }),
       });
 
