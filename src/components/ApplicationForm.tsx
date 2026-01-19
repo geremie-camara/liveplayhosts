@@ -58,7 +58,7 @@ export default function ApplicationForm() {
   const uploadVideoToS3 = async (file: File): Promise<string> => {
     // Get pre-signed URL from our API
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
+      `/api/upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
     );
 
     if (!response.ok) {
