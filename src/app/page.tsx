@@ -7,15 +7,23 @@ export default function Home() {
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <div className="text-2xl font-bold text-primary">
-              Live Play<span className="text-secondary">Hosts</span>
+            <div className="text-4xl font-bold text-primary">
+              LivePlay <span className="text-secondary">Hosts</span>
             </div>
-            <a
-              href="#apply"
-              className="btn-primary hidden sm:inline-block"
-            >
-              Apply Now
-            </a>
+            <div className="flex gap-3 items-center">
+              <a
+                href="#"
+                className="bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors duration-200 hidden sm:inline-flex items-center justify-center"
+              >
+                Host Login
+              </a>
+              <a
+                href="#apply"
+                className="btn-cta hidden sm:inline-flex items-center justify-center"
+              >
+                Apply Now
+              </a>
+            </div>
           </div>
         </div>
       </header>
