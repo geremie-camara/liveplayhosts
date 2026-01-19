@@ -7,12 +7,17 @@ export default function Home() {
       <header className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <div className="text-4xl font-bold text-primary">
-              LivePlay <span className="text-secondary">Hosts</span>
-            </div>
+            <a href="/" className="flex items-center gap-2">
+              <img
+                src="/logo.png"
+                alt="LivePlay"
+                className="h-10 md:h-12 w-auto"
+              />
+              <span className="text-2xl md:text-3xl font-bold text-primary">Hosts</span>
+            </a>
             <div className="flex gap-3 items-center">
               <a
-                href="#"
+                href="/sign-in"
                 className="bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors duration-200 hidden sm:inline-flex items-center justify-center"
               >
                 Host Login
@@ -296,8 +301,13 @@ export default function Home() {
       <footer className="bg-dark text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="text-2xl font-bold mb-4 md:mb-0">
-              LivePlay <span className="text-secondary">Hosts</span>
+            <div className="flex items-center gap-2 mb-4 md:mb-0">
+              <img
+                src="/logo.png"
+                alt="LivePlay"
+                className="h-8 w-auto brightness-0 invert"
+              />
+              <span className="text-xl font-bold">Hosts</span>
             </div>
             <div className="text-gray-400 text-sm">
               © 2026 LivePlay Services. All rights reserved.

@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-const TABLE_NAME = process.env.TABLE_NAME || "liveplayhosts-applications";
+const TABLE_NAME = process.env.TABLE_NAME || "liveplayhosts-hosts";
 
 // CORS headers
 const headers = {
@@ -62,21 +62,33 @@ exports.handler = async (event) => {
     }
 
     // Generate unique ID
-    const applicationId = crypto.randomUUID();
+    const hostId = crypto.randomUUID();
+    const now = new Date().toISOString();
 
-    // Prepare item for DynamoDB
-    const item = {
-      id: applicationId,
+    // Prepare host record for DynamoDB
+    // New applicants start with status "applicant" and role "trainee"
+    const host = {
+      id: hostId,
+
+      // Status & Role - new applications are applicants
+      status: "applicant",
+      role: "trainee",
+
+      // Personal Information
       firstName: body.firstName,
       lastName: body.lastName,
       email: body.email.toLowerCase(),
       phone: body.phone,
+
+      // Address
       address: {
         street: body.street,
         city: body.city,
         state: body.state,
         zip: body.zip,
       },
+
+      // Social Profiles
       socialProfiles: {
         instagram: body.instagram || null,
         tiktok: body.tiktok || null,
@@ -84,29 +96,41 @@ exports.handler = async (event) => {
         linkedin: body.linkedin || null,
         other: body.otherSocial || null,
       },
+
+      // Application Info
       experience: body.experience,
       videoReelUrl: body.videoReelUrl || null,
-      status: "pending",
-      submittedAt: body.submittedAt || new Date().toISOString(),
-      createdAt: new Date().toISOString(),
+
+      // Clerk Integration (will be set when they create an account)
+      clerkUserId: null,
+
+      // Timestamps
+      appliedAt: now,
+      invitedAt: null,
+      hiredAt: null,
+      createdAt: now,
+      updatedAt: now,
+
+      // Notes
+      notes: null,
     };
 
     // Save to DynamoDB
     await docClient.send(
       new PutCommand({
         TableName: TABLE_NAME,
-        Item: item,
+        Item: host,
       })
     );
 
-    console.log(`Application saved: ${applicationId}`);
+    console.log(`Application saved: ${hostId} - ${body.email}`);
 
     return {
       statusCode: 200,
       headers,
       body: JSON.stringify({
         success: true,
-        applicationId,
+        hostId,
         message: "Application submitted successfully",
       }),
     };

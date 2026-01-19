@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "export",
-  trailingSlash: true,
+  // Removed static export - Clerk requires server-side rendering
   images: {
     unoptimized: true,
   },
