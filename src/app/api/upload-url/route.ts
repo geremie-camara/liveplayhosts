@@ -17,10 +17,13 @@ export async function GET(request: NextRequest) {
   }
 
   // Validate content type
-  const allowedTypes = ["video/mp4", "video/quicktime", "video/webm", "video/x-msvideo"];
+  const videoTypes = ["video/mp4", "video/quicktime", "video/webm", "video/x-msvideo"];
+  const imageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  const allowedTypes = [...videoTypes, ...imageTypes];
+
   if (!allowedTypes.includes(contentType)) {
     return NextResponse.json(
-      { error: "Invalid content type. Allowed: MP4, MOV, WebM, AVI" },
+      { error: "Invalid content type. Allowed: MP4, MOV, WebM, AVI, JPEG, PNG, WebP, GIF" },
       { status: 400 }
     );
   }
@@ -29,7 +32,10 @@ export async function GET(request: NextRequest) {
   const timestamp = Date.now();
   const randomId = Math.random().toString(36).substring(2, 15);
   const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
-  const key = `video-reels/${timestamp}-${randomId}-${sanitizedFilename}`;
+
+  // Use different folders for videos and images
+  const folder = videoTypes.includes(contentType) ? "video-reels" : "headshots";
+  const key = `${folder}/${timestamp}-${randomId}-${sanitizedFilename}`;
 
   try {
     const command = new PutObjectCommand({

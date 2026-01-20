@@ -35,6 +35,7 @@ export interface Host {
   // Application Info
   experience: string;
   videoReelUrl?: string;
+  headshotUrl?: string;
 
   // Clerk Integration
   clerkUserId?: string;
@@ -75,6 +76,7 @@ export interface HostFormData {
   otherSocial?: string;
   experience: string;
   videoReelUrl?: string;
+  headshotUrl?: string;
   status?: HostStatus;
   role?: Host["role"];
   notes?: string;

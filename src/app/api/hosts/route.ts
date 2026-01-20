@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
     },
     experience: body.experience || "",
     videoReelUrl: body.videoReelUrl || undefined,
+    headshotUrl: body.headshotUrl || undefined,
     appliedAt: now,
     createdAt: now,
     updatedAt: now,

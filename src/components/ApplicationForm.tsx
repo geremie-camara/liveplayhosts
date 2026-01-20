@@ -26,8 +26,11 @@ export default function ApplicationForm() {
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [headshotFile, setHeadshotFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [headshotPreview, setHeadshotPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const headshotInputRef = useRef<HTMLInputElement>(null);
 
   const {
     register,
@@ -55,7 +58,30 @@ export default function ApplicationForm() {
     }
   };
 
-  const uploadVideoToS3 = async (file: File): Promise<string> => {
+  const handleHeadshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+      if (!validTypes.includes(file.type)) {
+        setErrorMessage("Please upload a valid image file (JPEG, PNG, WebP, or GIF)");
+        return;
+      }
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setErrorMessage("Image file must be less than 10MB");
+        return;
+      }
+      setHeadshotFile(file);
+      setErrorMessage("");
+
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setHeadshotPreview(previewUrl);
+    }
+  };
+
+  const uploadFileToS3 = async (file: File): Promise<string> => {
     // Get pre-signed URL from our API
     const response = await fetch(
       `/api/upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
@@ -102,10 +128,16 @@ export default function ApplicationForm() {
       setErrorMessage("");
 
       let videoUrl = "";
+      let headshotUrl = "";
+
+      // Upload headshot if provided
+      if (headshotFile) {
+        headshotUrl = await uploadFileToS3(headshotFile);
+      }
 
       // Upload video if provided
       if (videoFile) {
-        videoUrl = await uploadVideoToS3(videoFile);
+        videoUrl = await uploadFileToS3(videoFile);
       }
 
       setSubmitStatus("submitting");
@@ -119,6 +151,7 @@ export default function ApplicationForm() {
         body: JSON.stringify({
           ...data,
           videoReelUrl: videoUrl,
+          headshotUrl: headshotUrl,
           source: "application", // Marks this as a public application
         }),
       });
@@ -130,9 +163,14 @@ export default function ApplicationForm() {
       setSubmitStatus("success");
       reset();
       setVideoFile(null);
+      setHeadshotFile(null);
+      setHeadshotPreview(null);
       setUploadProgress(0);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+      if (headshotInputRef.current) {
+        headshotInputRef.current.value = "";
       }
     } catch (error) {
       setSubmitStatus("error");
@@ -405,6 +443,61 @@ export default function ApplicationForm() {
         {errors.experience && (
           <p className="mt-1 text-sm text-red-600">{errors.experience.message}</p>
         )}
+      </div>
+
+      {/* Headshot Upload */}
+      <div>
+        <label className="block text-sm font-medium text-dark mb-2">
+          Headshot Photo *
+        </label>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors duration-200">
+          <input
+            type="file"
+            ref={headshotInputRef}
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleHeadshotChange}
+            className="hidden"
+            id="headshotUpload"
+          />
+          <label
+            htmlFor="headshotUpload"
+            className="cursor-pointer"
+          >
+            {headshotPreview ? (
+              <div className="flex flex-col items-center">
+                <img
+                  src={headshotPreview}
+                  alt="Headshot preview"
+                  className="w-32 h-32 object-cover rounded-full mb-4"
+                />
+                <p className="text-primary font-medium">{headshotFile?.name}</p>
+                <p className="text-sm text-gray-500 mt-1">Click to change</p>
+              </div>
+            ) : (
+              <div>
+                <svg
+                  className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+                <p className="text-gray-600">
+                  <span className="text-primary font-medium">Click to upload</span> your headshot
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  JPEG, PNG, WebP, or GIF (max 10MB)
+                </p>
+              </div>
+            )}
+          </label>
+        </div>
       </div>
 
       {/* Video Upload */}
