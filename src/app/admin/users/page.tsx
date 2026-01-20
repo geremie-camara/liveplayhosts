@@ -186,10 +186,27 @@ export default function AdminUsersPage() {
                   {hosts.map((host) => (
                     <tr key={host.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
-                        <div className="font-medium text-dark">
-                          {host.firstName} {host.lastName}
+                        <div className="flex items-center gap-3">
+                          {host.headshotUrl ? (
+                            <img
+                              src={host.headshotUrl}
+                              alt={`${host.firstName} ${host.lastName}`}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-500 text-sm font-medium">
+                                {host.firstName.charAt(0)}{host.lastName.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-medium text-dark">
+                              {host.firstName} {host.lastName}
+                            </div>
+                            <div className="text-sm text-gray-500">{host.phone}</div>
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">{host.phone}</div>
                       </td>
                       <td className="px-6 py-4 text-gray-600">{host.email}</td>
                       <td className="px-6 py-4">

@@ -34,6 +34,7 @@ export default function EditUserPage() {
     otherSocial: "",
     experience: "",
     videoReelUrl: "",
+    headshotUrl: "",
     status: "applicant" as HostStatus,
     role: "trainee" as Role,
     notes: "",
@@ -65,6 +66,7 @@ export default function EditUserPage() {
           otherSocial: data.socialProfiles?.other || "",
           experience: data.experience || "",
           videoReelUrl: data.videoReelUrl || "",
+          headshotUrl: data.headshotUrl || "",
           status: data.status || "applicant",
           role: data.role || "trainee",
           notes: data.notes || "",
@@ -468,46 +470,83 @@ export default function EditUserPage() {
             </div>
           </div>
 
-          {/* Experience & Video */}
+          {/* Media (Headshot & Video) */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <h2 className="text-lg font-semibold text-dark mb-4">
-              Experience & Video
+              Media
             </h2>
-            <div className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Headshot */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Experience
+                  Headshot
                 </label>
-                <textarea
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleChange}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Video Reel URL
-                </label>
-                <input
-                  type="url"
-                  name="videoReelUrl"
-                  value={formData.videoReelUrl}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                />
-                {formData.videoReelUrl && (
-                  <a
-                    href={formData.videoReelUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent text-sm hover:underline mt-1 inline-block"
-                  >
-                    View Video →
-                  </a>
+                {formData.headshotUrl ? (
+                  <div className="space-y-2">
+                    <img
+                      src={formData.headshotUrl}
+                      alt={`${formData.firstName} ${formData.lastName}`}
+                      className="w-40 h-40 rounded-full object-cover border-4 border-gray-100"
+                    />
+                    <a
+                      href={formData.headshotUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent text-sm hover:underline inline-block"
+                    >
+                      View Full Image →
+                    </a>
+                  </div>
+                ) : (
+                  <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">No headshot</span>
+                  </div>
                 )}
               </div>
+
+              {/* Video */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Video Reel
+                </label>
+                {formData.videoReelUrl ? (
+                  <div className="space-y-2">
+                    <video
+                      src={formData.videoReelUrl}
+                      controls
+                      className="w-full max-w-sm rounded-lg"
+                    />
+                    <a
+                      href={formData.videoReelUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent text-sm hover:underline inline-block"
+                    >
+                      Open in New Tab →
+                    </a>
+                  </div>
+                ) : (
+                  <div className="w-full max-w-sm h-40 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">No video</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Experience */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-dark mb-4">
+              Experience
+            </h2>
+            <div>
+              <textarea
+                name="experience"
+                value={formData.experience}
+                onChange={handleChange}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
+              />
             </div>
           </div>
 
