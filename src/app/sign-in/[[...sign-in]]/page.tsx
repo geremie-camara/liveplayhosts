@@ -6,8 +6,7 @@ export default function SignInPage() {
       <div className="w-full max-w-md p-4">
         <div className="text-center mb-8">
           <a href="/" className="inline-flex items-center gap-2">
-            <img src="/logo.png" alt="LivePlay" className="h-10 w-auto" />
-            <span className="text-2xl font-bold text-primary">Hosts</span>
+            <img src="/logo.png" alt="LivePlay Hosts" className="h-8 w-auto" />
           </a>
         </div>
         <SignIn
