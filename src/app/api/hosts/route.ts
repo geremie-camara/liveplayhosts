@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { ScanCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
+import { Resend } from "resend";
 
 // GET /api/hosts - List all hosts
 export async function GET(request: NextRequest) {
@@ -120,6 +121,38 @@ export async function POST(request: NextRequest) {
         Item: newHost,
       })
     );
+
+    // Send email notification for new applications
+    if (body.source === "application" && process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const notificationEmails = (process.env.NOTIFICATION_EMAILS || "").split(",").filter(Boolean);
+
+      if (notificationEmails.length > 0) {
+        try {
+          await resend.emails.send({
+            from: "LivePlay Hosts <onboarding@resend.dev>",
+            to: notificationEmails,
+            subject: `New Host Application: ${newHost.firstName} ${newHost.lastName}`,
+            html: `
+              <h2>New Host Application Received</h2>
+              <p><strong>Name:</strong> ${newHost.firstName} ${newHost.lastName}</p>
+              <p><strong>Email:</strong> ${newHost.email}</p>
+              <p><strong>Phone:</strong> ${newHost.phone}</p>
+              <p><strong>Location:</strong> ${newHost.address.city}, ${newHost.address.state}</p>
+              <p><strong>Experience:</strong></p>
+              <p>${newHost.experience}</p>
+              ${newHost.headshotUrl ? `<p><strong>Headshot:</strong> <a href="${newHost.headshotUrl}">View</a></p>` : ""}
+              ${newHost.videoReelUrl ? `<p><strong>Video Reel:</strong> <a href="${newHost.videoReelUrl}">View</a></p>` : ""}
+              <hr />
+              <p><a href="https://www.liveplayhosts.com/admin/users">View in Admin Panel</a></p>
+            `,
+          });
+        } catch (emailError) {
+          console.error("Failed to send notification email:", emailError);
+          // Don't fail the request if email fails
+        }
+      }
+    }
 
     return NextResponse.json(newHost, { status: 201 });
   } catch (error) {
