@@ -54,8 +54,8 @@ export default function Home() {
           <div className="text-center max-w-4xl mx-auto">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight drop-shadow-lg">
               Become a{" "}
-              <span className="text-secondary">LivePlay</span>{" "}
-              <span className="text-secondary">Host</span>
+              <span style={{ color: '#52b3d3' }}>LivePlay</span>{" "}
+              <span style={{ color: '#52b3d3' }}>Host</span>
             </h1>
             <p className="mt-6 text-xl md:text-2xl text-gray-100 leading-relaxed drop-shadow">
               Turn your passion into a career. Engage live audiences, build your
@@ -302,9 +302,9 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
               <img
-                src="/logo.png"
+                src="/logo-white.png"
                 alt="LivePlay Hosts"
-                className="h-6 w-auto brightness-0 invert"
+                className="h-6 w-auto"
               />
             </div>
             <div className="text-gray-400 text-sm">
