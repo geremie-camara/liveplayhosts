@@ -9,7 +9,11 @@ const client = new DynamoDBClient({
   },
 });
 
-export const dynamoDb = DynamoDBDocumentClient.from(client);
+export const dynamoDb = DynamoDBDocumentClient.from(client, {
+  marshallOptions: {
+    removeUndefinedValues: true,
+  },
+});
 
 export const TABLES = {
   HOSTS: "liveplayhosts-hosts",
