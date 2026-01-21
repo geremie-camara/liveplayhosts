@@ -4,24 +4,39 @@ import { useState, useEffect } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Host, HOST_STATUS_CONFIG } from "@/lib/types";
-import { ROLE_NAMES, ROLE_COLORS } from "@/lib/roles";
+import { ROLE_NAMES, ROLE_COLORS, Role } from "@/lib/roles";
+
+type Tab = "active" | "applicants" | "pending";
 
 export default function AdminUsersPage() {
   const [hosts, setHosts] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<Tab>("active");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addingHost, setAddingHost] = useState(false);
+  const [newHost, setNewHost] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    role: "trainee" as Role,
+  });
 
   useEffect(() => {
     fetchHosts();
-  }, [statusFilter, roleFilter, search]);
+  }, [activeTab, roleFilter, search]);
 
   async function fetchHosts() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (statusFilter) params.set("status", statusFilter);
+      // Map tab to status filter
+      if (activeTab === "active") params.set("status", "active");
+      else if (activeTab === "applicants") params.set("status", "applicant");
+      else if (activeTab === "pending") params.set("status", "invited");
+
       if (roleFilter) params.set("role", roleFilter);
       if (search) params.set("search", search);
 
@@ -34,6 +49,40 @@ export default function AdminUsersPage() {
       console.error("Error fetching hosts:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAddHost(e: React.FormEvent) {
+    e.preventDefault();
+    setAddingHost(true);
+    try {
+      const response = await fetch("/api/hosts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newHost,
+          status: "active",
+        }),
+      });
+      if (response.ok) {
+        setShowAddModal(false);
+        setNewHost({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          role: "trainee",
+        });
+        fetchHosts();
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to add host");
+      }
+    } catch (error) {
+      console.error("Error adding host:", error);
+      alert("Failed to add host");
+    } finally {
+      setAddingHost(false);
     }
   }
 
@@ -113,6 +162,53 @@ export default function AdminUsersPage() {
               View and manage all hosts and applicants.
             </p>
           </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-600 transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Add Host
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex gap-8">
+              <button
+                onClick={() => setActiveTab("active")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "active"
+                    ? "border-accent text-accent"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Active Hosts
+              </button>
+              <button
+                onClick={() => setActiveTab("applicants")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "applicants"
+                    ? "border-accent text-accent"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Applicants
+              </button>
+              <button
+                onClick={() => setActiveTab("pending")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "pending"
+                    ? "border-accent text-accent"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Pending
+              </button>
+            </nav>
+          </div>
         </div>
 
         {/* Filters */}
@@ -128,17 +224,6 @@ export default function AdminUsersPage() {
               />
             </div>
             <div className="flex gap-4">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-              >
-                <option value="">All Statuses</option>
-                <option value="applicant">Applicants</option>
-                <option value="invited">Invited</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
               <select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
@@ -267,6 +352,107 @@ export default function AdminUsersPage() {
           )}
         </div>
       </main>
+
+      {/* Add Host Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-primary">Add New Host</h2>
+              <button
+                onClick={() => setShowAddModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <form onSubmit={handleAddHost} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newHost.firstName}
+                    onChange={(e) => setNewHost({ ...newHost, firstName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newHost.lastName}
+                    onChange={(e) => setNewHost({ ...newHost, lastName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={newHost.email}
+                  onChange={(e) => setNewHost({ ...newHost, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={newHost.phone}
+                  onChange={(e) => setNewHost({ ...newHost, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  value={newHost.role}
+                  onChange={(e) => setNewHost({ ...newHost, role: e.target.value as Role })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                >
+                  <option value="trainee">Trainee</option>
+                  <option value="host">Host</option>
+                  <option value="senior_host">Senior Host</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingHost}
+                  className="flex-1 px-4 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-600 transition-colors disabled:opacity-50"
+                >
+                  {addingHost ? "Adding..." : "Add Host"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
