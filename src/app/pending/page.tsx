@@ -61,7 +61,7 @@ export default async function PendingPage() {
           </h1>
 
           <p className="text-gray-600 mb-6">
-            Hi {user.firstName || "there"}! Your account ({primaryEmail}) is not yet activated as a LivePlay Host.
+            Hi {user.firstName || "there"}! Your account ({primaryEmail}) is not yet activated.
           </p>
 
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
@@ -83,7 +83,7 @@ export default async function PendingPage() {
           </div>
 
           <p className="text-gray-500 text-sm mb-6">
-            Haven&apos;t applied yet? Submit your application to become a host.
+            Haven&apos;t applied yet? Submit your application to join the team.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

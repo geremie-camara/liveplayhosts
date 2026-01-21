@@ -131,10 +131,10 @@ export default async function DashboardPage() {
         <div className="mb-8 flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-primary">
-              Welcome back, {user.firstName || "Host"}!
+              Welcome back, {user.firstName || "there"}!
             </h1>
             <p className="text-gray-600 mt-2">
-              Here&apos;s your host dashboard. Manage your schedule, access training,
+              Here&apos;s your dashboard. Manage your schedule, access training,
               and more.
             </p>
           </div>
@@ -252,7 +252,7 @@ export default async function DashboardPage() {
                   className="block w-full text-left px-4 py-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <span className="font-medium text-dark">Manage Users</span>
-                  <p className="text-sm text-gray-500">View and edit host roles</p>
+                  <p className="text-sm text-gray-500">View and edit user roles</p>
                 </a>
                 <a
                   href="/admin/content"

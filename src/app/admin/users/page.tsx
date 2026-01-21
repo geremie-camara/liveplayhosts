@@ -159,7 +159,7 @@ export default function AdminUsersPage() {
           <div>
             <h1 className="text-3xl font-bold text-primary">Manage Users</h1>
             <p className="text-gray-600 mt-1">
-              View and manage all hosts and applicants.
+              View and manage all users.
             </p>
           </div>
           <button
@@ -169,7 +169,7 @@ export default function AdminUsersPage() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Add Host
+            Add User
           </button>
         </div>
 
@@ -185,7 +185,7 @@ export default function AdminUsersPage() {
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
-                Active Hosts
+                Active Users
               </button>
               <button
                 onClick={() => setActiveTab("applicants")}
@@ -353,12 +353,12 @@ export default function AdminUsersPage() {
         </div>
       </main>
 
-      {/* Add Host Modal */}
+      {/* Add User Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-primary">Add New Host</h2>
+              <h2 className="text-xl font-bold text-primary">Add New User</h2>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -446,7 +446,7 @@ export default function AdminUsersPage() {
                   disabled={addingHost}
                   className="flex-1 px-4 py-2 bg-accent text-white font-medium rounded-lg hover:bg-accent-600 transition-colors disabled:opacity-50"
                 >
-                  {addingHost ? "Adding..." : "Add Host"}
+                  {addingHost ? "Adding..." : "Add User"}
                 </button>
               </div>
             </form>

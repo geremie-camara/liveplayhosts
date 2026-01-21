@@ -56,7 +56,7 @@ export default async function AdminPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
           <p className="text-gray-600 mt-2">
-            Manage hosts, applicants, and system settings.
+            Manage users, applicants, and system settings.
           </p>
         </div>
 
@@ -72,7 +72,7 @@ export default async function AdminPage() {
           </div>
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <div className="text-3xl font-bold text-green-600">3</div>
-            <div className="text-gray-600 mt-1">Active Hosts</div>
+            <div className="text-gray-600 mt-1">Active Users</div>
           </div>
           <div className="bg-white rounded-2xl shadow-sm p-6">
             <div className="text-3xl font-bold text-primary">6</div>
@@ -103,7 +103,7 @@ export default async function AdminPage() {
             </div>
             <h3 className="text-lg font-semibold text-dark">Manage Users</h3>
             <p className="text-gray-600 mt-1">
-              View, edit, and manage host accounts and applicants.
+              View, edit, and manage user accounts and applicants.
             </p>
           </Link>
 
@@ -128,7 +128,7 @@ export default async function AdminPage() {
             </div>
             <h3 className="text-lg font-semibold text-dark">Review Applications</h3>
             <p className="text-gray-600 mt-1">
-              Review pending host applications and approve or reject.
+              Review pending applications and approve or reject.
             </p>
           </Link>
 
