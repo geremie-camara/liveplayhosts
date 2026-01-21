@@ -218,12 +218,12 @@ export default function ApplicationForm() {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="bg-gray-50 rounded-2xl p-8 space-y-6"
+      className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 space-y-6"
     >
       {/* Name Fields */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="firstName" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="firstName" className="block text-sm font-medium text-white mb-2">
             First Name *
           </label>
           <input
@@ -238,7 +238,7 @@ export default function ApplicationForm() {
           )}
         </div>
         <div>
-          <label htmlFor="lastName" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="lastName" className="block text-sm font-medium text-white mb-2">
             Last Name *
           </label>
           <input
@@ -257,7 +257,7 @@ export default function ApplicationForm() {
       {/* Email & Phone */}
       <div className="grid md:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
             Email Address *
           </label>
           <input
@@ -278,7 +278,7 @@ export default function ApplicationForm() {
           )}
         </div>
         <div>
-          <label htmlFor="phone" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
             Phone Number *
           </label>
           <input
@@ -296,7 +296,7 @@ export default function ApplicationForm() {
 
       {/* Address */}
       <div>
-        <label htmlFor="street" className="block text-sm font-medium text-dark mb-2">
+        <label htmlFor="street" className="block text-sm font-medium text-white mb-2">
           Street Address *
         </label>
         <input
@@ -313,7 +313,7 @@ export default function ApplicationForm() {
 
       <div className="grid md:grid-cols-3 gap-4">
         <div>
-          <label htmlFor="city" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="city" className="block text-sm font-medium text-white mb-2">
             City *
           </label>
           <input
@@ -328,7 +328,7 @@ export default function ApplicationForm() {
           )}
         </div>
         <div>
-          <label htmlFor="state" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="state" className="block text-sm font-medium text-white mb-2">
             State *
           </label>
           <input
@@ -343,7 +343,7 @@ export default function ApplicationForm() {
           )}
         </div>
         <div>
-          <label htmlFor="zip" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="zip" className="block text-sm font-medium text-white mb-2">
             ZIP Code *
           </label>
           <input
@@ -361,10 +361,10 @@ export default function ApplicationForm() {
 
       {/* Social Profiles */}
       <div>
-        <h3 className="text-lg font-semibold text-dark mb-4">Social Profiles</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">Social Profiles</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="instagram" className="block text-sm font-medium text-dark mb-2">
+            <label htmlFor="instagram" className="block text-sm font-medium text-white mb-2">
               Instagram
             </label>
             <input
@@ -376,7 +376,7 @@ export default function ApplicationForm() {
             />
           </div>
           <div>
-            <label htmlFor="tiktok" className="block text-sm font-medium text-dark mb-2">
+            <label htmlFor="tiktok" className="block text-sm font-medium text-white mb-2">
               TikTok
             </label>
             <input
@@ -388,7 +388,7 @@ export default function ApplicationForm() {
             />
           </div>
           <div>
-            <label htmlFor="youtube" className="block text-sm font-medium text-dark mb-2">
+            <label htmlFor="youtube" className="block text-sm font-medium text-white mb-2">
               YouTube
             </label>
             <input
@@ -400,7 +400,7 @@ export default function ApplicationForm() {
             />
           </div>
           <div>
-            <label htmlFor="linkedin" className="block text-sm font-medium text-dark mb-2">
+            <label htmlFor="linkedin" className="block text-sm font-medium text-white mb-2">
               LinkedIn
             </label>
             <input
@@ -413,7 +413,7 @@ export default function ApplicationForm() {
           </div>
         </div>
         <div className="mt-4">
-          <label htmlFor="otherSocial" className="block text-sm font-medium text-dark mb-2">
+          <label htmlFor="otherSocial" className="block text-sm font-medium text-white mb-2">
             Other Social Profiles
           </label>
           <input
@@ -428,7 +428,7 @@ export default function ApplicationForm() {
 
       {/* Experience */}
       <div>
-        <label htmlFor="experience" className="block text-sm font-medium text-dark mb-2">
+        <label htmlFor="experience" className="block text-sm font-medium text-white mb-2">
           Tell us about your hosting experience *
         </label>
         <textarea
@@ -447,10 +447,10 @@ export default function ApplicationForm() {
 
       {/* Headshot Upload */}
       <div>
-        <label className="block text-sm font-medium text-dark mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           Headshot Photo *
         </label>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors duration-200">
+        <div className="border-2 border-dashed border-white/30 rounded-lg p-6 text-center hover:border-white/60 transition-colors duration-200">
           <input
             type="file"
             ref={headshotInputRef}
@@ -470,13 +470,13 @@ export default function ApplicationForm() {
                   alt="Headshot preview"
                   className="w-32 h-32 object-cover rounded-full mb-4"
                 />
-                <p className="text-primary font-medium">{headshotFile?.name}</p>
-                <p className="text-sm text-gray-500 mt-1">Click to change</p>
+                <p className="text-white font-medium">{headshotFile?.name}</p>
+                <p className="text-sm text-white/60 mt-1">Click to change</p>
               </div>
             ) : (
               <div>
                 <svg
-                  className="w-12 h-12 text-gray-400 mx-auto mb-4"
+                  className="w-12 h-12 text-white/50 mx-auto mb-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -488,10 +488,10 @@ export default function ApplicationForm() {
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                   />
                 </svg>
-                <p className="text-gray-600">
-                  <span className="text-primary font-medium">Click to upload</span> your headshot
+                <p className="text-white/80">
+                  <span className="text-white font-medium">Click to upload</span> your headshot
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-white/60 mt-1">
                   JPEG, PNG, WebP, or GIF (max 10MB)
                 </p>
               </div>
@@ -502,10 +502,10 @@ export default function ApplicationForm() {
 
       {/* Video Upload */}
       <div>
-        <label className="block text-sm font-medium text-dark mb-2">
+        <label className="block text-sm font-medium text-white mb-2">
           Video Reel
         </label>
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors duration-200">
+        <div className="border-2 border-dashed border-white/30 rounded-lg p-6 text-center hover:border-white/60 transition-colors duration-200">
           <input
             type="file"
             ref={fileInputRef}
@@ -519,7 +519,7 @@ export default function ApplicationForm() {
             className="cursor-pointer"
           >
             <svg
-              className="w-12 h-12 text-gray-400 mx-auto mb-4"
+              className="w-12 h-12 text-white/50 mx-auto mb-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -533,18 +533,18 @@ export default function ApplicationForm() {
             </svg>
             {videoFile ? (
               <div>
-                <p className="text-primary font-medium">{videoFile.name}</p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-white font-medium">{videoFile.name}</p>
+                <p className="text-sm text-white/60 mt-1">
                   {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
                 </p>
               </div>
             ) : (
               <div>
-                <p className="text-gray-600">
-                  <span className="text-primary font-medium">Click to upload</span> or
+                <p className="text-white/80">
+                  <span className="text-white font-medium">Click to upload</span> or
                   drag and drop
                 </p>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-white/60 mt-1">
                   MP4, MOV, WebM, or AVI (max 500MB)
                 </p>
               </div>
@@ -553,13 +553,13 @@ export default function ApplicationForm() {
         </div>
         {uploadProgress > 0 && uploadProgress < 100 && (
           <div className="mt-4">
-            <div className="flex justify-between text-sm text-gray-600 mb-1">
+            <div className="flex justify-between text-sm text-white/80 mb-1">
               <span>Uploading...</span>
               <span>{uploadProgress}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-white/20 rounded-full h-2">
               <div
-                className="bg-accent h-2 rounded-full transition-all duration-300"
+                className="bg-white h-2 rounded-full transition-all duration-300"
                 style={{ width: `${uploadProgress}%` }}
               />
             </div>
@@ -587,7 +587,7 @@ export default function ApplicationForm() {
           : "Submit Application"}
       </button>
 
-      <p className="text-sm text-gray-500 text-center">
+      <p className="text-sm text-white/70 text-center">
         By submitting this application, you agree to our terms of service and
         privacy policy.
       </p>
