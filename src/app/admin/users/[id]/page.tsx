@@ -117,6 +117,10 @@ export default function EditUserPage() {
       });
 
       if (response.ok) {
+        const data = await response.json();
+        if (data.warning) {
+          alert(data.warning);
+        }
         router.push("/admin/users");
       } else {
         setError("Failed to save changes");

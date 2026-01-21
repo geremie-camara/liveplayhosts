@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { GetCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
+import { Resend } from "resend";
 
 // GET /api/hosts/[id] - Get single host
 export async function GET(
@@ -61,6 +62,15 @@ export async function PUT(
   const body = await request.json();
   const now = new Date().toISOString();
 
+  // Get current host to check status change
+  const currentHostResult = await dynamoDb.send(
+    new GetCommand({
+      TableName: TABLES.HOSTS,
+      Key: { id },
+    })
+  );
+  const currentHost = currentHostResult.Item as Host | undefined;
+
   // Build update expression dynamically
   const updateFields: string[] = [];
   const expressionAttributeNames: Record<string, string> = {};
@@ -69,7 +79,7 @@ export async function PUT(
   // Fields that can be updated
   const allowedFields = [
     "status", "role", "firstName", "lastName", "email", "phone",
-    "address", "socialProfiles", "experience", "videoReelUrl", "notes"
+    "address", "socialProfiles", "experience", "videoReelUrl", "notes", "clerkUserId"
   ];
 
   for (const field of allowedFields) {
@@ -98,6 +108,71 @@ export async function PUT(
     expressionAttributeValues[":hiredAt"] = now;
   }
 
+  // Check if status is changing to "active" - send Clerk invitation
+  const isActivating = body.status === "active" && currentHost?.status !== "active";
+  let clerkInviteError: string | null = null;
+
+  if (isActivating && currentHost) {
+    try {
+      const clerk = await clerkClient();
+
+      // Check if user already exists in Clerk
+      const existingUsers = await clerk.users.getUserList({
+        emailAddress: [currentHost.email],
+      });
+
+      if (existingUsers.data.length > 0) {
+        // User already exists - update their role metadata
+        const existingUser = existingUsers.data[0];
+        await clerk.users.updateUser(existingUser.id, {
+          publicMetadata: {
+            role: body.role || currentHost.role || "trainee",
+          },
+        });
+
+        // Store Clerk user ID
+        updateFields.push("#clerkUserId = :clerkUserId");
+        expressionAttributeNames["#clerkUserId"] = "clerkUserId";
+        expressionAttributeValues[":clerkUserId"] = existingUser.id;
+      } else {
+        // Create invitation for new user
+        await clerk.invitations.createInvitation({
+          emailAddress: currentHost.email,
+          publicMetadata: {
+            role: body.role || currentHost.role || "trainee",
+          },
+          redirectUrl: "https://www.liveplayhosts.com/dashboard",
+        });
+
+        // Send welcome email via Resend
+        if (process.env.RESEND_API_KEY) {
+          const resend = new Resend(process.env.RESEND_API_KEY);
+          try {
+            await resend.emails.send({
+              from: "LivePlay Hosts <onboarding@resend.dev>",
+              to: [currentHost.email],
+              subject: "Welcome to LivePlay Hosts - You're Activated!",
+              html: `
+                <h2>Congratulations, ${currentHost.firstName}!</h2>
+                <p>Your application to become a LivePlay Host has been approved!</p>
+                <p>You should receive a separate email with a link to set up your account and password.</p>
+                <p>Once you've set up your account, you can log in at <a href="https://www.liveplayhosts.com/sign-in">liveplayhosts.com</a> to access your dashboard.</p>
+                <p>Welcome to the team!</p>
+                <hr />
+                <p>The LivePlay Hosts Team</p>
+              `,
+            });
+          } catch (emailError) {
+            console.error("Failed to send welcome email:", emailError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error with Clerk invitation:", error);
+      clerkInviteError = "Host activated but Clerk invitation failed. They may need to be invited manually.";
+    }
+  }
+
   try {
     const result = await dynamoDb.send(
       new UpdateCommand({
@@ -110,7 +185,15 @@ export async function PUT(
       })
     );
 
-    return NextResponse.json(result.Attributes as Host);
+    const response: { host: Host; warning?: string } = {
+      host: result.Attributes as Host,
+    };
+
+    if (clerkInviteError) {
+      response.warning = clerkInviteError;
+    }
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error updating host:", error);
     return NextResponse.json({ error: "Failed to update host" }, { status: 500 });

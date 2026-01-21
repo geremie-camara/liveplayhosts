@@ -60,6 +60,12 @@ export default function AdminUsersPage() {
         body: JSON.stringify({ status: "active" }),
       });
       if (response.ok) {
+        const data = await response.json();
+        if (data.warning) {
+          alert(data.warning);
+        } else {
+          alert("Host activated! A Clerk invitation has been sent to their email.");
+        }
         fetchHosts();
       }
     } catch (error) {
