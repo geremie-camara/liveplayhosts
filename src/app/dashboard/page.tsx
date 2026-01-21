@@ -6,9 +6,9 @@ import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
 
-async function syncUserRole(userId: string, email: string, currentRole?: string) {
-  // If user already has a role set, don't override it
-  if (currentRole) return currentRole;
+async function syncUserRole(userId: string, email: string, currentRole?: string): Promise<{ role: Role; isApproved: boolean }> {
+  // If user already has a role set, they're approved
+  if (currentRole) return { role: currentRole as Role, isApproved: true };
 
   try {
     // Look up host by email in DynamoDB
@@ -35,13 +35,14 @@ async function syncUserRole(userId: string, email: string, currentRole?: string)
         publicMetadata: { role },
       });
 
-      return role;
+      return { role: role as Role, isApproved: true };
     }
   } catch (error) {
     console.error("Error syncing user role:", error);
   }
 
-  return "trainee";
+  // No matching active host - not approved
+  return { role: "trainee", isApproved: false };
 }
 
 export default async function DashboardPage() {
@@ -55,7 +56,13 @@ export default async function DashboardPage() {
   const existingRole = user.publicMetadata?.role as Role | undefined;
 
   // Sync role from DynamoDB if not set
-  const role = await syncUserRole(user.id, primaryEmail, existingRole) as Role;
+  const { role, isApproved } = await syncUserRole(user.id, primaryEmail, existingRole);
+
+  // If not approved, redirect to pending page
+  if (!isApproved) {
+    redirect("/pending");
+  }
+
   const canViewSchedule = hasPermission(role, "viewSchedule");
   const canViewAnalytics = hasPermission(role, "viewAnalytics");
   const canManageUsers = hasPermission(role, "manageUsers");
