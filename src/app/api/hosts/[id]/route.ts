@@ -108,9 +108,9 @@ export async function PUT(
     expressionAttributeValues[":hiredAt"] = now;
   }
 
-  // Check if status is changing to "active" - send Clerk invitation
+  // Check if status is changing to "active" - update Clerk metadata if user exists
   const isActivating = body.status === "active" && currentHost?.status !== "active";
-  let clerkInviteError: string | null = null;
+  let clerkSyncMessage: string | null = null;
 
   if (isActivating && currentHost) {
     try {
@@ -134,42 +134,37 @@ export async function PUT(
         updateFields.push("#clerkUserId = :clerkUserId");
         expressionAttributeNames["#clerkUserId"] = "clerkUserId";
         expressionAttributeValues[":clerkUserId"] = existingUser.id;
-      } else {
-        // Create invitation for new user
-        await clerk.invitations.createInvitation({
-          emailAddress: currentHost.email,
-          publicMetadata: {
-            role: body.role || currentHost.role || "trainee",
-          },
-          redirectUrl: "https://www.liveplayhosts.com/dashboard",
-        });
 
-        // Send welcome email via Resend
-        if (process.env.RESEND_API_KEY) {
-          const resend = new Resend(process.env.RESEND_API_KEY);
-          try {
-            await resend.emails.send({
-              from: "LivePlay Hosts <onboarding@resend.dev>",
-              to: [currentHost.email],
-              subject: "Welcome to LivePlay Hosts - You're Activated!",
-              html: `
-                <h2>Congratulations, ${currentHost.firstName}!</h2>
-                <p>Your application to become a LivePlay Host has been approved!</p>
-                <p>You should receive a separate email with a link to set up your account and password.</p>
-                <p>Once you've set up your account, you can log in at <a href="https://www.liveplayhosts.com/sign-in">liveplayhosts.com</a> to access your dashboard.</p>
-                <p>Welcome to the team!</p>
-                <hr />
-                <p>The LivePlay Hosts Team</p>
-              `,
-            });
-          } catch (emailError) {
-            console.error("Failed to send welcome email:", emailError);
-          }
+        clerkSyncMessage = "Role synced to existing Clerk account.";
+      } else {
+        // User doesn't exist in Clerk yet - they'll be synced on first login
+        clerkSyncMessage = "Host activated. Role will sync when they sign in with Google/Slack.";
+      }
+
+      // Send welcome email via Resend
+      if (process.env.RESEND_API_KEY) {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        try {
+          await resend.emails.send({
+            from: "LivePlay Hosts <onboarding@resend.dev>",
+            to: [currentHost.email],
+            subject: "Welcome to LivePlay Hosts - You're Activated!",
+            html: `
+              <h2>Congratulations, ${currentHost.firstName}!</h2>
+              <p>Your application to become a LivePlay Host has been approved!</p>
+              <p>You can now log in at <a href="https://www.liveplayhosts.com/sign-in">liveplayhosts.com</a> using Google or Slack to access your dashboard.</p>
+              <p>Welcome to the team!</p>
+              <hr />
+              <p>The LivePlay Hosts Team</p>
+            `,
+          });
+        } catch (emailError) {
+          console.error("Failed to send welcome email:", emailError);
         }
       }
     } catch (error) {
-      console.error("Error with Clerk invitation:", error);
-      clerkInviteError = "Host activated but Clerk invitation failed. They may need to be invited manually.";
+      console.error("Error syncing with Clerk:", error);
+      clerkSyncMessage = "Host activated. Role will sync when they sign in.";
     }
   }
 
@@ -185,12 +180,12 @@ export async function PUT(
       })
     );
 
-    const response: { host: Host; warning?: string } = {
+    const response: { host: Host; message?: string } = {
       host: result.Attributes as Host,
     };
 
-    if (clerkInviteError) {
-      response.warning = clerkInviteError;
+    if (clerkSyncMessage) {
+      response.message = clerkSyncMessage;
     }
 
     return NextResponse.json(response);

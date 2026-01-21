@@ -1,7 +1,48 @@
 import { UserButton } from "@clerk/nextjs";
-import { currentUser } from "@clerk/nextjs/server";
+import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Role, ROLE_NAMES, ROLE_COLORS, hasPermission } from "@/lib/roles";
+import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { dynamoDb, TABLES } from "@/lib/dynamodb";
+import { Host } from "@/lib/types";
+
+async function syncUserRole(userId: string, email: string, currentRole?: string) {
+  // If user already has a role set, don't override it
+  if (currentRole) return currentRole;
+
+  try {
+    // Look up host by email in DynamoDB
+    const result = await dynamoDb.send(
+      new ScanCommand({
+        TableName: TABLES.HOSTS,
+        FilterExpression: "email = :email AND #status = :status",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":email": email.toLowerCase(),
+          ":status": "active"
+        },
+      })
+    );
+
+    const hosts = result.Items as Host[];
+    if (hosts.length > 0) {
+      const host = hosts[0];
+      const role = host.role || "trainee";
+
+      // Update Clerk user metadata
+      const clerk = await clerkClient();
+      await clerk.users.updateUser(userId, {
+        publicMetadata: { role },
+      });
+
+      return role;
+    }
+  } catch (error) {
+    console.error("Error syncing user role:", error);
+  }
+
+  return "trainee";
+}
 
 export default async function DashboardPage() {
   const user = await currentUser();
@@ -10,7 +51,11 @@ export default async function DashboardPage() {
     redirect("/sign-in");
   }
 
-  const role = (user.publicMetadata?.role as Role) || "trainee";
+  const primaryEmail = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress || "";
+  const existingRole = user.publicMetadata?.role as Role | undefined;
+
+  // Sync role from DynamoDB if not set
+  const role = await syncUserRole(user.id, primaryEmail, existingRole) as Role;
   const canViewSchedule = hasPermission(role, "viewSchedule");
   const canViewAnalytics = hasPermission(role, "viewAnalytics");
   const canManageUsers = hasPermission(role, "manageUsers");

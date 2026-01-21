@@ -118,8 +118,8 @@ export default function EditUserPage() {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.warning) {
-          alert(data.warning);
+        if (data.message) {
+          alert(data.message);
         }
         router.push("/admin/users");
       } else {
