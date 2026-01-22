@@ -349,7 +349,11 @@ export default function AdminUsersPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{host.email}</td>
+                    <td className="px-6 py-4">
+                      <a href={`mailto:${host.email}`} className="text-gray-600 hover:text-accent hover:underline">
+                        {host.email}
+                      </a>
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         {host.slackId ? (
