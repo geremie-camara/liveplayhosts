@@ -111,20 +111,21 @@ export async function PUT(
     expressionAttributeValues[":hiredAt"] = now;
   }
 
-  // Check if user is being approved - update Clerk metadata if user exists
+  // Sync role to Clerk whenever it changes
   let clerkSyncMessage: string | null = null;
+  const roleChanged = newRole && currentRole && newRole !== currentRole;
 
-  if (isBeingApproved && currentHost) {
+  if (roleChanged && currentHost) {
     try {
       const clerk = await clerkClient();
 
-      // Check if user already exists in Clerk
+      // Check if user exists in Clerk
       const existingUsers = await clerk.users.getUserList({
         emailAddress: [currentHost.email],
       });
 
       if (existingUsers.data.length > 0) {
-        // User already exists - update their role metadata
+        // User exists - update their role metadata
         const existingUser = existingUsers.data[0];
         await clerk.users.updateUser(existingUser.id, {
           publicMetadata: {
@@ -132,19 +133,21 @@ export async function PUT(
           },
         });
 
-        // Store Clerk user ID
-        updateFields.push("#clerkUserId = :clerkUserId");
-        expressionAttributeNames["#clerkUserId"] = "clerkUserId";
-        expressionAttributeValues[":clerkUserId"] = existingUser.id;
+        // Store Clerk user ID if not already set
+        if (!currentHost.clerkUserId) {
+          updateFields.push("#clerkUserId = :clerkUserId");
+          expressionAttributeNames["#clerkUserId"] = "clerkUserId";
+          expressionAttributeValues[":clerkUserId"] = existingUser.id;
+        }
 
-        clerkSyncMessage = "Role synced to existing Clerk account.";
+        clerkSyncMessage = `Role updated to ${newRole} and synced to Clerk.`;
       } else {
-        // User doesn't exist in Clerk yet - they'll be synced on first login
-        clerkSyncMessage = "User approved. Role will sync when they sign in with Google/Slack.";
+        // User doesn't exist in Clerk yet
+        clerkSyncMessage = `Role updated to ${newRole}. Will sync when user signs in.`;
       }
 
-      // Send welcome email via Resend
-      if (process.env.RESEND_API_KEY) {
+      // Send welcome email only on first approval (non-active to active)
+      if (isBeingApproved && process.env.RESEND_API_KEY) {
         const resend = new Resend(process.env.RESEND_API_KEY);
         try {
           await resend.emails.send({
@@ -166,7 +169,7 @@ export async function PUT(
       }
     } catch (error) {
       console.error("Error syncing with Clerk:", error);
-      clerkSyncMessage = "User approved. Role will sync when they sign in.";
+      clerkSyncMessage = `Role updated to ${newRole}. Clerk sync will happen on next sign in.`;
     }
   }
 
