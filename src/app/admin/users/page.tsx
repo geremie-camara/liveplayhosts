@@ -16,6 +16,7 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [addingHost, setAddingHost] = useState(false);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [newHost, setNewHost] = useState({
     firstName: "",
     lastName: "",
@@ -44,12 +45,36 @@ export default function AdminUsersPage() {
       if (response.ok) {
         const data = await response.json();
         setHosts(data);
+        // Fetch signed URLs for headshots
+        fetchSignedUrls(data);
       }
     } catch (error) {
       console.error("Error fetching hosts:", error);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function fetchSignedUrls(hostList: Host[]) {
+    const urls: Record<string, string> = {};
+    await Promise.all(
+      hostList
+        .filter((h) => h.headshotUrl)
+        .map(async (h) => {
+          try {
+            const response = await fetch(
+              `/api/upload-url?viewUrl=${encodeURIComponent(h.headshotUrl!)}`
+            );
+            if (response.ok) {
+              const data = await response.json();
+              urls[h.id] = data.signedUrl;
+            }
+          } catch (err) {
+            console.error("Failed to get signed URL for", h.id);
+          }
+        })
+    );
+    setSignedUrls(urls);
   }
 
   async function handleAddHost(e: React.FormEvent) {
@@ -275,9 +300,9 @@ export default function AdminUsersPage() {
                     <tr key={host.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          {host.headshotUrl ? (
+                          {host.headshotUrl && signedUrls[host.id] ? (
                             <img
-                              src={host.headshotUrl}
+                              src={signedUrls[host.id]}
                               alt={`${host.firstName} ${host.lastName}`}
                               className="w-10 h-10 rounded-full object-cover"
                             />
