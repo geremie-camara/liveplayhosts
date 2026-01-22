@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Host, UserRole, ROLE_CONFIG } from "@/lib/types";
-import { ROLE_NAMES, ROLE_COLORS, ACTIVE_ROLES } from "@/lib/roles";
+import { ROLE_NAMES, ROLE_COLORS } from "@/lib/roles";
 
-type Tab = "all" | "active" | "applicants" | "rejected";
+type Tab = "all" | "hosts" | "producers" | "applicants" | "rejected" | "management";
 
 export default function AdminUsersPage() {
   const [hosts, setHosts] = useState<Host[]>([]);
@@ -34,13 +34,16 @@ export default function AdminUsersPage() {
       const params = new URLSearchParams();
 
       // Map tab to role filter
-      if (activeTab === "active") {
-        // Active users: host, producer, admin, owner
-        params.set("roles", ACTIVE_ROLES.join(","));
+      if (activeTab === "hosts") {
+        params.set("role", "host");
+      } else if (activeTab === "producers") {
+        params.set("role", "producer");
       } else if (activeTab === "applicants") {
         params.set("role", "applicant");
       } else if (activeTab === "rejected") {
         params.set("role", "rejected");
+      } else if (activeTab === "management") {
+        params.set("roles", "admin,owner");
       }
       // "all" tab doesn't filter by role
 
@@ -170,10 +173,10 @@ export default function AdminUsersPage() {
       {/* Tabs */}
       <div className="mb-6">
         <div className="border-b border-gray-200">
-          <nav className="-mb-px flex gap-8">
+          <nav className="-mb-px flex gap-6 overflow-x-auto">
             <button
               onClick={() => setActiveTab("all")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                 activeTab === "all"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -182,18 +185,28 @@ export default function AdminUsersPage() {
               All Users
             </button>
             <button
-              onClick={() => setActiveTab("active")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === "active"
+              onClick={() => setActiveTab("hosts")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === "hosts"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Active
+              Hosts
+            </button>
+            <button
+              onClick={() => setActiveTab("producers")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === "producers"
+                  ? "border-accent text-accent"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Producers
             </button>
             <button
               onClick={() => setActiveTab("applicants")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                 activeTab === "applicants"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -203,13 +216,23 @@ export default function AdminUsersPage() {
             </button>
             <button
               onClick={() => setActiveTab("rejected")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
                 activeTab === "rejected"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Rejected
+            </button>
+            <button
+              onClick={() => setActiveTab("management")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                activeTab === "management"
+                  ? "border-accent text-accent"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Management
             </button>
           </nav>
         </div>
