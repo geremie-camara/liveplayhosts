@@ -7,10 +7,10 @@ export type Role = UserRole;
 
 // Role hierarchy (higher index = more permissions)
 // applicant and rejected have no app access
-export const ROLE_HIERARCHY: Role[] = ["applicant", "rejected", "host", "producer", "admin", "owner"];
+export const ROLE_HIERARCHY: Role[] = ["applicant", "rejected", "host", "producer", "finance", "hr", "admin", "owner"];
 
 // Roles that have dashboard access (approved users only)
-export const ACTIVE_ROLES: Role[] = ["host", "producer", "admin", "owner"];
+export const ACTIVE_ROLES: Role[] = ["host", "producer", "finance", "hr", "admin", "owner"];
 
 // Role display names
 export const ROLE_NAMES: Record<Role, string> = {
@@ -20,6 +20,8 @@ export const ROLE_NAMES: Record<Role, string> = {
   producer: "Producer",
   admin: "Admin",
   owner: "Owner",
+  finance: "Finance",
+  hr: "HR",
 };
 
 // Role colors for UI
@@ -30,6 +32,8 @@ export const ROLE_COLORS: Record<Role, string> = {
   producer: "bg-purple-100 text-purple-800",
   admin: "bg-blue-100 text-blue-800",
   owner: "bg-indigo-100 text-indigo-800",
+  finance: "bg-emerald-100 text-emerald-800",
+  hr: "bg-orange-100 text-orange-800",
 };
 
 // Check if user has at least the required role level
@@ -59,20 +63,20 @@ export function getUserRole(publicMetadata: Record<string, unknown> | undefined)
 // Permission definitions by feature
 export const PERMISSIONS = {
   // Dashboard access (only active users)
-  viewDashboard: ["host", "producer", "admin", "owner"] as Role[],
+  viewDashboard: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
 
   // Training access
-  viewBasicTraining: ["host", "producer", "admin", "owner"] as Role[],
-  viewAdvancedTraining: ["host", "producer", "admin", "owner"] as Role[],
+  viewBasicTraining: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
+  viewAdvancedTraining: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
   viewAllTraining: ["admin", "owner"] as Role[],
 
   // Schedule access
-  viewSchedule: ["host", "producer", "admin", "owner"] as Role[],
+  viewSchedule: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
   manageSchedule: ["producer", "admin", "owner"] as Role[],
 
   // Admin features
-  manageUsers: ["admin", "owner"] as Role[],
-  viewAnalytics: ["producer", "admin", "owner"] as Role[],
+  manageUsers: ["hr", "admin", "owner"] as Role[],
+  viewAnalytics: ["producer", "finance", "hr", "admin", "owner"] as Role[],
   manageContent: ["admin", "owner"] as Role[],
 };
 

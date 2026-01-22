@@ -1,5 +1,5 @@
 // User role in the system
-export type UserRole = "applicant" | "rejected" | "host" | "producer" | "admin" | "owner";
+export type UserRole = "applicant" | "rejected" | "host" | "producer" | "admin" | "owner" | "finance" | "hr";
 
 // Database record for a user
 export interface Host {
@@ -63,6 +63,8 @@ export const ROLE_CONFIG: Record<UserRole, { label: string; color: string }> = {
   producer: { label: "Producer", color: "bg-purple-100 text-purple-800" },
   admin: { label: "Admin", color: "bg-blue-100 text-blue-800" },
   owner: { label: "Owner", color: "bg-indigo-100 text-indigo-800" },
+  finance: { label: "Finance", color: "bg-emerald-100 text-emerald-800" },
+  hr: { label: "HR", color: "bg-orange-100 text-orange-800" },
 };
 
 // Form data for creating/updating a user

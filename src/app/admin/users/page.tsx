@@ -307,6 +307,8 @@ export default function AdminUsersPage() {
               <option value="producer">Producer</option>
               <option value="admin">Admin</option>
               <option value="owner">Owner</option>
+              <option value="finance">Finance</option>
+              <option value="hr">HR</option>
             </select>
           </div>
         </div>
@@ -511,6 +513,9 @@ export default function AdminUsersPage() {
                   <option value="host">Host</option>
                   <option value="producer">Producer</option>
                   <option value="admin">Admin</option>
+                  <option value="owner">Owner</option>
+                  <option value="finance">Finance</option>
+                  <option value="hr">HR</option>
                 </select>
               </div>
               <div className="flex gap-3 pt-4">
