@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Lesson, LessonType, LESSON_TYPE_CONFIG } from "@/lib/training-types";
 
-interface PageProps {
-  params: Promise<{ id: string; lessonId: string }>;
-}
-
-export default function EditLessonPage({ params }: PageProps) {
-  const { id: courseId, lessonId } = use(params);
+export default function EditLessonPage() {
+  const params = useParams();
+  const courseId = params.id as string;
+  const lessonId = params.lessonId as string;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

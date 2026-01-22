@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   Course,
@@ -14,16 +14,13 @@ import {
   LessonType,
 } from "@/lib/training-types";
 
-interface PageProps {
-  params: Promise<{ id: string }>;
-}
-
 interface SectionWithLessons extends Section {
   lessons: Lesson[];
 }
 
-export default function EditCoursePage({ params }: PageProps) {
-  const { id } = use(params);
+export default function EditCoursePage() {
+  const params = useParams();
+  const id = params.id as string;
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
