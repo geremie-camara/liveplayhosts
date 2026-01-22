@@ -353,7 +353,7 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       {host.slackId ? (
                         <a
-                          href={`slack://user?team=T07BCJG2H95&id=${host.slackId}`}
+                          href={`slack://user?team=TN9K8GS6A&id=${host.slackId}`}
                           className="text-accent hover:underline"
                           title="Open DM in Slack"
                         >
