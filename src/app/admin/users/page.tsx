@@ -23,6 +23,8 @@ export default function AdminUsersPage() {
     phone: "",
     role: "host" as UserRole,
   });
+  const [deleteConfirm, setDeleteConfirm] = useState<Host | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchHosts();
@@ -147,6 +149,28 @@ export default function AdminUsersPage() {
       }
     } catch (error) {
       console.error("Error rejecting user:", error);
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteConfirm) return;
+    setDeleting(true);
+    try {
+      const response = await fetch(`/api/hosts/${deleteConfirm.id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        setDeleteConfirm(null);
+        fetchHosts();
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to delete user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      alert("Failed to delete user");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -353,6 +377,15 @@ export default function AdminUsersPage() {
                         >
                           Edit
                         </Link>
+                        <button
+                          onClick={() => setDeleteConfirm(host)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Delete user"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -459,6 +492,42 @@ export default function AdminUsersPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Delete User</h2>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Are you sure you want to delete <span className="font-semibold">{deleteConfirm.firstName} {deleteConfirm.lastName}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(null)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
         </div>
       )}
