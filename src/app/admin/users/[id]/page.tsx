@@ -328,7 +328,6 @@ export default function EditUserPage() {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
@@ -341,7 +340,6 @@ export default function EditUserPage() {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
@@ -354,7 +352,6 @@ export default function EditUserPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
@@ -367,7 +364,6 @@ export default function EditUserPage() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  required
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
