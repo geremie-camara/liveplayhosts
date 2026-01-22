@@ -68,6 +68,40 @@ export const ROLE_CONFIG: Record<UserRole, { label: string; color: string }> = {
   hr: { label: "HR", color: "bg-orange-100 text-orange-800" },
 };
 
+// Daily availability for a single day
+export interface DayAvailability {
+  enabled: boolean;
+  startTime: string; // Format: "HH:MM" (24-hour)
+  endTime: string;   // Format: "HH:MM" (24-hour)
+}
+
+// Weekly availability schedule
+export interface WeeklyAvailability {
+  monday: DayAvailability;
+  tuesday: DayAvailability;
+  wednesday: DayAvailability;
+  thursday: DayAvailability;
+  friday: DayAvailability;
+  saturday: DayAvailability;
+  sunday: DayAvailability;
+}
+
+// Blocked date range (for vacations, etc.)
+export interface BlockedDateRange {
+  id: string;
+  startDate: string; // Format: "YYYY-MM-DD"
+  endDate: string;   // Format: "YYYY-MM-DD"
+  reason?: string;
+}
+
+// User availability record
+export interface UserAvailability {
+  userId: string; // Reference to Host.id
+  weekly: WeeklyAvailability;
+  blockedDates: BlockedDateRange[];
+  updatedAt: string;
+}
+
 // Form data for creating/updating a user
 export interface HostFormData {
   firstName: string;

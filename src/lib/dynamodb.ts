@@ -17,4 +17,5 @@ export const dynamoDb = DynamoDBDocumentClient.from(client, {
 
 export const TABLES = {
   HOSTS: "liveplayhosts-hosts",
+  AVAILABILITY: "liveplayhosts-availability",
 };
