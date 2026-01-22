@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
   // Get query params
   const { searchParams } = new URL(request.url);
   const roleFilter = searchParams.get("role");
-  const rolesFilter = searchParams.get("roles"); // comma-separated list of roles
+  const rolesFilter = searchParams.get("roles"); // comma-separated list of roles to include
+  const excludeRolesFilter = searchParams.get("excludeRoles"); // comma-separated list of roles to exclude
   const search = searchParams.get("search");
 
   try {
@@ -41,6 +42,12 @@ export async function GET(request: NextRequest) {
     } else if (rolesFilter) {
       const roles = rolesFilter.split(",");
       hosts = hosts.filter((h) => roles.includes(h.role));
+    }
+
+    // Exclude specific roles
+    if (excludeRolesFilter) {
+      const excludeRoles = excludeRolesFilter.split(",");
+      hosts = hosts.filter((h) => !excludeRoles.includes(h.role));
     }
 
     if (search) {

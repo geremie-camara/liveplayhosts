@@ -50,7 +50,10 @@ export default function AdminUsersPage() {
       const params = new URLSearchParams();
 
       // Map tab to role filter
-      if (activeTab === "hosts") {
+      if (activeTab === "all") {
+        // "All Users" excludes applicants and rejected - they have their own tabs
+        params.set("excludeRoles", "applicant,rejected");
+      } else if (activeTab === "hosts") {
         params.set("role", "host");
       } else if (activeTab === "producers") {
         params.set("role", "producer");
@@ -59,9 +62,8 @@ export default function AdminUsersPage() {
       } else if (activeTab === "rejected") {
         params.set("role", "rejected");
       } else if (activeTab === "management") {
-        params.set("roles", "admin,owner");
+        params.set("roles", "admin,owner,finance,hr");
       }
-      // "all" tab doesn't filter by role
 
       if (roleFilter) params.set("role", roleFilter);
       if (search) params.set("search", search);

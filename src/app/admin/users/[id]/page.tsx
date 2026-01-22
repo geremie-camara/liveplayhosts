@@ -39,6 +39,7 @@ export default function EditUserPage() {
     experience: "",
     videoReelUrl: "",
     headshotUrl: "",
+    headshotExternalUrl: "",
     role: "applicant" as UserRole,
     notes: "",
     slackId: "",
@@ -144,6 +145,7 @@ export default function EditUserPage() {
           experience: data.experience || "",
           videoReelUrl: data.videoReelUrl || "",
           headshotUrl: data.headshotUrl || "",
+          headshotExternalUrl: data.headshotExternalUrl || "",
           role: data.role || "applicant",
           notes: data.notes || "",
           slackId: data.slackId || "",
@@ -190,6 +192,7 @@ export default function EditUserPage() {
           experience: formData.experience,
           videoReelUrl: formData.videoReelUrl || undefined,
           headshotUrl: formData.headshotUrl || undefined,
+          headshotExternalUrl: formData.headshotExternalUrl || undefined,
           role: formData.role,
           notes: formData.notes || undefined,
           slackId: formData.slackId || undefined,
@@ -573,6 +576,15 @@ export default function EditUserPage() {
                   <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-gray-400 text-sm">Loading...</span>
                   </div>
+                ) : formData.headshotExternalUrl ? (
+                  <div className="space-y-3">
+                    <img
+                      src={formData.headshotExternalUrl}
+                      alt={`${formData.firstName} ${formData.lastName}`}
+                      className="w-40 h-40 rounded-full object-cover border-4 border-gray-100"
+                    />
+                    <span className="text-gray-400 text-xs">Using external URL</span>
+                  </div>
                 ) : (
                   <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-gray-400 text-sm">No headshot</span>
@@ -608,6 +620,19 @@ export default function EditUserPage() {
                       }}
                     />
                   </label>
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    External URL <span className="text-gray-400 font-normal">(fallback if no upload)</span>
+                  </label>
+                  <input
+                    type="url"
+                    name="headshotExternalUrl"
+                    value={formData.headshotExternalUrl}
+                    onChange={handleChange}
+                    placeholder="https://example.com/photo.jpg"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent text-sm"
+                  />
                 </div>
               </div>
 

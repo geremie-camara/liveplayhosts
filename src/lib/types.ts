@@ -40,6 +40,7 @@ export interface Host {
   experience: string;
   videoReelUrl?: string;
   headshotUrl?: string;
+  headshotExternalUrl?: string; // Fallback URL if no uploaded headshot
 
   // Clerk Integration
   clerkUserId?: string;
