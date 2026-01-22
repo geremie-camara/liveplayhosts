@@ -362,7 +362,7 @@ export default function AdminUsersPage() {
                       <div className="flex items-center gap-2">
                         {host.slackId ? (
                           <a
-                            href={`slack://user?team=TN9K8GS6A&id=${host.slackId}`}
+                            href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackId}`}
                             className="px-2 py-1 text-xs font-medium text-white bg-accent rounded hover:bg-accent-600 transition-colors"
                             title="Open DM in Slack"
                           >
@@ -373,7 +373,7 @@ export default function AdminUsersPage() {
                         )}
                         {host.slackChannelId ? (
                           <a
-                            href={`slack://channel?team=TN9K8GS6A&id=${host.slackChannelId}`}
+                            href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackChannelId}`}
                             className="px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
                             title="Open Prod Channel in Slack"
                           >
