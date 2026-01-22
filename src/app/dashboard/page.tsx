@@ -1,10 +1,10 @@
-import { UserButton } from "@clerk/nextjs";
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { Role, ROLE_NAMES, ROLE_COLORS, hasPermission } from "@/lib/roles";
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
+import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 
 async function syncUserRole(userId: string, email: string, currentRole?: string): Promise<{ role: Role; isApproved: boolean }> {
   // If user already has a role set, they're approved
@@ -68,67 +68,10 @@ export default async function DashboardPage() {
   const canManageUsers = hasPermission(role, "manageUsers");
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <a href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="LivePlay Hosts" className="h-8 w-auto" />
-            </a>
-            <div className="flex items-center gap-4">
-              <nav className="hidden md:flex items-center gap-6">
-                <a
-                  href="/dashboard"
-                  className="text-primary font-medium hover:text-accent transition-colors"
-                >
-                  Dashboard
-                </a>
-                <a
-                  href="/training"
-                  className="text-gray-600 font-medium hover:text-accent transition-colors"
-                >
-                  Training
-                </a>
-                {canViewSchedule && (
-                  <a
-                    href="/schedule"
-                    className="text-gray-600 font-medium hover:text-accent transition-colors"
-                  >
-                    Schedule
-                  </a>
-                )}
-                <a
-                  href="/profile"
-                  className="text-gray-600 font-medium hover:text-accent transition-colors"
-                >
-                  Profile
-                </a>
-                {canManageUsers && (
-                  <a
-                    href="/admin"
-                    className="text-accent font-medium hover:text-accent-600 transition-colors"
-                  >
-                    Admin
-                  </a>
-                )}
-              </nav>
-              <UserButton
-                afterSignOutUrl="/"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-10 h-10",
-                  },
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex items-center justify-between">
+    <AuthenticatedLayout>
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-primary">
               Welcome back, {user.firstName || "there"}!
@@ -138,7 +81,7 @@ export default async function DashboardPage() {
               and more.
             </p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${ROLE_COLORS[role]}`}>
+          <span className={`px-3 py-1 rounded-full text-sm font-medium self-start ${ROLE_COLORS[role]}`}>
             {ROLE_NAMES[role]}
           </span>
         </div>
@@ -215,7 +158,7 @@ export default async function DashboardPage() {
               <div className="text-center py-8 text-gray-500">
                 <p className="mb-2">Complete your training to unlock scheduling</p>
                 <span className="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-sm">
-                  🔒 Requires Host role
+                  Requires Host role
                 </span>
               </div>
             </div>
@@ -284,7 +227,7 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AuthenticatedLayout>
   );
 }

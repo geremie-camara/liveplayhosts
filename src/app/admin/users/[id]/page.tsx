@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Host, HostStatus, HOST_STATUS_CONFIG } from "@/lib/types";
 import { Role, ROLE_NAMES } from "@/lib/roles";
@@ -257,44 +256,8 @@ export default function EditUserPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <a href="/" className="flex items-center gap-2">
-              <img src="/logo.png" alt="LivePlay Hosts" className="h-8 w-auto" />
-            </a>
-            <div className="flex items-center gap-4">
-              <nav className="hidden md:flex items-center gap-6">
-                <Link
-                  href="/dashboard"
-                  className="text-gray-600 font-medium hover:text-accent transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  href="/admin"
-                  className="text-gray-600 font-medium hover:text-accent transition-colors"
-                >
-                  Admin
-                </Link>
-                <Link
-                  href="/admin/users"
-                  className="text-accent font-medium"
-                >
-                  Users
-                </Link>
-              </nav>
-              <UserButton afterSignOutUrl="/" />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex items-center justify-between">
+    <>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <Link
               href="/admin/users"
@@ -314,12 +277,13 @@ export default function EditUserPage() {
           </button>
         </div>
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-600">{error}</p>
-          </div>
-        )}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <p className="text-red-600">{error}</p>
+        </div>
+      )}
 
+      <div className="max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Status & Role */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
@@ -766,7 +730,7 @@ export default function EditUserPage() {
             </button>
           </div>
         </form>
-      </main>
-    </div>
+      </div>
+    </>
   );
 }
