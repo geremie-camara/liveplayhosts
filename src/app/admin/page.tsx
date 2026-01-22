@@ -82,7 +82,10 @@ export default function AdminPage() {
           </p>
         </Link>
 
-        <div className="bg-white rounded-2xl shadow-sm p-6 opacity-50 cursor-not-allowed">
+        <Link
+          href="/admin/training"
+          className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow"
+        >
           <div className="w-12 h-12 bg-accent-100 rounded-xl flex items-center justify-center mb-4">
             <svg
               className="w-6 h-6 text-accent"
@@ -100,9 +103,9 @@ export default function AdminPage() {
           </div>
           <h3 className="text-lg font-semibold text-dark">Training Content</h3>
           <p className="text-gray-600 mt-1">
-            Manage training modules and materials. (Coming soon)
+            Manage courses, lessons, and training materials.
           </p>
-        </div>
+        </Link>
 
         <div className="bg-white rounded-2xl shadow-sm p-6 opacity-50 cursor-not-allowed">
           <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center mb-4">

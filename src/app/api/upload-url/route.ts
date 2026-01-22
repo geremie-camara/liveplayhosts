@@ -59,8 +59,18 @@ export async function GET(request: NextRequest) {
   const randomId = Math.random().toString(36).substring(2, 15);
   const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
 
-  // Use different folders for videos and images
-  const folder = videoTypes.includes(contentType) ? "video-reels" : "headshots";
+  // Use different folders based on content type and optional folder parameter
+  const folderParam = searchParams.get("folder");
+  let folder: string;
+
+  if (folderParam === "training-videos") {
+    folder = "training-videos";
+  } else if (videoTypes.includes(contentType)) {
+    folder = "video-reels";
+  } else {
+    folder = "headshots";
+  }
+
   const key = `${folder}/${timestamp}-${randomId}-${sanitizedFilename}`;
 
   try {
