@@ -403,6 +403,19 @@ export default function AdminUsersPage() {
                         ) : (
                           <span className="text-gray-400 text-sm">-</span>
                         )}
+                        {host.phone ? (
+                          <a
+                            href={`https://wa.me/${host.phone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded hover:bg-green-600 transition-colors"
+                            title="Message on WhatsApp"
+                          >
+                            WA
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
