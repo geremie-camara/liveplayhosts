@@ -351,17 +351,30 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4 text-gray-600">{host.email}</td>
                     <td className="px-6 py-4">
-                      {host.slackId ? (
-                        <a
-                          href={`slack://user?team=TN9K8GS6A&id=${host.slackId}`}
-                          className="text-accent hover:underline"
-                          title="Open DM in Slack"
-                        >
-                          DM
-                        </a>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
+                      <div className="flex items-center gap-3">
+                        {host.slackId ? (
+                          <a
+                            href={`slack://user?team=TN9K8GS6A&id=${host.slackId}`}
+                            className="text-accent hover:underline"
+                            title="Open DM in Slack"
+                          >
+                            DM
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                        {host.slackChannelId ? (
+                          <a
+                            href={`slack://channel?team=TN9K8GS6A&id=${host.slackChannelId}`}
+                            className="text-purple-600 hover:underline"
+                            title="Open Prod Channel in Slack"
+                          >
+                            Prod
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
