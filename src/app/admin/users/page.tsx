@@ -426,7 +426,7 @@ export default function AdminUsersPage() {
                         </Link>
                         <button
                           onClick={() => setDeleteConfirm(host)}
-                          className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                          className="p-1.5 text-red-500 hover:text-red-700 transition-colors"
                           title="Delete user"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
