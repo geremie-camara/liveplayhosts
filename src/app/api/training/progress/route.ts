@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { TrainingProgress, ProgressStatus } from "@/lib/training-types";
 import { UserRole } from "@/lib/types";
-import { hasPermission } from "@/lib/roles";
+import { hasPermission, isActiveUser } from "@/lib/roles";
 
 // POST /api/training/progress - Save lesson progress
 export async function POST(request: NextRequest) {
-  const { userId, sessionClaims } = await auth();
+  const user = await currentUser();
 
-  if (!userId) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = (sessionClaims?.metadata as { role?: UserRole })?.role;
-  if (!userRole || !hasPermission(userRole, "viewBasicTraining")) {
+  const userId = user.id;
+  const userRole = user.publicMetadata?.role as UserRole | undefined;
+
+  // Check if user has an active role that can access training
+  if (!userRole || !isActiveUser(userRole)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -73,14 +76,16 @@ export async function POST(request: NextRequest) {
 
 // GET /api/training/progress - Get user's progress
 export async function GET(request: NextRequest) {
-  const { userId, sessionClaims } = await auth();
+  const user = await currentUser();
 
-  if (!userId) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = (sessionClaims?.metadata as { role?: UserRole })?.role;
-  if (!userRole || !hasPermission(userRole, "viewBasicTraining")) {
+  const userId = user.id;
+  const userRole = user.publicMetadata?.role as UserRole | undefined;
+
+  if (!userRole || !isActiveUser(userRole)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
