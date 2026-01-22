@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   // Check if user is admin or owner
   const userRole = (sessionClaims?.metadata as { role?: string })?.role;
-  if (userRole !== "admin" && userRole !== "owner") {
+  if (userRole !== "admin" && userRole !== "owner" && userRole !== "talent") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
   // Check if this is a public application (no auth required) or admin action
   const { userId, sessionClaims } = await auth();
   const userRole = (sessionClaims?.metadata as { role?: string })?.role;
-  const isAdmin = userRole === "admin" || userRole === "owner";
+  const isAdmin = userRole === "admin" || userRole === "owner" || userRole === "talent";
 
   // For non-application requests, require admin
   if (body.source !== "application" && !isAdmin) {

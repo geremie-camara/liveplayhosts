@@ -18,7 +18,7 @@ export async function GET(
   }
 
   const userRole = (sessionClaims?.metadata as { role?: string })?.role;
-  if (userRole !== "admin" && userRole !== "owner") {
+  if (userRole !== "admin" && userRole !== "owner" && userRole !== "talent") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -55,7 +55,7 @@ export async function PUT(
   }
 
   const userRole = (sessionClaims?.metadata as { role?: string })?.role;
-  if (userRole !== "admin" && userRole !== "owner") {
+  if (userRole !== "admin" && userRole !== "owner" && userRole !== "talent") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -212,7 +212,7 @@ export async function DELETE(
   }
 
   const userRole = (sessionClaims?.metadata as { role?: string })?.role;
-  if (userRole !== "admin" && userRole !== "owner") {
+  if (userRole !== "admin" && userRole !== "owner" && userRole !== "talent") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

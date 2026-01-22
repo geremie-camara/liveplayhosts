@@ -46,9 +46,9 @@ export function hasRole(userRole: Role | undefined, requiredRole: Role): boolean
   return userLevel >= requiredLevel;
 }
 
-// Check if user is admin or owner
+// Check if user is admin or owner (talent has admin access for now)
 export function isAdmin(userRole: Role | undefined): boolean {
-  return userRole === "admin" || userRole === "owner";
+  return userRole === "admin" || userRole === "owner" || userRole === "talent";
 }
 
 // Check if user has an active/approved role
@@ -65,21 +65,21 @@ export function getUserRole(publicMetadata: Record<string, unknown> | undefined)
 // Permission definitions by feature
 export const PERMISSIONS = {
   // Dashboard access (only active users)
-  viewDashboard: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
+  viewDashboard: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
 
   // Training access
-  viewBasicTraining: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
-  viewAdvancedTraining: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
-  viewAllTraining: ["admin", "owner"] as Role[],
+  viewBasicTraining: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
+  viewAdvancedTraining: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
+  viewAllTraining: ["talent", "admin", "owner"] as Role[],
 
   // Schedule access
-  viewSchedule: ["host", "producer", "finance", "hr", "admin", "owner"] as Role[],
-  manageSchedule: ["producer", "admin", "owner"] as Role[],
+  viewSchedule: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
+  manageSchedule: ["producer", "talent", "admin", "owner"] as Role[],
 
   // Admin features
-  manageUsers: ["hr", "admin", "owner"] as Role[],
-  viewAnalytics: ["producer", "finance", "hr", "admin", "owner"] as Role[],
-  manageContent: ["admin", "owner"] as Role[],
+  manageUsers: ["talent", "hr", "admin", "owner"] as Role[],
+  viewAnalytics: ["producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
+  manageContent: ["talent", "admin", "owner"] as Role[],
 };
 
 // Check if user has permission

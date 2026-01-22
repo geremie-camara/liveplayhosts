@@ -24,9 +24,12 @@ export default clerkMiddleware(async (auth, req) => {
     // Get user role from session claims (public metadata)
     const role = (sessionClaims?.metadata as { role?: string })?.role;
 
-    // Check admin routes
-    if (isAdminRoute(req) && role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+    // Check admin routes (admin, owner, talent have access)
+    if (isAdminRoute(req)) {
+      const adminRoles = ["admin", "owner", "talent"];
+      if (!role || !adminRoles.includes(role)) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
     }
 
     // Check host routes (host, senior_host, admin can access)
