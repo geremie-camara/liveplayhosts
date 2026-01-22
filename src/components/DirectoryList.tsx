@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { UserRole } from "@/lib/types";
-import { ROLE_NAMES, ROLE_COLORS } from "@/lib/roles";
 
 interface DirectoryHost {
   id: string;
@@ -12,6 +11,8 @@ interface DirectoryHost {
   phone: string;
   location?: string;
   role: UserRole;
+  slackId?: string;
+  slackChannelId?: string;
   socialProfiles: {
     instagram?: string;
     tiktok?: string;
@@ -50,12 +51,14 @@ export default function DirectoryList() {
     try {
       const params = new URLSearchParams();
 
-      if (activeTab === "hosts") {
+      if (activeTab === "all") {
+        // All active users (excludes applicants and rejected - handled by API)
+      } else if (activeTab === "hosts") {
         params.set("role", "host");
       } else if (activeTab === "producers") {
         params.set("role", "producer");
       } else if (activeTab === "management") {
-        params.set("roles", "talent,admin,owner,finance,hr");
+        params.set("roles", "talent,hr,admin,owner,finance");
       }
 
       if (search) params.set("search", search);
@@ -185,7 +188,7 @@ export default function DirectoryList() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Instagram</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">TikTok</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Communication</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -255,9 +258,47 @@ export default function DirectoryList() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
-                        {ROLE_NAMES[host.role]}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {host.slackId ? (
+                          <a
+                            href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-1 text-xs font-medium text-white bg-accent rounded hover:bg-accent-600 transition-colors"
+                            title="Open DM in Slack"
+                          >
+                            DM
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                        {host.slackChannelId ? (
+                          <a
+                            href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackChannelId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
+                            title="Open Prod Channel in Slack"
+                          >
+                            Prod
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                        {host.phone ? (
+                          <a
+                            href={`https://wa.me/${host.phone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded hover:bg-green-600 transition-colors"
+                            title="Message on WhatsApp"
+                          >
+                            WA
+                          </a>
+                        ) : (
+                          <span className="text-gray-400 text-sm">-</span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

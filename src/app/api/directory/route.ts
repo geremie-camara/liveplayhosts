@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     const result = await dynamoDb.send(new ScanCommand(scanParams));
     const hosts = (result.Items || []) as Host[];
 
-    // Remove sensitive fields (slackId, slackChannelId, notes, address details)
+    // Include communication fields but remove sensitive notes and address details
     const safeHosts = hosts.map(host => ({
       id: host.id,
       firstName: host.firstName,
@@ -87,6 +87,8 @@ export async function GET(request: NextRequest) {
       phone: host.phone,
       location: host.location,
       role: host.role,
+      slackId: host.slackId,
+      slackChannelId: host.slackChannelId,
       socialProfiles: {
         instagram: host.socialProfiles?.instagram,
         tiktok: host.socialProfiles?.tiktok,
