@@ -7,6 +7,20 @@ import { ROLE_NAMES, ROLE_COLORS } from "@/lib/roles";
 
 type Tab = "all" | "hosts" | "producers" | "applicants" | "rejected" | "management";
 
+function formatPhone(phone: string): string {
+  if (!phone) return "";
+  // Remove all non-digits
+  const digits = phone.replace(/\D/g, "");
+  // Format as (XXX) XXX-XXXX
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits[0] === "1") {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return phone; // Return original if can't format
+}
+
 export default function AdminUsersPage() {
   const [hosts, setHosts] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
@@ -305,7 +319,7 @@ export default function AdminUsersPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Location</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Slack</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Applied</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Actions</th>
@@ -331,12 +345,24 @@ export default function AdminUsersPage() {
                         )}
                         <div>
                           <div className="font-medium text-dark">{host.firstName} {host.lastName}</div>
-                          <div className="text-sm text-gray-500">{host.phone}</div>
+                          <div className="text-sm text-gray-500">{formatPhone(host.phone)}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">{host.email}</td>
-                    <td className="px-6 py-4 text-gray-600">{host.location || "-"}</td>
+                    <td className="px-6 py-4">
+                      {host.slackId ? (
+                        <a
+                          href={`slack://user?team=T07BCJG2H95&id=${host.slackId}`}
+                          className="text-accent hover:underline"
+                          title="Open DM in Slack"
+                        >
+                          DM
+                        </a>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
                         {ROLE_NAMES[host.role]}
