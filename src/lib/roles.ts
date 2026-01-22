@@ -7,10 +7,10 @@ export type Role = UserRole;
 
 // Role hierarchy (higher index = more permissions)
 // applicant and rejected have no app access
-export const ROLE_HIERARCHY: Role[] = ["applicant", "rejected", "host", "producer", "finance", "hr", "admin", "owner"];
+export const ROLE_HIERARCHY: Role[] = ["applicant", "rejected", "host", "producer", "talent", "finance", "hr", "admin", "owner"];
 
 // Roles that have dashboard access (approved users only)
-export const ACTIVE_ROLES: Role[] = ["host", "producer", "finance", "hr", "admin", "owner"];
+export const ACTIVE_ROLES: Role[] = ["host", "producer", "talent", "finance", "hr", "admin", "owner"];
 
 // Role display names
 export const ROLE_NAMES: Record<Role, string> = {
@@ -18,6 +18,7 @@ export const ROLE_NAMES: Record<Role, string> = {
   rejected: "Rejected",
   host: "Host",
   producer: "Producer",
+  talent: "Talent",
   admin: "Admin",
   owner: "Owner",
   finance: "Finance",
@@ -30,6 +31,7 @@ export const ROLE_COLORS: Record<Role, string> = {
   rejected: "bg-red-100 text-red-800",
   host: "bg-green-100 text-green-800",
   producer: "bg-purple-100 text-purple-800",
+  talent: "bg-pink-100 text-pink-800",
   admin: "bg-blue-100 text-blue-800",
   owner: "bg-indigo-100 text-indigo-800",
   finance: "bg-emerald-100 text-emerald-800",

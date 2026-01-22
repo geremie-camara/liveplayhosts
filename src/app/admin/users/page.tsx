@@ -62,7 +62,7 @@ export default function AdminUsersPage() {
       } else if (activeTab === "rejected") {
         params.set("role", "rejected");
       } else if (activeTab === "management") {
-        params.set("roles", "admin,owner,finance,hr");
+        params.set("roles", "talent,admin,owner,finance,hr");
       }
 
       if (roleFilter) params.set("role", roleFilter);
@@ -307,6 +307,7 @@ export default function AdminUsersPage() {
               <option value="rejected">Rejected</option>
               <option value="host">Host</option>
               <option value="producer">Producer</option>
+              <option value="talent">Talent</option>
               <option value="admin">Admin</option>
               <option value="owner">Owner</option>
               <option value="finance">Finance</option>
@@ -536,6 +537,7 @@ export default function AdminUsersPage() {
                 >
                   <option value="host">Host</option>
                   <option value="producer">Producer</option>
+                  <option value="talent">Talent</option>
                   <option value="admin">Admin</option>
                   <option value="owner">Owner</option>
                   <option value="finance">Finance</option>
