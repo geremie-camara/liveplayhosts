@@ -327,6 +327,7 @@ export default function AdminUsersPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
+                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-600 w-16"></th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">First Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Last Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
@@ -338,6 +339,27 @@ export default function AdminUsersPage() {
               <tbody className="divide-y divide-gray-100">
                 {hosts.map((host) => (
                   <tr key={host.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4">
+                      {signedUrls[host.id] ? (
+                        <img
+                          src={signedUrls[host.id]}
+                          alt={`${host.firstName} ${host.lastName}`}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : host.headshotExternalUrl ? (
+                        <img
+                          src={host.headshotExternalUrl}
+                          alt={`${host.firstName} ${host.lastName}`}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <span className="text-gray-500 text-sm font-medium">
+                            {host.firstName?.charAt(0)}{host.lastName?.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-dark">{host.firstName}</div>
                       {host.phone && (
