@@ -18,4 +18,12 @@ export const dynamoDb = DynamoDBDocumentClient.from(client, {
 export const TABLES = {
   HOSTS: "liveplayhosts-hosts",
   AVAILABILITY: "liveplayhosts-availability",
+  // Training/LMS tables
+  COURSES: "liveplayhosts-courses",
+  SECTIONS: "liveplayhosts-sections",
+  LESSONS: "liveplayhosts-lessons",
+  QUIZZES: "liveplayhosts-quizzes",
+  FAQS: "liveplayhosts-faqs",
+  TRAINING_PROGRESS: "liveplayhosts-training-progress",
+  QUIZ_ATTEMPTS: "liveplayhosts-quiz-attempts",
 };

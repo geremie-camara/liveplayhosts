@@ -72,6 +72,10 @@ export const PERMISSIONS = {
   viewAdvancedTraining: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
   viewAllTraining: ["talent", "admin", "owner"] as Role[],
 
+  // Training management (admin)
+  manageTraining: ["talent", "admin", "owner"] as Role[],
+  viewTrainingAnalytics: ["producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
+
   // Schedule access
   viewSchedule: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
   manageSchedule: ["producer", "talent", "admin", "owner"] as Role[],
