@@ -4,8 +4,7 @@ import { Host } from "./types";
 export const mockHosts: Host[] = [
   {
     id: "1",
-    status: "active",
-    role: "admin",
+    role: "owner",
     firstName: "Admin",
     lastName: "User",
     email: "admin@liveplay.com",
@@ -29,8 +28,7 @@ export const mockHosts: Host[] = [
   },
   {
     id: "2",
-    status: "active",
-    role: "senior_host",
+    role: "producer",
     firstName: "Sarah",
     lastName: "Johnson",
     email: "sarah@example.com",
@@ -56,7 +54,6 @@ export const mockHosts: Host[] = [
   },
   {
     id: "3",
-    status: "active",
     role: "host",
     firstName: "Mike",
     lastName: "Chen",
@@ -81,8 +78,7 @@ export const mockHosts: Host[] = [
   },
   {
     id: "4",
-    status: "invited",
-    role: "trainee",
+    role: "host",
     firstName: "Emily",
     lastName: "Davis",
     email: "emily@example.com",
@@ -100,14 +96,13 @@ export const mockHosts: Host[] = [
     experience: "New to hosting but have 50k followers on TikTok.",
     videoReelUrl: "https://example.com/emily-reel.mp4",
     appliedAt: "2024-06-01T00:00:00Z",
-    invitedAt: "2024-06-10T00:00:00Z",
+    hiredAt: "2024-06-15T00:00:00Z",
     createdAt: "2024-06-01T00:00:00Z",
-    updatedAt: "2024-06-10T00:00:00Z",
+    updatedAt: "2024-06-15T00:00:00Z",
   },
   {
     id: "5",
-    status: "applicant",
-    role: "trainee",
+    role: "applicant",
     firstName: "James",
     lastName: "Wilson",
     email: "james@example.com",
@@ -131,8 +126,7 @@ export const mockHosts: Host[] = [
   },
   {
     id: "6",
-    status: "applicant",
-    role: "trainee",
+    role: "applicant",
     firstName: "Lisa",
     lastName: "Park",
     email: "lisa@example.com",

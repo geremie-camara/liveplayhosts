@@ -13,16 +13,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Check if user is admin
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-  if (role !== "admin") {
+  // Check if user is admin or owner
+  const userRole = (sessionClaims?.metadata as { role?: string })?.role;
+  if (userRole !== "admin" && userRole !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   // Get query params
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status");
   const roleFilter = searchParams.get("role");
+  const rolesFilter = searchParams.get("roles"); // comma-separated list of roles
   const search = searchParams.get("search");
 
   try {
@@ -36,12 +36,11 @@ export async function GET(request: NextRequest) {
     let hosts = (result.Items || []) as Host[];
 
     // Apply filters
-    if (status) {
-      hosts = hosts.filter((h) => h.status === status);
-    }
-
     if (roleFilter) {
       hosts = hosts.filter((h) => h.role === roleFilter);
+    } else if (rolesFilter) {
+      const roles = rolesFilter.split(",");
+      hosts = hosts.filter((h) => roles.includes(h.role));
     }
 
     if (search) {
@@ -72,7 +71,8 @@ export async function POST(request: NextRequest) {
 
   // Check if this is a public application (no auth required) or admin action
   const { userId, sessionClaims } = await auth();
-  const isAdmin = (sessionClaims?.metadata as { role?: string })?.role === "admin";
+  const userRole = (sessionClaims?.metadata as { role?: string })?.role;
+  const isAdmin = userRole === "admin" || userRole === "owner";
 
   // For non-application requests, require admin
   if (body.source !== "application" && !isAdmin) {
@@ -86,18 +86,20 @@ export async function POST(request: NextRequest) {
 
   const newHost: Host = {
     id: crypto.randomUUID(),
-    status: body.status || "applicant",
-    role: body.role || "trainee",
+    role: body.role || "applicant",
     firstName: body.firstName,
     lastName: body.lastName,
     email: body.email.toLowerCase(),
     phone: body.phone,
+    location: body.location || undefined,
     address: {
       street: body.street || "",
       city: body.city || "",
       state: body.state || "",
       zip: body.zip || "",
     },
+    slackId: body.slackId || undefined,
+    slackChannelId: body.slackChannelId || undefined,
     socialProfiles: {
       instagram: body.instagram || undefined,
       tiktok: body.tiktok || undefined,

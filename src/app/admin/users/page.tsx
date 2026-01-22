@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Host, HOST_STATUS_CONFIG } from "@/lib/types";
-import { ROLE_NAMES, ROLE_COLORS, Role } from "@/lib/roles";
+import { Host, UserRole, ROLE_CONFIG } from "@/lib/types";
+import { ROLE_NAMES, ROLE_COLORS, ACTIVE_ROLES } from "@/lib/roles";
 
-type Tab = "active" | "applicants" | "pending";
+type Tab = "all" | "active" | "applicants" | "rejected";
 
 export default function AdminUsersPage() {
   const [hosts, setHosts] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("active");
+  const [activeTab, setActiveTab] = useState<Tab>("all");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -21,7 +21,7 @@ export default function AdminUsersPage() {
     lastName: "",
     email: "",
     phone: "",
-    role: "trainee" as Role,
+    role: "host" as UserRole,
   });
 
   useEffect(() => {
@@ -32,10 +32,17 @@ export default function AdminUsersPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      // Map tab to status filter
-      if (activeTab === "active") params.set("status", "active");
-      else if (activeTab === "applicants") params.set("status", "applicant");
-      else if (activeTab === "pending") params.set("status", "invited");
+
+      // Map tab to role filter
+      if (activeTab === "active") {
+        // Active users: host, producer, admin, owner
+        params.set("roles", ACTIVE_ROLES.join(","));
+      } else if (activeTab === "applicants") {
+        params.set("role", "applicant");
+      } else if (activeTab === "rejected") {
+        params.set("role", "rejected");
+      }
+      // "all" tab doesn't filter by role
 
       if (roleFilter) params.set("role", roleFilter);
       if (search) params.set("search", search);
@@ -44,7 +51,6 @@ export default function AdminUsersPage() {
       if (response.ok) {
         const data = await response.json();
         setHosts(data);
-        // Fetch signed URLs for headshots
         fetchSignedUrls(data);
       }
     } catch (error) {
@@ -83,10 +89,7 @@ export default function AdminUsersPage() {
       const response = await fetch("/api/hosts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...newHost,
-          status: "active",
-        }),
+        body: JSON.stringify(newHost),
       });
       if (response.ok) {
         setShowAddModal(false);
@@ -95,42 +98,27 @@ export default function AdminUsersPage() {
           lastName: "",
           email: "",
           phone: "",
-          role: "trainee",
+          role: "host",
         });
         fetchHosts();
       } else {
         const data = await response.json();
-        alert(data.error || "Failed to add host");
+        alert(data.error || "Failed to add user");
       }
     } catch (error) {
-      console.error("Error adding host:", error);
-      alert("Failed to add host");
+      console.error("Error adding user:", error);
+      alert("Failed to add user");
     } finally {
       setAddingHost(false);
     }
   }
 
-  async function handleInvite(hostId: string) {
+  async function handleApprove(hostId: string, newRole: UserRole = "host") {
     try {
       const response = await fetch(`/api/hosts/${hostId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "invited" }),
-      });
-      if (response.ok) {
-        fetchHosts();
-      }
-    } catch (error) {
-      console.error("Error inviting host:", error);
-    }
-  }
-
-  async function handleActivate(hostId: string) {
-    try {
-      const response = await fetch(`/api/hosts/${hostId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "active" }),
+        body: JSON.stringify({ role: newRole }),
       });
       if (response.ok) {
         const data = await response.json();
@@ -140,7 +128,22 @@ export default function AdminUsersPage() {
         fetchHosts();
       }
     } catch (error) {
-      console.error("Error activating host:", error);
+      console.error("Error approving user:", error);
+    }
+  }
+
+  async function handleReject(hostId: string) {
+    try {
+      const response = await fetch(`/api/hosts/${hostId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: "rejected" }),
+      });
+      if (response.ok) {
+        fetchHosts();
+      }
+    } catch (error) {
+      console.error("Error rejecting user:", error);
     }
   }
 
@@ -169,6 +172,16 @@ export default function AdminUsersPage() {
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex gap-8">
             <button
+              onClick={() => setActiveTab("all")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === "all"
+                  ? "border-accent text-accent"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              All Users
+            </button>
+            <button
               onClick={() => setActiveTab("active")}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === "active"
@@ -176,7 +189,7 @@ export default function AdminUsersPage() {
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Active Users
+              Active
             </button>
             <button
               onClick={() => setActiveTab("applicants")}
@@ -189,14 +202,14 @@ export default function AdminUsersPage() {
               Applicants
             </button>
             <button
-              onClick={() => setActiveTab("pending")}
+              onClick={() => setActiveTab("rejected")}
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === "pending"
+                activeTab === "rejected"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
-              Pending
+              Rejected
             </button>
           </nav>
         </div>
@@ -221,10 +234,12 @@ export default function AdminUsersPage() {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
             >
               <option value="">All Roles</option>
-              <option value="trainee">Trainee</option>
+              <option value="applicant">Applicant</option>
+              <option value="rejected">Rejected</option>
               <option value="host">Host</option>
-              <option value="senior_host">Senior Host</option>
+              <option value="producer">Producer</option>
               <option value="admin">Admin</option>
+              <option value="owner">Owner</option>
             </select>
           </div>
         </div>
@@ -243,7 +258,7 @@ export default function AdminUsersPage() {
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Location</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Applied</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Actions</th>
@@ -274,11 +289,7 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-600">{host.email}</td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${HOST_STATUS_CONFIG[host.status].color}`}>
-                        {HOST_STATUS_CONFIG[host.status].label}
-                      </span>
-                    </td>
+                    <td className="px-6 py-4 text-gray-600">{host.location || "-"}</td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
                         {ROLE_NAMES[host.role]}
@@ -289,20 +300,28 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {host.status === "applicant" && (
-                          <button
-                            onClick={() => handleInvite(host.id)}
-                            className="px-3 py-1 text-sm font-medium text-white bg-accent rounded-lg hover:bg-accent-600 transition-colors"
-                          >
-                            Invite
-                          </button>
+                        {host.role === "applicant" && (
+                          <>
+                            <button
+                              onClick={() => handleApprove(host.id, "host")}
+                              className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => handleReject(host.id)}
+                              className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                            >
+                              Reject
+                            </button>
+                          </>
                         )}
-                        {host.status === "invited" && (
+                        {host.role === "rejected" && (
                           <button
-                            onClick={() => handleActivate(host.id)}
+                            onClick={() => handleApprove(host.id, "host")}
                             className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                           >
-                            Activate
+                            Approve
                           </button>
                         )}
                         <Link
@@ -392,12 +411,11 @@ export default function AdminUsersPage() {
                 </label>
                 <select
                   value={newHost.role}
-                  onChange={(e) => setNewHost({ ...newHost, role: e.target.value as Role })}
+                  onChange={(e) => setNewHost({ ...newHost, role: e.target.value as UserRole })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 >
-                  <option value="trainee">Trainee</option>
                   <option value="host">Host</option>
-                  <option value="senior_host">Senior Host</option>
+                  <option value="producer">Producer</option>
                   <option value="admin">Admin</option>
                 </select>
               </div>

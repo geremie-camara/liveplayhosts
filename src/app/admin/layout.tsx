@@ -7,9 +7,7 @@ export default function AdminLayout({
 }) {
   return (
     <AuthenticatedLayout requireRole="admin">
-      <div className="max-w-7xl mx-auto">
-        {children}
-      </div>
+      <div className="max-w-7xl mx-auto">{children}</div>
     </AuthenticatedLayout>
   );
 }

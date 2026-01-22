@@ -1,25 +1,25 @@
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Role, ROLE_NAMES, ROLE_COLORS, hasPermission } from "@/lib/roles";
+import { Role, ROLE_NAMES, ROLE_COLORS, hasPermission, ACTIVE_ROLES, isActiveUser } from "@/lib/roles";
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 
 async function syncUserRole(userId: string, email: string, currentRole?: string): Promise<{ role: Role; isApproved: boolean }> {
-  // If user already has a role set, they're approved
-  if (currentRole) return { role: currentRole as Role, isApproved: true };
+  // If user already has an active role set, they're approved
+  if (currentRole && isActiveUser(currentRole as Role)) {
+    return { role: currentRole as Role, isApproved: true };
+  }
 
   try {
-    // Look up host by email in DynamoDB
+    // Look up user by email in DynamoDB with an active role
     const result = await dynamoDb.send(
       new ScanCommand({
         TableName: TABLES.HOSTS,
-        FilterExpression: "email = :email AND #status = :status",
-        ExpressionAttributeNames: { "#status": "status" },
+        FilterExpression: "email = :email",
         ExpressionAttributeValues: {
           ":email": email.toLowerCase(),
-          ":status": "active"
         },
       })
     );
@@ -27,22 +27,26 @@ async function syncUserRole(userId: string, email: string, currentRole?: string)
     const hosts = result.Items as Host[];
     if (hosts.length > 0) {
       const host = hosts[0];
-      const role = host.role || "trainee";
 
-      // Update Clerk user metadata
-      const clerk = await clerkClient();
-      await clerk.users.updateUser(userId, {
-        publicMetadata: { role },
-      });
+      // Check if the user has an active role
+      if (isActiveUser(host.role)) {
+        const role = host.role;
 
-      return { role: role as Role, isApproved: true };
+        // Update Clerk user metadata
+        const clerk = await clerkClient();
+        await clerk.users.updateUser(userId, {
+          publicMetadata: { role },
+        });
+
+        return { role: role as Role, isApproved: true };
+      }
     }
   } catch (error) {
     console.error("Error syncing user role:", error);
   }
 
-  // No matching active host - not approved
-  return { role: "trainee", isApproved: false };
+  // No matching active user - not approved
+  return { role: "applicant", isApproved: false };
 }
 
 export default async function DashboardPage() {
@@ -134,7 +138,7 @@ export default async function DashboardPage() {
             </a>
           </div>
 
-          {/* Upcoming Schedule - Only for hosts and above */}
+          {/* Upcoming Schedule */}
           {canViewSchedule ? (
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-dark mb-4">
@@ -153,18 +157,21 @@ export default async function DashboardPage() {
           ) : (
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-dark mb-4">
-                Complete Training
+                Schedule Access
               </h3>
               <div className="text-center py-8 text-gray-500">
-                <p className="mb-2">Complete your training to unlock scheduling</p>
-                <span className="inline-flex items-center px-3 py-1 bg-gray-100 rounded-full text-sm">
-                  Requires Host role
-                </span>
+                <p className="mb-2">Schedule access is available for all active users</p>
+                <a
+                  href="/schedule"
+                  className="inline-flex items-center text-accent font-medium hover:underline mt-2"
+                >
+                  View Schedule →
+                </a>
               </div>
             </div>
           )}
 
-          {/* Analytics - Only for senior hosts and admins */}
+          {/* Analytics - Only for producers and admins */}
           {canViewAnalytics && (
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h3 className="text-lg font-semibold text-dark mb-4">
@@ -216,13 +223,15 @@ export default async function DashboardPage() {
             <div className="bg-primary-50 border border-primary-100 rounded-lg p-4">
               <p className="text-primary font-medium">Welcome to LivePlay Hosts!</p>
               <p className="text-gray-600 mt-1">
-                {role === "trainee"
-                  ? "Complete your training modules to become a certified host and unlock scheduling features."
-                  : role === "host"
+                {role === "host"
                   ? "You're ready to host! Check your schedule and start your first session."
-                  : role === "senior_host"
-                  ? "As a senior host, you have access to analytics and advanced features."
-                  : "You have full admin access. Manage users and content from the admin panel."}
+                  : role === "producer"
+                  ? "As a producer, you have access to analytics and scheduling management."
+                  : role === "admin"
+                  ? "As an admin, you can manage users and content from the admin panel."
+                  : role === "owner"
+                  ? "You have full owner access. Manage everything from the admin panel."
+                  : "Welcome to the team! Explore your dashboard and training materials."}
               </p>
             </div>
           </div>

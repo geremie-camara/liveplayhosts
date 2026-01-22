@@ -1,23 +1,35 @@
 // Role definitions for LivePlay Hosts
-export type Role = "admin" | "senior_host" | "host" | "trainee";
+// Import from types.ts for consistency
+import { UserRole, ROLE_CONFIG } from "./types";
+
+// Re-export for convenience
+export type Role = UserRole;
 
 // Role hierarchy (higher index = more permissions)
-export const ROLE_HIERARCHY: Role[] = ["trainee", "host", "senior_host", "admin"];
+// applicant and rejected have no app access
+export const ROLE_HIERARCHY: Role[] = ["applicant", "rejected", "host", "producer", "admin", "owner"];
+
+// Roles that have dashboard access (approved users only)
+export const ACTIVE_ROLES: Role[] = ["host", "producer", "admin", "owner"];
 
 // Role display names
 export const ROLE_NAMES: Record<Role, string> = {
-  admin: "Administrator",
-  senior_host: "Senior Host",
+  applicant: "Applicant",
+  rejected: "Rejected",
   host: "Host",
-  trainee: "Trainee",
+  producer: "Producer",
+  admin: "Admin",
+  owner: "Owner",
 };
 
 // Role colors for UI
 export const ROLE_COLORS: Record<Role, string> = {
-  admin: "bg-accent text-white",
-  senior_host: "bg-primary text-white",
-  host: "bg-secondary text-dark",
-  trainee: "bg-gray-200 text-gray-700",
+  applicant: "bg-yellow-100 text-yellow-800",
+  rejected: "bg-red-100 text-red-800",
+  host: "bg-green-100 text-green-800",
+  producer: "bg-purple-100 text-purple-800",
+  admin: "bg-blue-100 text-blue-800",
+  owner: "bg-indigo-100 text-indigo-800",
 };
 
 // Check if user has at least the required role level
@@ -28,35 +40,40 @@ export function hasRole(userRole: Role | undefined, requiredRole: Role): boolean
   return userLevel >= requiredLevel;
 }
 
-// Check if user is admin
+// Check if user is admin or owner
 export function isAdmin(userRole: Role | undefined): boolean {
-  return userRole === "admin";
+  return userRole === "admin" || userRole === "owner";
+}
+
+// Check if user has an active/approved role
+export function isActiveUser(userRole: Role | undefined): boolean {
+  return userRole ? ACTIVE_ROLES.includes(userRole) : false;
 }
 
 // Get user role from Clerk metadata
 export function getUserRole(publicMetadata: Record<string, unknown> | undefined): Role {
   const role = publicMetadata?.role as Role | undefined;
-  return role && ROLE_HIERARCHY.includes(role) ? role : "trainee";
+  return role && ROLE_HIERARCHY.includes(role) ? role : "applicant";
 }
 
 // Permission definitions by feature
 export const PERMISSIONS = {
-  // Dashboard access
-  viewDashboard: ["trainee", "host", "senior_host", "admin"] as Role[],
+  // Dashboard access (only active users)
+  viewDashboard: ["host", "producer", "admin", "owner"] as Role[],
 
   // Training access
-  viewBasicTraining: ["trainee", "host", "senior_host", "admin"] as Role[],
-  viewAdvancedTraining: ["host", "senior_host", "admin"] as Role[],
-  viewAllTraining: ["senior_host", "admin"] as Role[],
+  viewBasicTraining: ["host", "producer", "admin", "owner"] as Role[],
+  viewAdvancedTraining: ["host", "producer", "admin", "owner"] as Role[],
+  viewAllTraining: ["admin", "owner"] as Role[],
 
   // Schedule access
-  viewSchedule: ["host", "senior_host", "admin"] as Role[],
-  manageSchedule: ["senior_host", "admin"] as Role[],
+  viewSchedule: ["host", "producer", "admin", "owner"] as Role[],
+  manageSchedule: ["producer", "admin", "owner"] as Role[],
 
   // Admin features
-  manageUsers: ["admin"] as Role[],
-  viewAnalytics: ["senior_host", "admin"] as Role[],
-  manageContent: ["admin"] as Role[],
+  manageUsers: ["admin", "owner"] as Role[],
+  viewAnalytics: ["producer", "admin", "owner"] as Role[],
+  manageContent: ["admin", "owner"] as Role[],
 };
 
 // Check if user has permission

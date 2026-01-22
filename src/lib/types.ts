@@ -1,19 +1,19 @@
-// Host/Applicant status in the system
-export type HostStatus = "applicant" | "invited" | "active" | "inactive";
+// User role in the system
+export type UserRole = "applicant" | "rejected" | "host" | "producer" | "admin" | "owner";
 
-// Database record for a host/applicant
+// Database record for a user
 export interface Host {
   id: string;
 
-  // Status & Role
-  status: HostStatus;
-  role: "trainee" | "host" | "senior_host" | "admin";
+  // Role (replaces old status + role system)
+  role: UserRole;
 
   // Personal Information
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  location?: string; // Simplified location (city/region)
 
   // Address
   address: {
@@ -22,6 +22,10 @@ export interface Host {
     state: string;
     zip: string;
   };
+
+  // Slack Integration
+  slackId?: string;
+  slackChannelId?: string;
 
   // Social Profiles
   socialProfiles: {
@@ -51,20 +55,23 @@ export interface Host {
   notes?: string;
 }
 
-// Status display configuration
-export const HOST_STATUS_CONFIG: Record<HostStatus, { label: string; color: string }> = {
+// Role display configuration
+export const ROLE_CONFIG: Record<UserRole, { label: string; color: string }> = {
   applicant: { label: "Applicant", color: "bg-yellow-100 text-yellow-800" },
-  invited: { label: "Invited", color: "bg-blue-100 text-blue-800" },
-  active: { label: "Active", color: "bg-green-100 text-green-800" },
-  inactive: { label: "Inactive", color: "bg-gray-100 text-gray-800" },
+  rejected: { label: "Rejected", color: "bg-red-100 text-red-800" },
+  host: { label: "Host", color: "bg-green-100 text-green-800" },
+  producer: { label: "Producer", color: "bg-purple-100 text-purple-800" },
+  admin: { label: "Admin", color: "bg-blue-100 text-blue-800" },
+  owner: { label: "Owner", color: "bg-indigo-100 text-indigo-800" },
 };
 
-// Form data for creating/updating a host
+// Form data for creating/updating a user
 export interface HostFormData {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
+  location?: string;
   street: string;
   city: string;
   state: string;
@@ -77,7 +84,8 @@ export interface HostFormData {
   experience: string;
   videoReelUrl?: string;
   headshotUrl?: string;
-  status?: HostStatus;
-  role?: Host["role"];
+  role?: UserRole;
   notes?: string;
+  slackId?: string;
+  slackChannelId?: string;
 }

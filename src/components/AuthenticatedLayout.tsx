@@ -1,11 +1,11 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Role } from "@/lib/roles";
+import { Role, isAdmin, isActiveUser } from "@/lib/roles";
 import Sidebar from "./Sidebar";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
-  requireRole?: Role;
+  requireRole?: "admin" | "active"; // admin requires admin/owner, active requires host/producer/admin/owner
 }
 
 export default async function AuthenticatedLayout({
@@ -18,18 +18,17 @@ export default async function AuthenticatedLayout({
     redirect("/sign-in");
   }
 
-  const userRole = (user.publicMetadata?.role as Role) || "trainee";
+  const userRole = (user.publicMetadata?.role as Role) || "applicant";
   const userName = user.firstName || user.emailAddresses[0]?.emailAddress || "User";
 
-  // Check role requirement if specified
-  if (requireRole) {
-    const roleHierarchy: Role[] = ["trainee", "host", "senior_host", "admin"];
-    const userLevel = roleHierarchy.indexOf(userRole);
-    const requiredLevel = roleHierarchy.indexOf(requireRole);
+  // Check if user is active (host, producer, admin, or owner)
+  if (!isActiveUser(userRole)) {
+    redirect("/pending");
+  }
 
-    if (userLevel < requiredLevel) {
-      redirect("/dashboard");
-    }
+  // Check role requirement if specified
+  if (requireRole === "admin" && !isAdmin(userRole)) {
+    redirect("/dashboard");
   }
 
   return (

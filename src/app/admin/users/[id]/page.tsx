@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { Host, HostStatus, HOST_STATUS_CONFIG } from "@/lib/types";
-import { Role, ROLE_NAMES } from "@/lib/roles";
+import { Host, UserRole } from "@/lib/types";
+import { ROLE_NAMES, ROLE_COLORS } from "@/lib/roles";
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -26,6 +26,7 @@ export default function EditUserPage() {
     lastName: "",
     email: "",
     phone: "",
+    location: "",
     street: "",
     city: "",
     state: "",
@@ -38,9 +39,10 @@ export default function EditUserPage() {
     experience: "",
     videoReelUrl: "",
     headshotUrl: "",
-    status: "applicant" as HostStatus,
-    role: "trainee" as Role,
+    role: "applicant" as UserRole,
     notes: "",
+    slackId: "",
+    slackChannelId: "",
   });
 
   useEffect(() => {
@@ -129,6 +131,7 @@ export default function EditUserPage() {
           lastName: data.lastName || "",
           email: data.email || "",
           phone: data.phone || "",
+          location: data.location || "",
           street: data.address?.street || "",
           city: data.address?.city || "",
           state: data.address?.state || "",
@@ -141,9 +144,10 @@ export default function EditUserPage() {
           experience: data.experience || "",
           videoReelUrl: data.videoReelUrl || "",
           headshotUrl: data.headshotUrl || "",
-          status: data.status || "applicant",
-          role: data.role || "trainee",
+          role: data.role || "applicant",
           notes: data.notes || "",
+          slackId: data.slackId || "",
+          slackChannelId: data.slackChannelId || "",
         });
       } else {
         setError("Host not found");
@@ -169,6 +173,7 @@ export default function EditUserPage() {
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
+          location: formData.location || undefined,
           address: {
             street: formData.street,
             city: formData.city,
@@ -185,9 +190,10 @@ export default function EditUserPage() {
           experience: formData.experience,
           videoReelUrl: formData.videoReelUrl || undefined,
           headshotUrl: formData.headshotUrl || undefined,
-          status: formData.status,
           role: formData.role,
           notes: formData.notes || undefined,
+          slackId: formData.slackId || undefined,
+          slackChannelId: formData.slackChannelId || undefined,
         }),
       });
 
@@ -285,44 +291,25 @@ export default function EditUserPage() {
 
       <div className="max-w-4xl">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Status & Role */}
+          {/* Role */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="text-lg font-semibold text-dark mb-4">Status & Role</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                >
-                  {Object.entries(HOST_STATUS_CONFIG).map(([value, config]) => (
-                    <option key={value} value={value}>
-                      {config.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Role
-                </label>
-                <select
-                  name="role"
-                  value={formData.role}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                >
-                  {Object.entries(ROLE_NAMES).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <h2 className="text-lg font-semibold text-dark mb-4">Role</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                User Role
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full max-w-xs px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+              >
+                {Object.entries(ROLE_NAMES).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -381,6 +368,19 @@ export default function EditUserPage() {
                   value={formData.phone}
                   onChange={handleChange}
                   required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  placeholder="e.g., Los Angeles, CA"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
@@ -507,6 +507,39 @@ export default function EditUserPage() {
                   name="otherSocial"
                   value={formData.otherSocial}
                   onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Slack Integration */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-semibold text-dark mb-4">Slack Integration</h2>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Slack ID
+                </label>
+                <input
+                  type="text"
+                  name="slackId"
+                  value={formData.slackId}
+                  onChange={handleChange}
+                  placeholder="e.g., U095KESC6GL"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Slack Channel ID
+                </label>
+                <input
+                  type="text"
+                  name="slackChannelId"
+                  value={formData.slackChannelId}
+                  onChange={handleChange}
+                  placeholder="e.g., C095P0T2XU6"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>

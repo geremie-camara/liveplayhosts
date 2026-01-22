@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { GetCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { Host } from "@/lib/types";
+import { Host, UserRole } from "@/lib/types";
+import { ACTIVE_ROLES } from "@/lib/roles";
 import { Resend } from "resend";
 
 // GET /api/hosts/[id] - Get single host
@@ -16,8 +17,8 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-  if (role !== "admin") {
+  const userRole = (sessionClaims?.metadata as { role?: string })?.role;
+  if (userRole !== "admin" && userRole !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -53,8 +54,8 @@ export async function PUT(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-  if (role !== "admin") {
+  const userRole = (sessionClaims?.metadata as { role?: string })?.role;
+  if (userRole !== "admin" && userRole !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -62,7 +63,7 @@ export async function PUT(
   const body = await request.json();
   const now = new Date().toISOString();
 
-  // Get current host to check status change
+  // Get current host to check role change
   const currentHostResult = await dynamoDb.send(
     new GetCommand({
       TableName: TABLES.HOSTS,
@@ -78,8 +79,9 @@ export async function PUT(
 
   // Fields that can be updated
   const allowedFields = [
-    "status", "role", "firstName", "lastName", "email", "phone",
-    "address", "socialProfiles", "experience", "videoReelUrl", "headshotUrl", "notes", "clerkUserId"
+    "role", "firstName", "lastName", "email", "phone", "location",
+    "address", "socialProfiles", "experience", "videoReelUrl", "headshotUrl", "notes", "clerkUserId",
+    "slackId", "slackChannelId"
   ];
 
   for (const field of allowedFields) {
@@ -95,24 +97,24 @@ export async function PUT(
   expressionAttributeNames["#updatedAt"] = "updatedAt";
   expressionAttributeValues[":updatedAt"] = now;
 
-  // Handle status change timestamps
-  if (body.status === "invited") {
-    updateFields.push("#invitedAt = :invitedAt");
-    expressionAttributeNames["#invitedAt"] = "invitedAt";
-    expressionAttributeValues[":invitedAt"] = now;
-  }
+  // Handle role change timestamps - set hiredAt when user is approved (moved to an active role)
+  const newRole = body.role as UserRole | undefined;
+  const currentRole = currentHost?.role;
+  const isBeingApproved = newRole &&
+    ACTIVE_ROLES.includes(newRole) &&
+    currentRole &&
+    !ACTIVE_ROLES.includes(currentRole);
 
-  if (body.status === "active") {
+  if (isBeingApproved) {
     updateFields.push("#hiredAt = :hiredAt");
     expressionAttributeNames["#hiredAt"] = "hiredAt";
     expressionAttributeValues[":hiredAt"] = now;
   }
 
-  // Check if status is changing to "active" - update Clerk metadata if user exists
-  const isActivating = body.status === "active" && currentHost?.status !== "active";
+  // Check if user is being approved - update Clerk metadata if user exists
   let clerkSyncMessage: string | null = null;
 
-  if (isActivating && currentHost) {
+  if (isBeingApproved && currentHost) {
     try {
       const clerk = await clerkClient();
 
@@ -126,7 +128,7 @@ export async function PUT(
         const existingUser = existingUsers.data[0];
         await clerk.users.updateUser(existingUser.id, {
           publicMetadata: {
-            role: body.role || currentHost.role || "trainee",
+            role: newRole,
           },
         });
 
@@ -138,7 +140,7 @@ export async function PUT(
         clerkSyncMessage = "Role synced to existing Clerk account.";
       } else {
         // User doesn't exist in Clerk yet - they'll be synced on first login
-        clerkSyncMessage = "Host activated. Role will sync when they sign in with Google/Slack.";
+        clerkSyncMessage = "User approved. Role will sync when they sign in with Google/Slack.";
       }
 
       // Send welcome email via Resend
@@ -148,10 +150,10 @@ export async function PUT(
           await resend.emails.send({
             from: "LivePlay Hosts <onboarding@resend.dev>",
             to: [currentHost.email],
-            subject: "Welcome to LivePlay Hosts - You're Activated!",
+            subject: "Welcome to LivePlay Hosts - You're Approved!",
             html: `
               <h2>Congratulations, ${currentHost.firstName}!</h2>
-              <p>Your application to become a LivePlay Host has been approved!</p>
+              <p>Your application to join LivePlay Hosts has been approved!</p>
               <p>You can now log in at <a href="https://www.liveplayhosts.com/sign-in">liveplayhosts.com</a> using Google or Slack to access your dashboard.</p>
               <p>Welcome to the team!</p>
               <hr />
@@ -164,7 +166,7 @@ export async function PUT(
       }
     } catch (error) {
       console.error("Error syncing with Clerk:", error);
-      clerkSyncMessage = "Host activated. Role will sync when they sign in.";
+      clerkSyncMessage = "User approved. Role will sync when they sign in.";
     }
   }
 
@@ -206,8 +208,8 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const role = (sessionClaims?.metadata as { role?: string })?.role;
-  if (role !== "admin") {
+  const userRole = (sessionClaims?.metadata as { role?: string })?.role;
+  if (userRole !== "admin" && userRole !== "owner") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
