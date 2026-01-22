@@ -271,6 +271,7 @@ export default async function LessonPage({ params }: PageProps) {
                 userId={user.id}
                 courseId={course.id}
                 currentProgress={currentProgress}
+                nextLessonId={nextLesson?.id}
               />
             </div>
 

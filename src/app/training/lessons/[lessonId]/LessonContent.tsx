@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Lesson, TrainingProgress } from "@/lib/training-types";
 import VideoPlayer from "@/components/training/VideoPlayer";
 import ArticleContent from "@/components/training/ArticleContent";
@@ -10,6 +11,7 @@ interface LessonContentProps {
   userId: string;
   courseId: string;
   currentProgress?: TrainingProgress;
+  nextLessonId?: string;
 }
 
 export default function LessonContent({
@@ -17,7 +19,9 @@ export default function LessonContent({
   userId,
   courseId,
   currentProgress,
+  nextLessonId,
 }: LessonContentProps) {
+  const router = useRouter();
   const [isCompleted, setIsCompleted] = useState(
     currentProgress?.status === "completed"
   );
@@ -72,7 +76,7 @@ export default function LessonContent({
     setIsCompleted(true);
 
     try {
-      await fetch("/api/training/progress", {
+      const res = await fetch("/api/training/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -83,13 +87,27 @@ export default function LessonContent({
           timeSpent,
         }),
       });
+
+      if (res.ok) {
+        // Refresh to update the navigation buttons, then navigate to next lesson
+        router.refresh();
+        if (nextLessonId) {
+          // Small delay to let the refresh complete
+          setTimeout(() => {
+            router.push(`/training/lessons/${nextLessonId}`);
+          }, 500);
+        }
+      } else {
+        console.error("Error saving progress:", await res.text());
+        setIsCompleted(false);
+      }
     } catch (error) {
       console.error("Error saving progress:", error);
       setIsCompleted(false);
     } finally {
       setSaving(false);
     }
-  }, [isCompleted, saving, lesson.id, courseId, lesson.sectionId, timeSpent]);
+  }, [isCompleted, saving, lesson.id, courseId, lesson.sectionId, timeSpent, router, nextLessonId]);
 
   const handleVideoProgress = useCallback((seconds: number) => {
     // Could be used for more granular video progress tracking
@@ -257,7 +275,9 @@ export default function LessonContent({
             <div>
               <p className="font-medium text-green-800">Lesson Complete!</p>
               <p className="text-sm text-green-600">
-                Great job! You can move on to the next lesson.
+                {nextLessonId
+                  ? "Great job! Taking you to the next lesson..."
+                  : "Great job! You've finished this lesson."}
               </p>
             </div>
           </div>
