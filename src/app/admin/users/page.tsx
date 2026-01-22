@@ -323,7 +323,8 @@ export default function AdminUsersPage() {
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">First Name</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Last Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Slack</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
@@ -334,30 +335,14 @@ export default function AdminUsersPage() {
                 {hosts.map((host) => (
                   <tr key={host.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {host.headshotUrl && signedUrls[host.id] ? (
-                          <img
-                            src={signedUrls[host.id]}
-                            alt={`${host.firstName} ${host.lastName}`}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-gray-500 text-sm font-medium">
-                              {host.firstName.charAt(0)}{host.lastName.charAt(0)}
-                            </span>
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-medium text-dark">{host.firstName} {host.lastName}</div>
-                          {host.phone && (
-                            <a href={`tel:${host.phone.replace(/\D/g, "")}`} className="text-sm text-accent underline">
-                              {formatPhone(host.phone)}
-                            </a>
-                          )}
-                        </div>
-                      </div>
+                      <div className="font-medium text-dark">{host.firstName}</div>
+                      {host.phone && (
+                        <a href={`tel:${host.phone.replace(/\D/g, "")}`} className="text-sm text-accent underline">
+                          {formatPhone(host.phone)}
+                        </a>
+                      )}
                     </td>
+                    <td className="px-6 py-4 text-dark">{host.lastName}</td>
                     <td className="px-6 py-4">
                       <a href={`mailto:${host.email}`} className="text-accent underline">
                         {host.email}
