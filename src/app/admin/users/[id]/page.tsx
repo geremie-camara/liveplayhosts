@@ -16,6 +16,10 @@ export default function EditUserPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [uploadingHeadshot, setUploadingHeadshot] = useState(false);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [signedHeadshotUrl, setSignedHeadshotUrl] = useState<string | null>(null);
+  const [signedVideoUrl, setSignedVideoUrl] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -43,6 +47,77 @@ export default function EditUserPage() {
   useEffect(() => {
     fetchHost();
   }, [id]);
+
+  // Get signed URLs when headshot/video URLs change
+  useEffect(() => {
+    if (formData.headshotUrl) {
+      getSignedUrl(formData.headshotUrl).then(setSignedHeadshotUrl);
+    } else {
+      setSignedHeadshotUrl(null);
+    }
+  }, [formData.headshotUrl]);
+
+  useEffect(() => {
+    if (formData.videoReelUrl) {
+      getSignedUrl(formData.videoReelUrl).then(setSignedVideoUrl);
+    } else {
+      setSignedVideoUrl(null);
+    }
+  }, [formData.videoReelUrl]);
+
+  async function getSignedUrl(url: string): Promise<string | null> {
+    try {
+      const response = await fetch(`/api/upload-url?viewUrl=${encodeURIComponent(url)}`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.signedUrl;
+      }
+    } catch (err) {
+      console.error("Failed to get signed URL:", err);
+    }
+    return null;
+  }
+
+  async function handleFileUpload(file: File, type: "headshot" | "video") {
+    const isVideo = type === "video";
+    if (isVideo) setUploadingVideo(true);
+    else setUploadingHeadshot(true);
+
+    try {
+      // Get pre-signed upload URL
+      const urlResponse = await fetch(
+        `/api/upload-url?filename=${encodeURIComponent(file.name)}&contentType=${encodeURIComponent(file.type)}`
+      );
+      if (!urlResponse.ok) {
+        const err = await urlResponse.json();
+        throw new Error(err.error || "Failed to get upload URL");
+      }
+      const { uploadUrl, fileUrl } = await urlResponse.json();
+
+      // Upload file to S3
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      // Update form data
+      if (isVideo) {
+        setFormData(prev => ({ ...prev, videoReelUrl: fileUrl }));
+      } else {
+        setFormData(prev => ({ ...prev, headshotUrl: fileUrl }));
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      if (isVideo) setUploadingVideo(false);
+      else setUploadingHeadshot(false);
+    }
+  }
 
   async function fetchHost() {
     try {
@@ -110,6 +185,7 @@ export default function EditUserPage() {
           },
           experience: formData.experience,
           videoReelUrl: formData.videoReelUrl || undefined,
+          headshotUrl: formData.headshotUrl || undefined,
           status: formData.status,
           role: formData.role,
           notes: formData.notes || undefined,
@@ -484,15 +560,15 @@ export default function EditUserPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Headshot
                 </label>
-                {formData.headshotUrl ? (
-                  <div className="space-y-2">
+                {formData.headshotUrl && signedHeadshotUrl ? (
+                  <div className="space-y-3">
                     <img
-                      src={formData.headshotUrl}
+                      src={signedHeadshotUrl}
                       alt={`${formData.firstName} ${formData.lastName}`}
                       className="w-40 h-40 rounded-full object-cover border-4 border-gray-100"
                     />
                     <a
-                      href={formData.headshotUrl}
+                      href={signedHeadshotUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-accent text-sm hover:underline inline-block"
@@ -500,11 +576,46 @@ export default function EditUserPage() {
                       View Full Image →
                     </a>
                   </div>
+                ) : formData.headshotUrl ? (
+                  <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">Loading...</span>
+                  </div>
                 ) : (
                   <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
                     <span className="text-gray-400 text-sm">No headshot</span>
                   </div>
                 )}
+                <div className="mt-3">
+                  <label className="cursor-pointer">
+                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      uploadingHeadshot
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}>
+                      {uploadingHeadshot ? (
+                        <>Uploading...</>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          {formData.headshotUrl ? "Replace" : "Upload"} Headshot
+                        </>
+                      )}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      disabled={uploadingHeadshot}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file, "headshot");
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
 
               {/* Video */}
@@ -512,15 +623,15 @@ export default function EditUserPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Video Reel
                 </label>
-                {formData.videoReelUrl ? (
-                  <div className="space-y-2">
+                {formData.videoReelUrl && signedVideoUrl ? (
+                  <div className="space-y-3">
                     <video
-                      src={formData.videoReelUrl}
+                      src={signedVideoUrl}
                       controls
                       className="w-full max-w-sm rounded-lg"
                     />
                     <a
-                      href={formData.videoReelUrl}
+                      href={signedVideoUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-accent text-sm hover:underline inline-block"
@@ -528,11 +639,46 @@ export default function EditUserPage() {
                       Open in New Tab →
                     </a>
                   </div>
+                ) : formData.videoReelUrl ? (
+                  <div className="w-full max-w-sm h-40 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-400 text-sm">Loading...</span>
+                  </div>
                 ) : (
                   <div className="w-full max-w-sm h-40 bg-gray-200 rounded-lg flex items-center justify-center">
                     <span className="text-gray-400 text-sm">No video</span>
                   </div>
                 )}
+                <div className="mt-3">
+                  <label className="cursor-pointer">
+                    <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      uploadingVideo
+                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}>
+                      {uploadingVideo ? (
+                        <>Uploading...</>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          {formData.videoReelUrl ? "Replace" : "Upload"} Video
+                        </>
+                      )}
+                    </span>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/quicktime,video/webm,video/x-msvideo"
+                      className="hidden"
+                      disabled={uploadingVideo}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileUpload(file, "video");
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
           </div>

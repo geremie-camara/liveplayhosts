@@ -1,13 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client, S3_BUCKETS } from "@/lib/s3";
 
-// GET /api/upload-url - Get pre-signed URL for video upload
+// GET /api/upload-url - Get pre-signed URL for upload OR viewing
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const filename = searchParams.get("filename");
   const contentType = searchParams.get("contentType");
+  const viewUrl = searchParams.get("viewUrl"); // URL to get signed view URL for
+
+  // If viewUrl is provided, generate a signed URL for viewing
+  if (viewUrl) {
+    try {
+      // Extract the key from the S3 URL
+      const urlMatch = viewUrl.match(/\.s3\.[^/]+\.amazonaws\.com\/(.+)$/);
+      if (!urlMatch) {
+        return NextResponse.json({ error: "Invalid S3 URL" }, { status: 400 });
+      }
+      const key = decodeURIComponent(urlMatch[1]);
+
+      const command = new GetObjectCommand({
+        Bucket: S3_BUCKETS.VIDEOS,
+        Key: key,
+      });
+
+      // Generate signed URL valid for 1 hour
+      const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+      return NextResponse.json({ signedUrl });
+    } catch (error) {
+      console.error("Error generating view URL:", error);
+      return NextResponse.json({ error: "Failed to generate view URL" }, { status: 500 });
+    }
+  }
 
   if (!filename || !contentType) {
     return NextResponse.json(

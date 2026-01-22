@@ -79,7 +79,7 @@ export async function PUT(
   // Fields that can be updated
   const allowedFields = [
     "status", "role", "firstName", "lastName", "email", "phone",
-    "address", "socialProfiles", "experience", "videoReelUrl", "notes", "clerkUserId"
+    "address", "socialProfiles", "experience", "videoReelUrl", "headshotUrl", "notes", "clerkUserId"
   ];
 
   for (const field of allowedFields) {
