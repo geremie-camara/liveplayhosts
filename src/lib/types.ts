@@ -13,6 +13,7 @@ export interface Host {
   lastName: string;
   email: string;
   phone: string;
+  birthday?: string; // Format: YYYY-MM-DD
   location?: string; // Simplified location (city/region)
 
   // Address
@@ -109,6 +110,7 @@ export interface HostFormData {
   lastName: string;
   email: string;
   phone: string;
+  birthday?: string;
   location?: string;
   street: string;
   city: string;

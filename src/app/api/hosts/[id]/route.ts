@@ -79,7 +79,7 @@ export async function PUT(
 
   // Fields that can be updated
   const allowedFields = [
-    "role", "firstName", "lastName", "email", "phone", "location",
+    "role", "firstName", "lastName", "email", "phone", "birthday", "location",
     "address", "socialProfiles", "experience", "videoReelUrl", "headshotUrl", "headshotExternalUrl", "notes", "clerkUserId",
     "slackId", "slackChannelId"
   ];

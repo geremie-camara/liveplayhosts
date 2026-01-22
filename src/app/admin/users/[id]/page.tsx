@@ -26,6 +26,7 @@ export default function EditUserPage() {
     lastName: "",
     email: "",
     phone: "",
+    birthday: "",
     location: "",
     street: "",
     city: "",
@@ -132,6 +133,7 @@ export default function EditUserPage() {
           lastName: data.lastName || "",
           email: data.email || "",
           phone: data.phone || "",
+          birthday: data.birthday || "",
           location: data.location || "",
           street: data.address?.street || "",
           city: data.address?.city || "",
@@ -175,6 +177,7 @@ export default function EditUserPage() {
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
+          birthday: formData.birthday || undefined,
           location: formData.location || undefined,
           address: {
             street: formData.street,
@@ -370,7 +373,19 @@ export default function EditUserPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 />
               </div>
-              <div className="md:col-span-2">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Birthday
+                </label>
+                <input
+                  type="date"
+                  name="birthday"
+                  value={formData.birthday}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Location
                 </label>

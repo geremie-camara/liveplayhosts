@@ -107,7 +107,7 @@ export async function PUT(request: NextRequest) {
 
     // Fields that users CAN update (excluding role, slackId, slackChannelId, notes)
     const allowedFields = [
-      "firstName", "lastName", "email", "phone", "location",
+      "firstName", "lastName", "email", "phone", "birthday", "location",
       "address", "socialProfiles", "experience", "videoReelUrl", "headshotUrl",
       "headshotExternalUrl"
     ];
