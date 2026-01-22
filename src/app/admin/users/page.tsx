@@ -321,7 +321,6 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Slack</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Applied</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
@@ -388,9 +387,6 @@ export default function AdminUsersPage() {
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
                         {ROLE_NAMES[host.role]}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(host.appliedAt).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
