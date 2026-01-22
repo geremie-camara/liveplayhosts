@@ -332,7 +332,7 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">First Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Last Name</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Slack</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Communication</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
                   <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
