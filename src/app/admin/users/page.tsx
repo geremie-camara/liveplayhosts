@@ -362,6 +362,8 @@ export default function AdminUsersPage() {
                         {host.slackId ? (
                           <a
                             href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="px-2 py-1 text-xs font-medium text-white bg-accent rounded hover:bg-accent-600 transition-colors"
                             title="Open DM in Slack"
                           >
@@ -373,6 +375,8 @@ export default function AdminUsersPage() {
                         {host.slackChannelId ? (
                           <a
                             href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackChannelId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
                             title="Open Prod Channel in Slack"
                           >
