@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { GetCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
 
 // GET /api/profile - Get current user's profile
 export async function GET() {
-  const { userId, sessionClaims } = await auth();
+  const user = await currentUser();
 
-  if (!userId) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const primaryEmail = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress || "";
 
   try {
     // First try to find by clerkUserId
@@ -19,7 +21,7 @@ export async function GET() {
         TableName: TABLES.HOSTS,
         FilterExpression: "clerkUserId = :clerkUserId",
         ExpressionAttributeValues: {
-          ":clerkUserId": userId,
+          ":clerkUserId": user.id,
         },
       })
     );
@@ -27,20 +29,17 @@ export async function GET() {
     let host = scanResult.Items?.[0] as Host | undefined;
 
     // If not found by clerkUserId, try by email
-    if (!host) {
-      const email = (sessionClaims as { email?: string })?.email;
-      if (email) {
-        const emailResult = await dynamoDb.send(
-          new ScanCommand({
-            TableName: TABLES.HOSTS,
-            FilterExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": email.toLowerCase(),
-            },
-          })
-        );
-        host = emailResult.Items?.[0] as Host | undefined;
-      }
+    if (!host && primaryEmail) {
+      const emailResult = await dynamoDb.send(
+        new ScanCommand({
+          TableName: TABLES.HOSTS,
+          FilterExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": primaryEmail.toLowerCase(),
+          },
+        })
+      );
+      host = emailResult.Items?.[0] as Host | undefined;
     }
 
     if (!host) {
@@ -59,12 +58,13 @@ export async function GET() {
 
 // PUT /api/profile - Update current user's profile
 export async function PUT(request: NextRequest) {
-  const { userId, sessionClaims } = await auth();
+  const user = await currentUser();
 
-  if (!userId) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const primaryEmail = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress || "";
   const body = await request.json();
   const now = new Date().toISOString();
 
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest) {
         TableName: TABLES.HOSTS,
         FilterExpression: "clerkUserId = :clerkUserId",
         ExpressionAttributeValues: {
-          ":clerkUserId": userId,
+          ":clerkUserId": user.id,
         },
       })
     );
@@ -83,20 +83,17 @@ export async function PUT(request: NextRequest) {
     let host = scanResult.Items?.[0] as Host | undefined;
 
     // If not found by clerkUserId, try by email
-    if (!host) {
-      const email = (sessionClaims as { email?: string })?.email;
-      if (email) {
-        const emailResult = await dynamoDb.send(
-          new ScanCommand({
-            TableName: TABLES.HOSTS,
-            FilterExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": email.toLowerCase(),
-            },
-          })
-        );
-        host = emailResult.Items?.[0] as Host | undefined;
-      }
+    if (!host && primaryEmail) {
+      const emailResult = await dynamoDb.send(
+        new ScanCommand({
+          TableName: TABLES.HOSTS,
+          FilterExpression: "email = :email",
+          ExpressionAttributeValues: {
+            ":email": primaryEmail.toLowerCase(),
+          },
+        })
+      );
+      host = emailResult.Items?.[0] as Host | undefined;
     }
 
     if (!host) {
