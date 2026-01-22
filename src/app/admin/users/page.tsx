@@ -69,8 +69,14 @@ export default function AdminUsersPage() {
       const response = await fetch(`/api/hosts?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setHosts(data);
-        fetchSignedUrls(data);
+        // Sort alphabetically by first name, then last name
+        const sorted = data.sort((a: Host, b: Host) => {
+          const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+          const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+          return nameA.localeCompare(nameB);
+        });
+        setHosts(sorted);
+        fetchSignedUrls(sorted);
       }
     } catch (error) {
       console.error("Error fetching hosts:", error);
