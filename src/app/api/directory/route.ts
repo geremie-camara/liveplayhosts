@@ -29,31 +29,30 @@ export async function GET(request: NextRequest) {
     let expressionAttributeValues: Record<string, unknown> = {};
     let expressionAttributeNames: Record<string, string> = {};
 
-    // Only show active users in directory (host, producer, talent, finance, hr, admin, owner)
-    filterExpressions.push("(#role = :host OR #role = :producer OR #role = :talent OR #role = :finance OR #role = :hr OR #role = :admin OR #role = :owner)");
+    // Always need #role for any role filtering
     expressionAttributeNames["#role"] = "role";
-    expressionAttributeValues[":host"] = "host";
-    expressionAttributeValues[":producer"] = "producer";
-    expressionAttributeValues[":talent"] = "talent";
-    expressionAttributeValues[":finance"] = "finance";
-    expressionAttributeValues[":hr"] = "hr";
-    expressionAttributeValues[":admin"] = "admin";
-    expressionAttributeValues[":owner"] = "owner";
 
-    // Filter by specific role
+    // Determine role filter based on params
     if (role) {
-      filterExpressions = [`#role = :filterRole`];
+      // Filter by specific single role
+      filterExpressions.push("#role = :filterRole");
       expressionAttributeValues[":filterRole"] = role;
-    }
-
-    // Filter by multiple roles
-    if (roles) {
+    } else if (roles) {
+      // Filter by multiple roles
       const roleList = roles.split(",");
-      const roleConditions = roleList.map((r, i) => `#role = :role${i}`);
-      filterExpressions = [`(${roleConditions.join(" OR ")})`];
-      roleList.forEach((r, i) => {
+      const roleConditions = roleList.map((r, i) => {
         expressionAttributeValues[`:role${i}`] = r;
+        return `#role = :role${i}`;
       });
+      filterExpressions.push(`(${roleConditions.join(" OR ")})`);
+    } else {
+      // Default: show all active users (excludes applicants and rejected)
+      const activeRoles = ["host", "producer", "talent", "finance", "hr", "admin", "owner"];
+      const roleConditions = activeRoles.map((r, i) => {
+        expressionAttributeValues[`:activeRole${i}`] = r;
+        return `#role = :activeRole${i}`;
+      });
+      filterExpressions.push(`(${roleConditions.join(" OR ")})`);
     }
 
     // Search filter
