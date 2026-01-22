@@ -345,38 +345,42 @@ export default function AdminUsersPage() {
                         )}
                         <div>
                           <div className="font-medium text-dark">{host.firstName} {host.lastName}</div>
-                          <div className="text-sm text-gray-500">{formatPhone(host.phone)}</div>
+                          {host.phone && (
+                            <a href={`tel:${host.phone.replace(/\D/g, "")}`} className="text-sm text-accent underline">
+                              {formatPhone(host.phone)}
+                            </a>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <a href={`mailto:${host.email}`} className="text-gray-600 hover:text-accent hover:underline">
+                      <a href={`mailto:${host.email}`} className="text-accent underline">
                         {host.email}
                       </a>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         {host.slackId ? (
                           <a
                             href={`slack://user?team=TN9K8GS6A&id=${host.slackId}`}
-                            className="text-accent hover:underline"
+                            className="px-2 py-1 text-xs font-medium text-white bg-accent rounded hover:bg-accent-600 transition-colors"
                             title="Open DM in Slack"
                           >
                             DM
                           </a>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-400 text-sm">-</span>
                         )}
                         {host.slackChannelId ? (
                           <a
                             href={`slack://channel?team=TN9K8GS6A&id=${host.slackChannelId}`}
-                            className="text-purple-600 hover:underline"
+                            className="px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
                             title="Open Prod Channel in Slack"
                           >
                             Prod
                           </a>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-400 text-sm">-</span>
                         )}
                       </div>
                     </td>
