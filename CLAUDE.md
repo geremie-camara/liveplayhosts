@@ -9,7 +9,7 @@ A host management platform for LivePlay Mobile. Hosts can apply, manage their pr
 - **Styling**: Tailwind CSS
 - **Auth**: Clerk (`@clerk/nextjs`)
 - **Database**: AWS DynamoDB
-- **Storage**: AWS S3 (headshots, video uploads)
+- **Storage**: AWS S3 (headshots, training videos)
 - **Email**: Resend
 - **Forms**: react-hook-form
 - **Deployment**: AWS Amplify
@@ -18,27 +18,47 @@ A host management platform for LivePlay Mobile. Hosts can apply, manage their pr
 
 ```
 src/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   │   ├── training/      # LMS API (courses, lessons)
-│   │   ├── hosts/         # Host CRUD
-│   │   ├── profile/       # User profile
-│   │   └── availability/  # Scheduling
-│   ├── admin/             # Admin dashboard
-│   ├── training/          # LMS pages (in progress)
-│   ├── dashboard/         # User dashboard
-│   ├── directory/         # Host directory
-│   ├── profile/           # Profile management
-│   └── availability/      # Availability scheduling
+├── app/
+│   ├── api/
+│   │   ├── training/           # User-facing training API
+│   │   │   ├── courses/        # Course listing
+│   │   │   ├── lessons/[id]/   # Lesson details
+│   │   │   └── progress/       # Progress tracking
+│   │   ├── admin/training/     # Admin training management API
+│   │   │   ├── courses/        # Course CRUD
+│   │   │   ├── sections/       # Section CRUD
+│   │   │   └── lessons/        # Lesson CRUD
+│   │   ├── hosts/              # Host management
+│   │   ├── profile/            # User profile
+│   │   ├── availability/       # Scheduling
+│   │   └── upload-url/         # S3 presigned URLs
+│   ├── admin/
+│   │   ├── training/           # Admin training management UI
+│   │   │   ├── courses/[id]/   # Course editor
+│   │   │   │   └── lessons/[lessonId]/ # Lesson editor
+│   │   │   └── courses/new/    # Create course
+│   │   └── users/              # User management
+│   ├── training/               # User-facing training
+│   │   ├── courses/[courseId]/ # Course detail
+│   │   └── lessons/[lessonId]/ # Lesson viewer
+│   ├── dashboard/
+│   ├── directory/
+│   ├── profile/
+│   └── availability/
 ├── components/
-│   ├── training/          # LMS components
-│   └── *.tsx              # Shared components
+│   ├── training/               # LMS components
+│   │   ├── CourseCard.tsx
+│   │   ├── CourseProgress.tsx
+│   │   ├── LessonList.tsx
+│   │   ├── VideoPlayer.tsx
+│   │   └── ArticleContent.tsx
+│   └── *.tsx
 └── lib/
-    ├── types.ts           # Core types (Host, UserRole, etc.)
-    ├── training-types.ts  # LMS types (Course, Lesson, Quiz, etc.)
-    ├── roles.ts           # Role-based access control
-    ├── dynamodb.ts        # DynamoDB client
-    └── s3.ts              # S3 client
+    ├── types.ts                # Core types
+    ├── training-types.ts       # LMS types
+    ├── roles.ts                # RBAC
+    ├── dynamodb.ts             # DynamoDB client
+    └── s3.ts                   # S3 client
 ```
 
 ## User Roles
@@ -48,55 +68,63 @@ Defined in `src/lib/types.ts`:
 - `rejected` - Rejected applicants
 - `host` - Approved hosts
 - `producer` - Producers
-- `talent` - Talent
+- `talent` - Talent (admin access)
 - `admin` - Administrators
 - `owner` - Owners
 - `finance` - Finance team
 - `hr` - HR team
 
-## Current Work: LMS Feature
-
-Adding a Learning Management System for host training.
+## LMS Feature Status
 
 ### Completed
-- Data models in `src/lib/training-types.ts`:
-  - Course, Section, Lesson, Quiz, FAQ
-  - TrainingProgress, QuizAttempt
-  - CourseCategory: onboarding, skills, advanced, compliance
-  - LessonType: video, article, quiz, faq
-- Components in `src/components/training/`:
-  - CourseCard, CourseProgress, LessonList
-  - VideoPlayer, ArticleContent
-- API routes:
-  - `/api/training/courses` - List/create courses
-  - `/api/training/courses/[id]` - Get/update course
-  - `/api/training/lessons/[id]` - Get/update lesson
+- [x] Data models (Course, Section, Lesson, Quiz, FAQ, TrainingProgress)
+- [x] User-facing training pages
+  - Course listing with categories
+  - Course detail with lesson navigation
+  - Lesson viewer (video, article, quiz placeholder, FAQ)
+  - Progress tracking with auto-save
+  - Sequential course support
+- [x] Admin training management
+  - Course listing with stats
+  - Create/edit/delete courses
+  - Section management
+  - Lesson editor with video upload
+- [x] S3 video upload (training-videos folder)
+- [x] DynamoDB tables created
+- [x] Sample training data seeded
 
 ### TODO
-- [x] Create training page files:
-  - [x] `/training/page.tsx` - Course listing
-  - [x] `/training/courses/[courseId]/page.tsx` - Course detail
-  - [x] `/training/lessons/[lessonId]/page.tsx` - Lesson viewer
-  - [x] `LessonContent.tsx` - Client component for lesson display
-  - [ ] `/training/faqs/page.tsx` - FAQ page
-  - [ ] `/training/progress/page.tsx` - User progress dashboard
-- [x] Progress tracking API routes (`/api/training/progress`)
-- [ ] Quiz component and functionality
-- [ ] Admin training management pages
-- [ ] DynamoDB tables for training data (need to create in AWS)
+- [ ] Quiz component and scoring
+- [ ] FAQ page
+- [ ] User progress dashboard
+- [ ] Training analytics for admins
+- [ ] Certificates on course completion
 
-## Commands
+## DynamoDB Tables
+
+- `liveplayhosts-hosts`
+- `liveplayhosts-availability`
+- `liveplayhosts-courses`
+- `liveplayhosts-sections`
+- `liveplayhosts-lessons`
+- `liveplayhosts-quizzes`
+- `liveplayhosts-faqs`
+- `liveplayhosts-training-progress`
+- `liveplayhosts-quiz-attempts`
+
+## Scripts
 
 ```bash
-npm run dev      # Start dev server
-npm run build    # Production build
-npm run lint     # Run ESLint
+npm run dev                              # Start dev server
+npm run build                            # Production build
+npm run lint                             # Run ESLint
+node scripts/create-training-tables.mjs # Create DynamoDB tables
+node scripts/seed-training-data.mjs     # Seed sample courses
 ```
 
 ## Environment Variables
 
 See `.env.example` for required variables:
-- Clerk keys
-- AWS credentials
-- DynamoDB table names
+- Clerk keys (NEXT_PUBLIC_CLERK_*, CLERK_SECRET_KEY)
+- AWS credentials (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_REGION)
 - S3 bucket config
