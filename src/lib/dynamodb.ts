@@ -30,4 +30,6 @@ export const TABLES = {
   BROADCASTS: "liveplayhosts-broadcasts",
   BROADCAST_TEMPLATES: "liveplayhosts-broadcast-templates",
   BROADCAST_DELIVERIES: "liveplayhosts-broadcast-deliveries",
+  // Location management
+  LOCATIONS: "liveplayhosts-locations",
 };

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Host, UserRole } from "@/lib/types";
-import { ROLE_NAMES, ROLE_COLORS } from "@/lib/roles";
+import { ROLE_NAMES } from "@/lib/roles";
+import { Location } from "@/lib/location-types";
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function EditUserPage() {
   const [uploadingVideo, setUploadingVideo] = useState(false);
   const [signedHeadshotUrl, setSignedHeadshotUrl] = useState<string | null>(null);
   const [signedVideoUrl, setSignedVideoUrl] = useState<string | null>(null);
+  const [locations, setLocations] = useState<Location[]>([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -49,7 +51,20 @@ export default function EditUserPage() {
 
   useEffect(() => {
     fetchHost();
+    fetchLocations();
   }, [id]);
+
+  async function fetchLocations() {
+    try {
+      const response = await fetch("/api/locations");
+      if (response.ok) {
+        const data = await response.json();
+        setLocations(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch locations:", err);
+    }
+  }
 
   // Get signed URLs when headshot/video URLs change
   useEffect(() => {
@@ -389,14 +404,19 @@ export default function EditUserPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Location
                 </label>
-                <input
-                  type="text"
+                <select
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="e.g., Los Angeles, CA"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                />
+                >
+                  <option value="">Select a location...</option>
+                  {locations.map((loc) => (
+                    <option key={loc.id} value={loc.name}>
+                      {loc.name}, {loc.country}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>

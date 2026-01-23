@@ -166,6 +166,7 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - `liveplayhosts-broadcasts` (main broadcast messages)
 - `liveplayhosts-broadcast-templates` (reusable templates)
 - `liveplayhosts-broadcast-deliveries` (per-user delivery tracking)
+- `liveplayhosts-locations` (location tags for users)
 
 ## Scripts
 
@@ -175,6 +176,7 @@ npm run build                             # Production build
 npm run lint                              # Run ESLint
 node scripts/create-training-tables.mjs  # Create training DynamoDB tables
 node scripts/create-broadcast-tables.mjs # Create broadcast DynamoDB tables
+node scripts/create-locations-table.mjs  # Create locations table with seed data
 node scripts/seed-training-data.mjs      # Seed sample courses
 ```
 
