@@ -174,6 +174,42 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
     onChange({ ...value, filterLocations: [] });
   };
 
+  // Toggle all US locations
+  const toggleUSLocations = () => {
+    const usLocationNames = usLocations.map((l) => l.name);
+    const allUSSelected = usLocationNames.every((name) => value.filterLocations.includes(name));
+
+    if (allUSSelected) {
+      // Remove all US locations
+      const newLocations = value.filterLocations.filter((l) => !usLocationNames.includes(l));
+      onChange({ ...value, filterLocations: newLocations });
+    } else {
+      // Add all US locations
+      const combined = Array.from(new Set([...value.filterLocations, ...usLocationNames]));
+      onChange({ ...value, filterLocations: combined });
+    }
+  };
+
+  // Toggle all International locations
+  const toggleInternationalLocations = () => {
+    const intlLocationNames = internationalLocations.map((l) => l.name);
+    const allIntlSelected = intlLocationNames.every((name) => value.filterLocations.includes(name));
+
+    if (allIntlSelected) {
+      // Remove all international locations
+      const newLocations = value.filterLocations.filter((l) => !intlLocationNames.includes(l));
+      onChange({ ...value, filterLocations: newLocations });
+    } else {
+      // Add all international locations
+      const combined = Array.from(new Set([...value.filterLocations, ...intlLocationNames]));
+      onChange({ ...value, filterLocations: combined });
+    }
+  };
+
+  // Check if all locations in a region are selected
+  const allUSSelected = usLocations.length > 0 && usLocations.every((l) => value.filterLocations.includes(l.name));
+  const allIntlSelected = internationalLocations.length > 0 && internationalLocations.every((l) => value.filterLocations.includes(l.name));
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -256,9 +292,20 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
           {/* US Locations */}
           {usLocations.length > 0 && (
             <div className="mb-3">
-              <div className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleUSLocations}
+                className={`text-xs font-medium mb-1 flex items-center gap-1 hover:text-accent transition-colors w-full text-left p-1 rounded ${
+                  allUSSelected ? "text-accent bg-accent/10" : "text-gray-500"
+                }`}
+              >
                 <span>🇺🇸</span> United States
-              </div>
+                {allUSSelected && (
+                  <svg className="w-3 h-3 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
               <div className="space-y-1 ml-2">
                 {usLocations.map((loc) => (
                   <label
@@ -281,9 +328,20 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
           {/* International Locations */}
           {internationalLocations.length > 0 && (
             <div>
-              <div className="text-xs font-medium text-gray-500 mb-1 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={toggleInternationalLocations}
+                className={`text-xs font-medium mb-1 flex items-center gap-1 hover:text-accent transition-colors w-full text-left p-1 rounded ${
+                  allIntlSelected ? "text-accent bg-accent/10" : "text-gray-500"
+                }`}
+              >
                 <span>🌍</span> International
-              </div>
+                {allIntlSelected && (
+                  <svg className="w-3 h-3 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </button>
               <div className="space-y-1 ml-2">
                 {internationalLocations.map((loc) => (
                   <label

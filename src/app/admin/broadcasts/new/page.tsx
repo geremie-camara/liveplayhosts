@@ -273,6 +273,49 @@ export default function NewBroadcastPage() {
             </select>
           </div>
 
+          {/* Channels - moved to top */}
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <h2 className="font-semibold text-dark mb-4">Delivery Channels *</h2>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.channels.slack}
+                  onChange={(e) => handleChannelChange("slack", e.target.checked)}
+                  className="rounded text-accent focus:ring-accent"
+                />
+                <span className="flex items-center gap-2">
+                  <span className="px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded">Slack</span>
+                  Full message as DM
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.channels.email}
+                  onChange={(e) => handleChannelChange("email", e.target.checked)}
+                  className="rounded text-accent focus:ring-accent"
+                />
+                <span className="flex items-center gap-2">
+                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">Email</span>
+                  Full formatted email
+                </span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.channels.sms}
+                  onChange={(e) => handleChannelChange("sms", e.target.checked)}
+                  className="rounded text-accent focus:ring-accent"
+                />
+                <span className="flex items-center gap-2">
+                  <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">SMS</span>
+                  Short text + link
+                </span>
+              </label>
+            </div>
+          </div>
+
           {/* Basic info */}
           <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
             <h2 className="font-semibold text-dark">Message Details</h2>
@@ -388,49 +431,6 @@ export default function NewBroadcastPage() {
               value={formData.userSelection || { filterRoles: [], filterLocations: [], selectedUserIds: [] }}
               onChange={handleUserSelectionChange}
             />
-          </div>
-
-          {/* Channels */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-semibold text-dark mb-4">Delivery Channels *</h2>
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.channels.slack}
-                  onChange={(e) => handleChannelChange("slack", e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded">Slack</span>
-                  Full message as DM
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.channels.email}
-                  onChange={(e) => handleChannelChange("email", e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">Email</span>
-                  Full formatted email
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.channels.sms}
-                  onChange={(e) => handleChannelChange("sms", e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">SMS</span>
-                  Short text + link
-                </span>
-              </label>
-            </div>
           </div>
 
           {/* Schedule */}
