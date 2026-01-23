@@ -86,9 +86,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!body.targetRoles || body.targetRoles.length === 0) {
+    // Validate recipients: either targetUserIds or targetRoles must be provided
+    const hasUserIds = body.targetUserIds && body.targetUserIds.length > 0;
+    const hasUserSelection = body.userSelection?.selectedUserIds && body.userSelection.selectedUserIds.length > 0;
+    const hasRoles = body.targetRoles && body.targetRoles.length > 0;
+
+    if (!hasUserIds && !hasUserSelection && !hasRoles) {
       return NextResponse.json(
-        { error: "At least one target role is required" },
+        { error: "At least one recipient must be selected" },
         { status: 400 }
       );
     }
@@ -133,7 +138,10 @@ export async function POST(request: NextRequest) {
       videoS3Key: body.videoS3Key || undefined,
       linkUrl: body.linkUrl || undefined,
       linkText: body.linkText || undefined,
-      targetRoles: body.targetRoles,
+      targetRoles: body.targetRoles || [],
+      targetLocations: body.targetLocations || undefined,
+      targetUserIds: body.targetUserIds || body.userSelection?.selectedUserIds || undefined,
+      userSelection: body.userSelection || undefined,
       channels: body.channels,
       status: "draft",
       scheduledAt: body.scheduledAt || undefined,

@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import RichTextEditor from "@/components/RichTextEditor";
 import VideoUpload from "@/components/VideoUpload";
-import { BroadcastFormData, BroadcastTemplate, BroadcastChannels } from "@/lib/broadcast-types";
-import { UserRole } from "@/lib/types";
-import { ROLE_NAMES, ACTIVE_ROLES } from "@/lib/roles";
+import UserSelector from "@/components/UserSelector";
+import { BroadcastFormData, BroadcastTemplate, BroadcastChannels, UserSelection } from "@/lib/broadcast-types";
 
 export default function NewBroadcastPage() {
   const router = useRouter();
@@ -26,6 +25,11 @@ export default function NewBroadcastPage() {
     linkUrl: "",
     linkText: "",
     targetRoles: [],
+    userSelection: {
+      filterRoles: [],
+      filterLocations: [],
+      selectedUserIds: [],
+    },
     channels: { slack: true, email: true, sms: false },
     scheduledAt: "",
   });
@@ -59,6 +63,7 @@ export default function NewBroadcastPage() {
         bodySms: template.bodySms,
         channels: template.defaultChannels,
         templateId: template.id,
+        userSelection: template.defaultUserSelection || prev.userSelection,
       }));
     }
   };
@@ -74,26 +79,12 @@ export default function NewBroadcastPage() {
     }));
   };
 
-  const handleRoleToggle = (role: UserRole) => {
+  const handleUserSelectionChange = (selection: UserSelection) => {
     setFormData((prev) => ({
       ...prev,
-      targetRoles: prev.targetRoles.includes(role)
-        ? prev.targetRoles.filter((r) => r !== role)
-        : [...prev.targetRoles, role],
-    }));
-  };
-
-  const selectAllRoles = () => {
-    setFormData((prev) => ({
-      ...prev,
-      targetRoles: [...ACTIVE_ROLES],
-    }));
-  };
-
-  const clearAllRoles = () => {
-    setFormData((prev) => ({
-      ...prev,
-      targetRoles: [],
+      userSelection: selection,
+      // Also update targetUserIds for the API
+      targetUserIds: selection.selectedUserIds,
     }));
   };
 
@@ -103,7 +94,7 @@ export default function NewBroadcastPage() {
     if (!formData.bodyHtml.trim()) return "Message body is required";
     if (!formData.bodySms.trim()) return "SMS text is required";
     if (formData.bodySms.length > 160) return "SMS text must be 160 characters or less";
-    if (formData.targetRoles.length === 0) return "Select at least one target role";
+    if (!formData.userSelection?.selectedUserIds.length) return "Select at least one recipient";
     if (!formData.channels.slack && !formData.channels.email && !formData.channels.sms) {
       return "Select at least one channel";
     }
@@ -390,48 +381,13 @@ export default function NewBroadcastPage() {
             </div>
           </div>
 
-          {/* Target roles */}
+          {/* User Selection */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-dark">Target Audience *</h2>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={selectAllRoles}
-                  className="text-xs text-accent hover:underline"
-                >
-                  Select All
-                </button>
-                <span className="text-gray-300">|</span>
-                <button
-                  type="button"
-                  onClick={clearAllRoles}
-                  className="text-xs text-gray-500 hover:underline"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {ACTIVE_ROLES.map((role) => (
-                <label
-                  key={role}
-                  className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
-                    formData.targetRoles.includes(role)
-                      ? "border-accent bg-accent/5"
-                      : "hover:bg-gray-50"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.targetRoles.includes(role)}
-                    onChange={() => handleRoleToggle(role)}
-                    className="rounded text-accent focus:ring-accent"
-                  />
-                  <span className="text-sm">{ROLE_NAMES[role]}</span>
-                </label>
-              ))}
-            </div>
+            <h2 className="font-semibold text-dark mb-4">Select Recipients *</h2>
+            <UserSelector
+              value={formData.userSelection || { filterRoles: [], filterLocations: [], selectedUserIds: [] }}
+              onChange={handleUserSelectionChange}
+            />
           </div>
 
           {/* Channels */}
@@ -650,8 +606,8 @@ export default function NewBroadcastPage() {
             <h2 className="font-semibold text-dark mb-4">Summary</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Target roles:</span>
-                <span className="font-medium">{formData.targetRoles.length} selected</span>
+                <span className="text-gray-600">Recipients:</span>
+                <span className="font-medium">{formData.userSelection?.selectedUserIds.length || 0} users</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Channels:</span>

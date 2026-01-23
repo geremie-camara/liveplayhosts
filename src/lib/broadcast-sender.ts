@@ -23,7 +23,7 @@ export async function getBroadcast(broadcastId: string): Promise<Broadcast | nul
   return (result.Item as Broadcast) || null;
 }
 
-// Get hosts by target roles
+// Get hosts by target roles (legacy support)
 export async function getTargetHosts(targetRoles: string[]): Promise<Host[]> {
   const result = await dynamoDb.send(
     new ScanCommand({
@@ -35,6 +35,24 @@ export async function getTargetHosts(targetRoles: string[]): Promise<Host[]> {
 
   // Filter by target roles
   return hosts.filter((host) => targetRoles.includes(host.role));
+}
+
+// Get hosts by specific user IDs
+export async function getHostsByIds(userIds: string[]): Promise<Host[]> {
+  if (!userIds || userIds.length === 0) {
+    return [];
+  }
+
+  const result = await dynamoDb.send(
+    new ScanCommand({
+      TableName: TABLES.HOSTS,
+    })
+  );
+
+  const hosts = (result.Items || []) as Host[];
+
+  // Filter by the specific IDs
+  return hosts.filter((host) => userIds.includes(host.id));
 }
 
 // Check rate limit for a user (max broadcasts per day)
@@ -264,12 +282,23 @@ export async function sendBroadcast(broadcastId: string): Promise<{
     // 2. Update status to sending
     await updateBroadcastStatus(broadcastId, "sending");
 
-    // 3. Get target hosts by role
-    const hosts = await getTargetHosts(broadcast.targetRoles);
+    // 3. Get target hosts - prefer specific user IDs, fall back to role-based targeting
+    let hosts: Host[];
+
+    // Check for targetUserIds (from userSelection.selectedUserIds)
+    if (broadcast.targetUserIds && broadcast.targetUserIds.length > 0) {
+      hosts = await getHostsByIds(broadcast.targetUserIds);
+    } else if (broadcast.userSelection?.selectedUserIds && broadcast.userSelection.selectedUserIds.length > 0) {
+      // Also check userSelection for backwards compatibility
+      hosts = await getHostsByIds(broadcast.userSelection.selectedUserIds);
+    } else {
+      // Fall back to role-based targeting (legacy support)
+      hosts = await getTargetHosts(broadcast.targetRoles);
+    }
 
     if (hosts.length === 0) {
       await updateBroadcastStatus(broadcastId, "failed");
-      return { success: false, error: "No recipients found for target roles" };
+      return { success: false, error: "No recipients found for the selected users" };
     }
 
     // 4. Initialize stats

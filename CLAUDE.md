@@ -2,6 +2,10 @@
 
 A host management platform for LivePlay Mobile. Hosts can apply, manage their profiles, set availability, and complete training courses.
 
+## Quick Commands
+
+- **"giddyup"** - When the user says "giddyup", perform all three: push to git, deploy, and update CLAUDE.md with changes
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
@@ -113,9 +117,13 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 
 ### Features
 - **Channels**: Slack DM (full body), Email (formatted HTML), SMS (short + link)
-- **Role-based targeting**: Send to specific user roles (host, producer, admin, etc.)
+- **User Selection**: 3-column selector with role/location filters, available users, and selected users
+  - Filter by roles and locations (grouped by US/International)
+  - Add individual users or all filtered users
+  - Remove individual users or all selected
+  - Save selections as part of templates
 - **Scheduling**: Send immediately or schedule for later
-- **Templates**: Reusable message templates
+- **Templates**: Reusable message templates with saved user selections
 - **Video attachments**: Upload videos to S3, playable in email/Slack/Message Center
 - **Message Center**: Users can view all messages on dashboard
 - **Delivery tracking**: Track Slack/Email/SMS delivery status and read receipts
@@ -191,6 +199,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-23 | pending | Add 3-column user selection for broadcasts with role/location filters |
 | 2026-01-23 | cdb2b1b | Update header: larger logo, add Host Login button |
 | 2026-01-23 | d412387 | Rebrand to LivePlay (one word) across the site |
 | 2026-01-23 | fb490f3 | Security hardening: XSS fix, CORS restriction, security headers, auth on uploads |

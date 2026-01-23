@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import RichTextEditor from "@/components/RichTextEditor";
 import VideoUpload from "@/components/VideoUpload";
+import UserSelector from "@/components/UserSelector";
 import {
   Broadcast,
   BroadcastDelivery,
   BroadcastFormData,
   BroadcastChannels,
+  UserSelection,
   BROADCAST_STATUS_CONFIG,
   DELIVERY_STATUS_CONFIG,
 } from "@/lib/broadcast-types";
@@ -38,6 +40,11 @@ export default function BroadcastDetailPage({
     linkUrl: "",
     linkText: "",
     targetRoles: [],
+    userSelection: {
+      filterRoles: [],
+      filterLocations: [],
+      selectedUserIds: [],
+    },
     channels: { slack: true, email: true, sms: false },
     scheduledAt: "",
   });
@@ -60,7 +67,13 @@ export default function BroadcastDetailPage({
           videoUrl: data.videoUrl || "",
           linkUrl: data.linkUrl || "",
           linkText: data.linkText || "",
-          targetRoles: data.targetRoles,
+          targetRoles: data.targetRoles || [],
+          targetUserIds: data.targetUserIds,
+          userSelection: data.userSelection || {
+            filterRoles: data.targetRoles || [],
+            filterLocations: data.targetLocations || [],
+            selectedUserIds: data.targetUserIds || [],
+          },
           channels: data.channels,
           scheduledAt: data.scheduledAt || "",
         });
@@ -96,12 +109,11 @@ export default function BroadcastDetailPage({
     }));
   };
 
-  const handleRoleToggle = (role: UserRole) => {
+  const handleUserSelectionChange = (selection: UserSelection) => {
     setFormData((prev) => ({
       ...prev,
-      targetRoles: prev.targetRoles.includes(role)
-        ? prev.targetRoles.filter((r) => r !== role)
-        : [...prev.targetRoles, role],
+      userSelection: selection,
+      targetUserIds: selection.selectedUserIds,
     }));
   };
 
@@ -111,7 +123,10 @@ export default function BroadcastDetailPage({
     if (!formData.bodyHtml.trim()) return "Message body is required";
     if (!formData.bodySms.trim()) return "SMS text is required";
     if (formData.bodySms.length > 160) return "SMS text must be 160 characters or less";
-    if (formData.targetRoles.length === 0) return "Select at least one target role";
+    // Check for either new user selection or legacy role-based targeting
+    const hasUserIds = formData.userSelection?.selectedUserIds && formData.userSelection.selectedUserIds.length > 0;
+    const hasRoles = formData.targetRoles && formData.targetRoles.length > 0;
+    if (!hasUserIds && !hasRoles) return "Select at least one recipient";
     if (!formData.channels.slack && !formData.channels.email && !formData.channels.sms) {
       return "Select at least one channel";
     }
@@ -382,37 +397,41 @@ export default function BroadcastDetailPage({
             </div>
           </div>
 
-          {/* Target roles */}
+          {/* Target Audience / User Selection */}
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-semibold text-dark mb-4">Target Audience</h2>
+            <h2 className="font-semibold text-dark mb-4">Select Recipients</h2>
             {isEditable ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {ACTIVE_ROLES.map((role) => (
-                  <label
-                    key={role}
-                    className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-colors ${
-                      formData.targetRoles.includes(role)
-                        ? "border-accent bg-accent/5"
-                        : "hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={formData.targetRoles.includes(role)}
-                      onChange={() => handleRoleToggle(role)}
-                      className="rounded text-accent focus:ring-accent"
-                    />
-                    <span className="text-sm">{ROLE_NAMES[role]}</span>
-                  </label>
-                ))}
-              </div>
+              <UserSelector
+                value={formData.userSelection || { filterRoles: [], filterLocations: [], selectedUserIds: [] }}
+                onChange={handleUserSelectionChange}
+              />
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {broadcast.targetRoles.map((role) => (
-                  <span key={role} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                    {ROLE_NAMES[role] || role}
-                  </span>
-                ))}
+              <div>
+                {/* Show selected user count for broadcasts with user selection */}
+                {broadcast.targetUserIds && broadcast.targetUserIds.length > 0 ? (
+                  <div className="text-gray-700">
+                    <span className="font-medium">{broadcast.targetUserIds.length}</span> recipients selected
+                    {broadcast.userSelection?.filterRoles && broadcast.userSelection.filterRoles.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        Filtered by roles: {broadcast.userSelection.filterRoles.map(r => ROLE_NAMES[r] || r).join(", ")}
+                      </div>
+                    )}
+                    {broadcast.userSelection?.filterLocations && broadcast.userSelection.filterLocations.length > 0 && (
+                      <div className="mt-1 text-sm text-gray-500">
+                        Filtered by locations: {broadcast.userSelection.filterLocations.join(", ")}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Legacy: show target roles */
+                  <div className="flex flex-wrap gap-2">
+                    {broadcast.targetRoles.map((role) => (
+                      <span key={role} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
+                        {ROLE_NAMES[role] || role}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

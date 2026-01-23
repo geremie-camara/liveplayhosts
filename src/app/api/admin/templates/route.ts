@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
       bodyHtml: body.bodyHtml,
       bodySms: body.bodySms,
       defaultChannels: body.defaultChannels || { slack: true, email: true, sms: false },
+      defaultUserSelection: body.defaultUserSelection,
       variables: body.variables || [],
       createdBy: creatorHostId,
       createdAt: now,

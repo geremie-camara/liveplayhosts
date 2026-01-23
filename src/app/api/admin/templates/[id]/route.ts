@@ -88,6 +88,7 @@ export async function PUT(
       "bodyHtml",
       "bodySms",
       "defaultChannels",
+      "defaultUserSelection",
       "variables",
     ];
 

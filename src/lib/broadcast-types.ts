@@ -25,6 +25,13 @@ export interface BroadcastStats {
   readCount: number;
 }
 
+// User selection for targeting
+export interface UserSelection {
+  filterRoles: UserRole[];       // Roles used to filter users
+  filterLocations: string[];     // Locations used to filter users
+  selectedUserIds: string[];     // Specific user IDs selected
+}
+
 // Main broadcast message
 export interface Broadcast {
   id: string;                    // broadcast-{timestamp}-{randomId}
@@ -36,7 +43,10 @@ export interface Broadcast {
   videoS3Key?: string;           // S3 key for uploaded video
   linkUrl?: string;              // Optional CTA link
   linkText?: string;             // CTA button text
-  targetRoles: UserRole[];       // Roles to target
+  targetRoles: UserRole[];       // Roles to target (legacy, kept for backwards compat)
+  targetLocations?: string[];    // Locations to target
+  targetUserIds?: string[];      // Specific user IDs to target
+  userSelection?: UserSelection; // Full user selection data
   channels: BroadcastChannels;   // Which channels to send via
   status: BroadcastStatus;
   scheduledAt?: string;          // ISO timestamp for scheduled sends
@@ -63,6 +73,7 @@ export interface BroadcastTemplate {
   bodyHtml: string;              // HTML body template
   bodySms: string;               // SMS body template
   defaultChannels: BroadcastChannels;
+  defaultUserSelection?: UserSelection; // Saved user selection
   variables: TemplateVariable[];
   createdBy: string;
   createdAt: string;
@@ -109,6 +120,9 @@ export interface BroadcastFormData {
   linkUrl?: string;
   linkText?: string;
   targetRoles: UserRole[];
+  targetLocations?: string[];
+  targetUserIds?: string[];
+  userSelection?: UserSelection;
   channels: BroadcastChannels;
   scheduledAt?: string;
   templateId?: string;
@@ -121,6 +135,7 @@ export interface TemplateFormData {
   bodyHtml: string;
   bodySms: string;
   defaultChannels: BroadcastChannels;
+  defaultUserSelection?: UserSelection;
   variables: TemplateVariable[];
 }
 
