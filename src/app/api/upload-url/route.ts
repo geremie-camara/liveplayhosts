@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client, S3_BUCKETS } from "@/lib/s3";
@@ -9,9 +10,27 @@ export async function GET(request: NextRequest) {
   const filename = searchParams.get("filename");
   const contentType = searchParams.get("contentType");
   const viewUrl = searchParams.get("viewUrl"); // URL to get signed view URL for
+  const folderParam = searchParams.get("folder");
 
-  // If viewUrl is provided, generate a signed URL for viewing
+  // Training video uploads require admin authentication
+  if (folderParam === "training-videos") {
+    const { userId, sessionClaims } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const userRole = (sessionClaims?.metadata as { role?: string })?.role;
+    if (!["admin", "owner", "talent"].includes(userRole || "")) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+  }
+
+  // Viewing signed URLs requires authentication
   if (viewUrl) {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
       // Extract the key from the S3 URL
       const urlMatch = viewUrl.match(/\.s3\.[^/]+\.amazonaws\.com\/(.+)$/);
@@ -60,7 +79,6 @@ export async function GET(request: NextRequest) {
   const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.-]/g, "_");
 
   // Use different folders based on content type and optional folder parameter
-  const folderParam = searchParams.get("folder");
   let folder: string;
 
   if (folderParam === "training-videos") {

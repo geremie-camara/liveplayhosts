@@ -135,3 +135,10 @@ See `.env.example` for required variables:
 - Clerk keys (NEXT_PUBLIC_CLERK_*, CLERK_SECRET_KEY)
 - AWS credentials (S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_REGION)
 - S3 bucket config
+
+## Deployment Log
+
+| Date | Commit | Description |
+|------|--------|-------------|
+| 2026-01-23 | cdb2b1b | Update header: larger logo, add Host Login button |
+| 2026-01-23 | d412387 | Rebrand to LivePlay (one word) across the site |

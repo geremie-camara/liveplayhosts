@@ -6,12 +6,14 @@ const s3Client = new S3Client({});
 
 const BUCKET_NAME = process.env.BUCKET_NAME || "liveplayhosts-uploads";
 const URL_EXPIRATION = 300; // 5 minutes
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || "https://www.liveplayhosts.com";
 
-// CORS headers
+// CORS headers - restrict to production domain
 const headers = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
   "Access-Control-Allow-Headers": "Content-Type",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Credentials": "true",
   "Content-Type": "application/json",
 };
 

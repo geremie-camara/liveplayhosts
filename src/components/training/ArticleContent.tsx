@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useMemo } from "react";
+import DOMPurify from "dompurify";
 
 interface ArticleContentProps {
   content: string;
@@ -16,6 +17,14 @@ export default function ArticleContent({
   const containerRef = useRef<HTMLDivElement>(null);
   const lastReportedPercent = useRef(0);
   const hasCompleted = useRef(false);
+
+  // Sanitize HTML content to prevent XSS attacks
+  const sanitizedContent = useMemo(() => {
+    return DOMPurify.sanitize(content, {
+      ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'ul', 'ol', 'li', 'a', 'strong', 'em', 'b', 'i', 'u', 'code', 'pre', 'blockquote', 'img', 'span', 'div'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+    });
+  }, [content]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -67,7 +76,7 @@ export default function ArticleContent({
         prose-code:text-accent prose-code:bg-accent/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
         prose-pre:bg-gray-900 prose-pre:text-gray-100
         prose-img:rounded-xl prose-img:shadow-md"
-      dangerouslySetInnerHTML={{ __html: content }}
+      dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );
 }
