@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
   const viewUrl = searchParams.get("viewUrl"); // URL to get signed view URL for
   const folderParam = searchParams.get("folder");
 
-  // Training video uploads require admin authentication
-  if (folderParam === "training-videos") {
+  // Admin folder uploads require admin authentication
+  if (folderParam === "training-videos" || folderParam === "broadcast-videos") {
     const { userId, sessionClaims } = await auth();
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -83,6 +83,8 @@ export async function GET(request: NextRequest) {
 
   if (folderParam === "training-videos") {
     folder = "training-videos";
+  } else if (folderParam === "broadcast-videos") {
+    folder = "broadcast-videos";
   } else if (videoTypes.includes(contentType)) {
     folder = "video-reels";
   } else {

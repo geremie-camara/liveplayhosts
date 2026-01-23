@@ -4,6 +4,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import RichTextEditor from "@/components/RichTextEditor";
+import VideoUpload from "@/components/VideoUpload";
 import {
   Broadcast,
   BroadcastDelivery,
@@ -345,6 +346,38 @@ export default function BroadcastDetailPage({
                 />
               ) : (
                 <p className="text-gray-900 p-4 bg-gray-50 rounded-lg">{broadcast.bodySms}</p>
+              )}
+            </div>
+
+            {/* Video attachment */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Video Attachment
+              </label>
+              {isEditable ? (
+                <>
+                  <VideoUpload
+                    value={formData.videoUrl || undefined}
+                    onChange={(url) => handleChange("videoUrl", url || "")}
+                    folder="broadcast-videos"
+                    placeholder="Upload a video to include with your broadcast"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Video will be embedded in email and message center, and linked in Slack.
+                  </p>
+                </>
+              ) : broadcast.videoUrl ? (
+                <div className="aspect-video bg-black rounded-lg overflow-hidden">
+                  <video
+                    src={broadcast.videoUrl}
+                    controls
+                    className="w-full h-full object-contain"
+                  >
+                    Your browser does not support the video tag.
+                  </video>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No video attached</p>
               )}
             </div>
           </div>

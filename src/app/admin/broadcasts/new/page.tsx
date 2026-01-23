@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import RichTextEditor from "@/components/RichTextEditor";
+import VideoUpload from "@/components/VideoUpload";
 import { BroadcastFormData, BroadcastTemplate, BroadcastChannels } from "@/lib/broadcast-types";
 import { UserRole } from "@/lib/types";
 import { ROLE_NAMES, ACTIVE_ROLES } from "@/lib/roles";
@@ -347,18 +348,17 @@ export default function NewBroadcastPage() {
             <h2 className="font-semibold text-dark">Optional Content</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Video URL
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Video Attachment
               </label>
-              <input
-                type="url"
-                value={formData.videoUrl || ""}
-                onChange={(e) => handleChange("videoUrl", e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
-                placeholder="https://..."
+              <VideoUpload
+                value={formData.videoUrl || undefined}
+                onChange={(url) => handleChange("videoUrl", url || "")}
+                folder="broadcast-videos"
+                placeholder="Upload a video to include with your broadcast"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Video will be embedded in email and message center.
+              <p className="text-xs text-gray-500 mt-2">
+                Video will be embedded in email and message center, and linked in Slack.
               </p>
             </div>
 

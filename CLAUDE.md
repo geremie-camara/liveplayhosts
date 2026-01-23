@@ -116,6 +116,7 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - **Role-based targeting**: Send to specific user roles (host, producer, admin, etc.)
 - **Scheduling**: Send immediately or schedule for later
 - **Templates**: Reusable message templates
+- **Video attachments**: Upload videos to S3, playable in email/Slack/Message Center
 - **Message Center**: Users can view all messages on dashboard
 - **Delivery tracking**: Track Slack/Email/SMS delivery status and read receipts
 - **Rate limiting**: Max 3 broadcasts per day per user
