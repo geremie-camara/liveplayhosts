@@ -79,9 +79,9 @@ export async function POST(request: NextRequest) {
     const body: BroadcastFormData = await request.json();
 
     // Validate required fields
-    if (!body.title || !body.subject || !body.bodyHtml || !body.bodySms) {
+    if (!body.title || !body.subject || !body.bodyHtml) {
       return NextResponse.json(
-        { error: "Missing required fields: title, subject, bodyHtml, bodySms" },
+        { error: "Missing required fields: title, subject, bodyHtml" },
         { status: 400 }
       );
     }
@@ -105,12 +105,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate SMS length
-    if (body.bodySms.length > 160) {
-      return NextResponse.json(
-        { error: "SMS body must be 160 characters or less" },
-        { status: 400 }
-      );
+    // Validate SMS only if SMS channel is enabled
+    if (body.channels.sms) {
+      if (!body.bodySms) {
+        return NextResponse.json(
+          { error: "SMS text is required when SMS channel is enabled" },
+          { status: 400 }
+        );
+      }
+      if (body.bodySms.length > 160) {
+        return NextResponse.json(
+          { error: "SMS body must be 160 characters or less" },
+          { status: 400 }
+        );
+      }
     }
 
     const now = new Date().toISOString();
@@ -133,7 +141,7 @@ export async function POST(request: NextRequest) {
       title: body.title,
       subject: body.subject,
       bodyHtml: body.bodyHtml,
-      bodySms: body.bodySms,
+      bodySms: body.bodySms || "",
       videoUrl: body.videoUrl || undefined,
       videoS3Key: body.videoS3Key || undefined,
       linkUrl: body.linkUrl || undefined,

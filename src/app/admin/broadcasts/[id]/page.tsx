@@ -121,8 +121,11 @@ export default function BroadcastDetailPage({
     if (!formData.title.trim()) return "Title is required";
     if (!formData.subject.trim()) return "Subject is required";
     if (!formData.bodyHtml.trim()) return "Message body is required";
-    if (!formData.bodySms.trim()) return "SMS text is required";
-    if (formData.bodySms.length > 160) return "SMS text must be 160 characters or less";
+    // Only require SMS text if SMS channel is selected
+    if (formData.channels.sms) {
+      if (!formData.bodySms.trim()) return "SMS text is required when SMS is enabled";
+      if (formData.bodySms.length > 160) return "SMS text must be 160 characters or less";
+    }
     // Check for either new user selection or legacy role-based targeting
     const hasUserIds = formData.userSelection?.selectedUserIds && formData.userSelection.selectedUserIds.length > 0;
     const hasRoles = formData.targetRoles && formData.targetRoles.length > 0;

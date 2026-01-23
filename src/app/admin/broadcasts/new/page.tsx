@@ -92,8 +92,11 @@ export default function NewBroadcastPage() {
     if (!formData.title.trim()) return "Title is required";
     if (!formData.subject.trim()) return "Subject is required";
     if (!formData.bodyHtml.trim()) return "Message body is required";
-    if (!formData.bodySms.trim()) return "SMS text is required";
-    if (formData.bodySms.length > 160) return "SMS text must be 160 characters or less";
+    // Only require SMS text if SMS channel is selected
+    if (formData.channels.sms) {
+      if (!formData.bodySms.trim()) return "SMS text is required when SMS is enabled";
+      if (formData.bodySms.length > 160) return "SMS text must be 160 characters or less";
+    }
     if (!formData.userSelection?.selectedUserIds.length) return "Select at least one recipient";
     if (!formData.channels.slack && !formData.channels.email && !formData.channels.sms) {
       return "Select at least one channel";
