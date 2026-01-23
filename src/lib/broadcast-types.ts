@@ -181,4 +181,4 @@ export const DELIVERY_STATUS_CONFIG: Record<DeliveryStatus, { label: string; col
 };
 
 // Rate limit constant
-export const BROADCASTS_PER_DAY_LIMIT = 3;
+export const BROADCASTS_PER_DAY_LIMIT = 50;

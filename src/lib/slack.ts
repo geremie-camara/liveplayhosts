@@ -89,7 +89,7 @@ export async function sendSlackDM(
       type: string;
       text?: { type: string; text: string };
       accessory?: { type: string; text?: { type: string; text: string }; url?: string };
-      elements?: Array<{ type: string; text: string; url: string }>;
+      elements?: Array<{ type: string; text: { type: string; text: string }; url: string }>;
     }> = [
       {
         type: "header",
@@ -125,7 +125,10 @@ export async function sendSlackDM(
         elements: [
           {
             type: "button",
-            text: linkText || "Learn More",
+            text: {
+              type: "plain_text",
+              text: linkText || "Learn More",
+            },
             url: linkUrl,
           },
         ],
