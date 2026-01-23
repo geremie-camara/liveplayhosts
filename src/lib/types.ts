@@ -26,8 +26,7 @@ export interface Host {
 
   // Slack Integration
   slackId?: string;
-  slackChannelId?: string;
-  prodSlackId?: string; // Secondary Slack ID for host producer channel
+  slackChannelId?: string; // Host producer channel Slack ID
 
   // Social Profiles
   socialProfiles: {

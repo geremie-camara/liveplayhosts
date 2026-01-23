@@ -224,11 +224,11 @@ async function sendToHost(
     results.sms = smsResult.success;
   }
 
-  // Send to Host Producer Channel (prod Slack ID) - additional send, no separate tracking
-  if (broadcast.channels.hostProducerChannel && host.prodSlackId && isSlackConfigured()) {
+  // Send to Host Producer Channel (slackChannelId) - additional send, no separate tracking
+  if (broadcast.channels.hostProducerChannel && host.slackChannelId && isSlackConfigured()) {
     try {
       await sendSlackDM(
-        host.prodSlackId,
+        host.slackChannelId,
         broadcast.subject,
         broadcast.bodyHtml,
         broadcast.videoUrl,
@@ -236,7 +236,7 @@ async function sendToHost(
         broadcast.linkText
       );
     } catch (error) {
-      console.error(`Failed to send to prod Slack ID for ${host.id}:`, error);
+      console.error(`Failed to send to Slack Channel ID for ${host.id}:`, error);
     }
   }
 
