@@ -199,6 +199,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-23 | c84419f | Add comprehensive logging for broadcast channel delivery |
 | 2026-01-23 | 263e4a7 | Fix: Send route now checks targetUserIds (was only checking targetRoles) |
 | 2026-01-23 | 120d89a | Add better error logging for broadcast targeting debug |
 | 2026-01-23 | f66dbca | Fix: SMS optional, use host's Slack IDs directly (no cross-user lookup) |
