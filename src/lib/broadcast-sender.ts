@@ -8,7 +8,7 @@ import {
   DeliveryStatus,
   BROADCASTS_PER_DAY_LIMIT,
 } from "./broadcast-types";
-import { sendSlackDM, isSlackConfigured, findSlackUserByEmail } from "./slack";
+import { sendSlackDM, isSlackConfigured } from "./slack";
 import { sendBroadcastEmail, isEmailConfigured } from "./email";
 import { sendBroadcastSms, isSmsConfigured } from "./sms";
 
@@ -159,42 +159,27 @@ async function sendToHost(
   const results = { slack: false, email: false, sms: false };
 
   // Send Slack DM
-  if (broadcast.channels.slack && isSlackConfigured()) {
-    // Determine the Slack user ID to use
-    let slackUserId: string | null = null;
+  if (broadcast.channels.slack && host.slackId && isSlackConfigured()) {
+    const slackResult = await sendSlackDM(
+      host.slackId,
+      broadcast.subject,
+      broadcast.bodyHtml,
+      broadcast.videoUrl,
+      broadcast.linkUrl,
+      broadcast.linkText
+    );
 
-    // Check if slackId looks like a valid Slack user ID (starts with U or W)
-    if (host.slackId && /^[UW][A-Z0-9]+$/.test(host.slackId)) {
-      slackUserId = host.slackId;
-    } else if (host.email) {
-      // Look up by email if slackId is not a valid ID (might be a handle)
-      slackUserId = await findSlackUserByEmail(host.email);
-    }
+    await updateDeliveryStatus(
+      delivery.id,
+      "slack",
+      slackResult.success ? "sent" : "failed",
+      slackResult.messageId,
+      slackResult.error
+    );
 
-    if (slackUserId) {
-      const slackResult = await sendSlackDM(
-        slackUserId,
-        broadcast.subject,
-        broadcast.bodyHtml,
-        broadcast.videoUrl,
-        broadcast.linkUrl,
-        broadcast.linkText
-      );
-
-      await updateDeliveryStatus(
-        delivery.id,
-        "slack",
-        slackResult.success ? "sent" : "failed",
-        slackResult.messageId,
-        slackResult.error
-      );
-
-      results.slack = slackResult.success;
-    } else {
-      await updateDeliveryStatus(delivery.id, "slack", "skipped", undefined, "No valid Slack ID found");
-    }
-  } else if (broadcast.channels.slack && !isSlackConfigured()) {
-    await updateDeliveryStatus(delivery.id, "slack", "skipped", undefined, "Slack not configured");
+    results.slack = slackResult.success;
+  } else if (broadcast.channels.slack && !host.slackId) {
+    await updateDeliveryStatus(delivery.id, "slack", "skipped", undefined, "No Slack ID");
   }
 
   // Send Email
@@ -240,27 +225,18 @@ async function sendToHost(
   }
 
   // Send to Host Producer Channel (slackChannelId) - additional send, no separate tracking
-  if (broadcast.channels.hostProducerChannel && isSlackConfigured()) {
-    // Check if slackChannelId looks like a valid Slack ID (starts with U, W, or C for channels)
-    let prodSlackId: string | null = null;
-
-    if (host.slackChannelId && /^[UWC][A-Z0-9]+$/.test(host.slackChannelId)) {
-      prodSlackId = host.slackChannelId;
-    }
-
-    if (prodSlackId) {
-      try {
-        await sendSlackDM(
-          prodSlackId,
-          broadcast.subject,
-          broadcast.bodyHtml,
-          broadcast.videoUrl,
-          broadcast.linkUrl,
-          broadcast.linkText
-        );
-      } catch (error) {
-        console.error(`Failed to send to Slack Channel ID for ${host.id}:`, error);
-      }
+  if (broadcast.channels.hostProducerChannel && host.slackChannelId && isSlackConfigured()) {
+    try {
+      await sendSlackDM(
+        host.slackChannelId,
+        broadcast.subject,
+        broadcast.bodyHtml,
+        broadcast.videoUrl,
+        broadcast.linkUrl,
+        broadcast.linkText
+      );
+    } catch (error) {
+      console.error(`Failed to send to Slack Channel ID for ${host.id}:`, error);
     }
   }
 
