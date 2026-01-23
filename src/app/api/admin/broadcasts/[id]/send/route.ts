@@ -5,7 +5,7 @@ import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { UserRole } from "@/lib/types";
 import { hasPermission } from "@/lib/roles";
 import { Broadcast } from "@/lib/broadcast-types";
-import { sendBroadcast, getTargetHosts } from "@/lib/broadcast-sender";
+import { sendBroadcast, getTargetHosts, getHostsByIds } from "@/lib/broadcast-sender";
 
 // POST /api/admin/broadcasts/[id]/send - Send broadcast immediately or schedule
 export async function POST(
@@ -85,12 +85,24 @@ export async function POST(
     }
 
     // Send immediately
-    // First, get recipient count for preview
-    const hosts = await getTargetHosts(broadcast.targetRoles);
+    // First, get recipient count for validation
+    let hosts;
+    if (broadcast.targetUserIds && broadcast.targetUserIds.length > 0) {
+      hosts = await getHostsByIds(broadcast.targetUserIds);
+    } else if (broadcast.userSelection?.selectedUserIds && broadcast.userSelection.selectedUserIds.length > 0) {
+      hosts = await getHostsByIds(broadcast.userSelection.selectedUserIds);
+    } else if (broadcast.targetRoles && broadcast.targetRoles.length > 0) {
+      hosts = await getTargetHosts(broadcast.targetRoles);
+    } else {
+      return NextResponse.json(
+        { error: "No recipients configured for this broadcast" },
+        { status: 400 }
+      );
+    }
 
     if (hosts.length === 0) {
       return NextResponse.json(
-        { error: "No recipients found for target roles" },
+        { error: "No recipients found for the selected users" },
         { status: 400 }
       );
     }
