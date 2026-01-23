@@ -1,10 +1,11 @@
 import { currentUser, clerkClient } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Role, ROLE_NAMES, ROLE_COLORS, hasPermission, ACTIVE_ROLES, isActiveUser } from "@/lib/roles";
+import { Role, ROLE_NAMES, ROLE_COLORS, hasPermission, isActiveUser } from "@/lib/roles";
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
+import MessageCenter from "@/components/MessageCenter";
 
 async function syncUserRole(userId: string, email: string, currentRole?: string): Promise<{ role: Role; isApproved: boolean }> {
   // If user already has an active role set, they're approved
@@ -215,26 +216,27 @@ export default async function DashboardPage() {
             </div>
           )}
 
-          {/* Announcements */}
-          <div className={`bg-white rounded-2xl shadow-sm p-6 ${canViewAnalytics ? "lg:col-span-2" : "md:col-span-2 lg:col-span-3"}`}>
-            <h3 className="text-lg font-semibold text-dark mb-4">
-              Announcements
-            </h3>
-            <div className="bg-primary-50 border border-primary-100 rounded-lg p-4">
-              <p className="text-primary font-medium">Welcome to LivePlay Hosts!</p>
-              <p className="text-gray-600 mt-1">
-                {role === "host"
-                  ? "You're ready to host! Check your schedule and start your first session."
-                  : role === "producer"
-                  ? "As a producer, you have access to analytics and scheduling management."
-                  : role === "admin"
-                  ? "As an admin, you can manage users and content from the admin panel."
-                  : role === "owner"
-                  ? "You have full owner access. Manage everything from the admin panel."
-                  : "Welcome to the team! Explore your dashboard and training materials."}
-              </p>
-            </div>
+          {/* Message Center */}
+          <div className={canViewAnalytics ? "lg:col-span-2" : "md:col-span-2 lg:col-span-1"}>
+            <MessageCenter />
           </div>
+
+          {/* Welcome Message - Only if not many items */}
+          {!canViewAnalytics && !canManageUsers && (
+            <div className="bg-white rounded-2xl shadow-sm p-6 md:col-span-2 lg:col-span-2">
+              <h3 className="text-lg font-semibold text-dark mb-4">
+                Welcome
+              </h3>
+              <div className="bg-primary-50 border border-primary-100 rounded-lg p-4">
+                <p className="text-primary font-medium">Welcome to LivePlay Hosts!</p>
+                <p className="text-gray-600 mt-1">
+                  {role === "host"
+                    ? "You're ready to host! Check your schedule and start your first session."
+                    : "Welcome to the team! Explore your dashboard and training materials."}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </AuthenticatedLayout>

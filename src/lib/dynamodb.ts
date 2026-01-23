@@ -26,4 +26,8 @@ export const TABLES = {
   FAQS: "liveplayhosts-faqs",
   TRAINING_PROGRESS: "liveplayhosts-training-progress",
   QUIZ_ATTEMPTS: "liveplayhosts-quiz-attempts",
+  // Broadcast messaging tables
+  BROADCASTS: "liveplayhosts-broadcasts",
+  BROADCAST_TEMPLATES: "liveplayhosts-broadcast-templates",
+  BROADCAST_DELIVERIES: "liveplayhosts-broadcast-deliveries",
 };

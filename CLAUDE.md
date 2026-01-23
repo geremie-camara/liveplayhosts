@@ -107,6 +107,50 @@ Users can set their work availability at `/availability`:
 - **Blocked Dates**: Add date ranges for vacations/time off with optional reason
 - Data stored in `liveplayhosts-availability` table keyed by Clerk userId
 
+## Broadcast Messaging System
+
+Multi-channel broadcast system for admins to send targeted messages to hosts.
+
+### Features
+- **Channels**: Slack DM (full body), Email (formatted HTML), SMS (short + link)
+- **Role-based targeting**: Send to specific user roles (host, producer, admin, etc.)
+- **Scheduling**: Send immediately or schedule for later
+- **Templates**: Reusable message templates
+- **Message Center**: Users can view all messages on dashboard
+- **Delivery tracking**: Track Slack/Email/SMS delivery status and read receipts
+- **Rate limiting**: Max 3 broadcasts per day per user
+
+### Admin Pages
+- `/admin/broadcasts` - List all broadcasts
+- `/admin/broadcasts/new` - Create new broadcast
+- `/admin/broadcasts/[id]` - Edit/view broadcast details
+- `/admin/templates` - Manage reusable templates
+
+### User Pages
+- `/messages` - User message inbox
+- `/messages/[id]` - View message details
+- Dashboard MessageCenter widget shows recent messages
+
+### API Routes
+- `GET/POST /api/admin/broadcasts` - List/create broadcasts
+- `GET/PUT/DELETE /api/admin/broadcasts/[id]` - Broadcast CRUD
+- `POST /api/admin/broadcasts/[id]/send` - Send/schedule broadcast
+- `GET /api/admin/broadcasts/[id]/deliveries` - Delivery details
+- `GET/POST /api/admin/templates` - Template CRUD
+- `GET /api/messages` - User's messages
+- `POST /api/messages/[id]/read` - Mark as read
+- `GET /api/messages/unread-count` - Unread count
+- `GET/POST /api/cron/send-broadcasts` - Process scheduled sends
+
+### New Environment Variables
+- `SLACK_BOT_TOKEN` - Slack bot token for DMs
+- `CRON_SECRET` - Auth secret for cron endpoint
+
+### New Dependencies
+- `@slack/web-api` - Slack messaging
+- `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-link` - WYSIWYG editor
+- `@aws-sdk/client-sns` - SMS via AWS SNS
+
 ## DynamoDB Tables
 
 - `liveplayhosts-hosts`
@@ -118,15 +162,19 @@ Users can set their work availability at `/availability`:
 - `liveplayhosts-faqs`
 - `liveplayhosts-training-progress`
 - `liveplayhosts-quiz-attempts`
+- `liveplayhosts-broadcasts` (main broadcast messages)
+- `liveplayhosts-broadcast-templates` (reusable templates)
+- `liveplayhosts-broadcast-deliveries` (per-user delivery tracking)
 
 ## Scripts
 
 ```bash
-npm run dev                              # Start dev server
-npm run build                            # Production build
-npm run lint                             # Run ESLint
-node scripts/create-training-tables.mjs # Create DynamoDB tables
-node scripts/seed-training-data.mjs     # Seed sample courses
+npm run dev                               # Start dev server
+npm run build                             # Production build
+npm run lint                              # Run ESLint
+node scripts/create-training-tables.mjs  # Create training DynamoDB tables
+node scripts/create-broadcast-tables.mjs # Create broadcast DynamoDB tables
+node scripts/seed-training-data.mjs      # Seed sample courses
 ```
 
 ## Environment Variables

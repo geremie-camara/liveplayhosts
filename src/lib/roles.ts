@@ -84,6 +84,10 @@ export const PERMISSIONS = {
   manageUsers: ["talent", "hr", "admin", "owner"] as Role[],
   viewAnalytics: ["producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
   manageContent: ["talent", "admin", "owner"] as Role[],
+
+  // Broadcast messaging
+  manageBroadcasts: ["talent", "admin", "owner"] as Role[],
+  viewMessages: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
 };
 
 // Check if user has permission
