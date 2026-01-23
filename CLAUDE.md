@@ -199,7 +199,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
-| 2026-01-23 | pending | Fix: SMS optional when unchecked, Slack ID lookup by email fallback |
+| 2026-01-23 | f174f4a | Fix: SMS optional when unchecked, Slack ID lookup by email fallback |
 | 2026-01-23 | b19127c | Add Host Producer Channel option to send to host's prod Slack ID |
 | 2026-01-23 | b249c92 | Move delivery channels to top, add clickable US/International region filters |
 | 2026-01-23 | c425c82 | Add 3-column user selection for broadcasts with role/location filters |
