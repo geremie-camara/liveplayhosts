@@ -159,69 +159,97 @@ async function sendToHost(
   const results = { slack: false, email: false, sms: false };
 
   // Send Slack DM
-  if (broadcast.channels.slack && host.slackId && isSlackConfigured()) {
-    const slackResult = await sendSlackDM(
-      host.slackId,
-      broadcast.subject,
-      broadcast.bodyHtml,
-      broadcast.videoUrl,
-      broadcast.linkUrl,
-      broadcast.linkText
-    );
+  if (broadcast.channels.slack) {
+    if (!isSlackConfigured()) {
+      console.log(`Slack not configured for host ${host.id}`);
+      await updateDeliveryStatus(delivery.id, "slack", "skipped", undefined, "Slack not configured");
+    } else if (!host.slackId) {
+      console.log(`No Slack ID for host ${host.id}`);
+      await updateDeliveryStatus(delivery.id, "slack", "skipped", undefined, "No Slack ID");
+    } else {
+      console.log(`Sending Slack to ${host.slackId} for host ${host.id}`);
+      const slackResult = await sendSlackDM(
+        host.slackId,
+        broadcast.subject,
+        broadcast.bodyHtml,
+        broadcast.videoUrl,
+        broadcast.linkUrl,
+        broadcast.linkText
+      );
 
-    await updateDeliveryStatus(
-      delivery.id,
-      "slack",
-      slackResult.success ? "sent" : "failed",
-      slackResult.messageId,
-      slackResult.error
-    );
+      await updateDeliveryStatus(
+        delivery.id,
+        "slack",
+        slackResult.success ? "sent" : "failed",
+        slackResult.messageId,
+        slackResult.error
+      );
 
-    results.slack = slackResult.success;
-  } else if (broadcast.channels.slack && !host.slackId) {
-    await updateDeliveryStatus(delivery.id, "slack", "skipped", undefined, "No Slack ID");
+      results.slack = slackResult.success;
+      console.log(`Slack result for ${host.id}: ${slackResult.success ? "sent" : "failed"} - ${slackResult.error || ""}`);
+    }
   }
 
   // Send Email
-  if (broadcast.channels.email && host.email && isEmailConfigured()) {
-    const emailResult = await sendBroadcastEmail(
-      host.email,
-      broadcast.subject,
-      broadcast.bodyHtml,
-      broadcast.videoUrl,
-      broadcast.linkUrl,
-      broadcast.linkText
-    );
+  if (broadcast.channels.email) {
+    if (!isEmailConfigured()) {
+      console.log(`Email not configured for host ${host.id}`);
+      await updateDeliveryStatus(delivery.id, "email", "skipped", undefined, "Email not configured");
+    } else if (!host.email) {
+      console.log(`No email for host ${host.id}`);
+      await updateDeliveryStatus(delivery.id, "email", "skipped", undefined, "No email address");
+    } else {
+      console.log(`Sending email to ${host.email} for host ${host.id}`);
+      const emailResult = await sendBroadcastEmail(
+        host.email,
+        broadcast.subject,
+        broadcast.bodyHtml,
+        broadcast.videoUrl,
+        broadcast.linkUrl,
+        broadcast.linkText
+      );
 
-    await updateDeliveryStatus(
-      delivery.id,
-      "email",
-      emailResult.success ? "sent" : "failed",
-      emailResult.messageId,
-      emailResult.error
-    );
+      await updateDeliveryStatus(
+        delivery.id,
+        "email",
+        emailResult.success ? "sent" : "failed",
+        emailResult.messageId,
+        emailResult.error
+      );
 
-    results.email = emailResult.success;
+      results.email = emailResult.success;
+      console.log(`Email result for ${host.id}: ${emailResult.success ? "sent" : "failed"} - ${emailResult.error || ""}`);
+    }
   }
 
   // Send SMS
-  if (broadcast.channels.sms && host.phone && isSmsConfigured()) {
-    const smsResult = await sendBroadcastSms(
-      host.phone,
-      broadcast.subject,
-      broadcast.bodySms,
-      broadcast.id
-    );
+  if (broadcast.channels.sms) {
+    if (!isSmsConfigured()) {
+      console.log(`SMS not configured for host ${host.id}`);
+      await updateDeliveryStatus(delivery.id, "sms", "skipped", undefined, "SMS not configured");
+    } else if (!host.phone) {
+      console.log(`No phone for host ${host.id}`);
+      await updateDeliveryStatus(delivery.id, "sms", "skipped", undefined, "No phone number");
+    } else {
+      console.log(`Sending SMS to ${host.phone} for host ${host.id}`);
+      const smsResult = await sendBroadcastSms(
+        host.phone,
+        broadcast.subject,
+        broadcast.bodySms,
+        broadcast.id
+      );
 
-    await updateDeliveryStatus(
-      delivery.id,
-      "sms",
-      smsResult.success ? "sent" : "failed",
-      smsResult.messageId,
-      smsResult.error
-    );
+      await updateDeliveryStatus(
+        delivery.id,
+        "sms",
+        smsResult.success ? "sent" : "failed",
+        smsResult.messageId,
+        smsResult.error
+      );
 
-    results.sms = smsResult.success;
+      results.sms = smsResult.success;
+      console.log(`SMS result for ${host.id}: ${smsResult.success ? "sent" : "failed"} - ${smsResult.error || ""}`);
+    }
   }
 
   // Send to Host Producer Channel (slackChannelId) - additional send, no separate tracking
