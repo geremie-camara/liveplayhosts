@@ -199,7 +199,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
-| 2026-01-23 | pending | Move delivery channels to top, add clickable US/International region filters |
+| 2026-01-23 | b249c92 | Move delivery channels to top, add clickable US/International region filters |
 | 2026-01-23 | c425c82 | Add 3-column user selection for broadcasts with role/location filters |
 | 2026-01-23 | cdb2b1b | Update header: larger logo, add Host Login button |
 | 2026-01-23 | d412387 | Rebrand to LivePlay (one word) across the site |
