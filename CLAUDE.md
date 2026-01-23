@@ -100,10 +100,17 @@ Defined in `src/lib/types.ts`:
 - [ ] Training analytics for admins
 - [ ] Certificates on course completion
 
+## Availability Feature
+
+Users can set their work availability at `/availability`:
+- **Weekly Schedule**: Check days available (Mon-Sun), set start/end times per day
+- **Blocked Dates**: Add date ranges for vacations/time off with optional reason
+- Data stored in `liveplayhosts-availability` table keyed by Clerk userId
+
 ## DynamoDB Tables
 
 - `liveplayhosts-hosts`
-- `liveplayhosts-availability`
+- `liveplayhosts-availability` (userId → weekly schedule + blocked dates)
 - `liveplayhosts-courses`
 - `liveplayhosts-sections`
 - `liveplayhosts-lessons`
