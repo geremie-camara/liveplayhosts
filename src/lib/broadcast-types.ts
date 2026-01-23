@@ -11,6 +11,7 @@ export interface BroadcastChannels {
   slack: boolean;
   email: boolean;
   sms: boolean;
+  hostProducerChannel?: boolean; // Send to host's prod Slack ID
 }
 
 // Delivery statistics

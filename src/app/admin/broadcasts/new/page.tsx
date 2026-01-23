@@ -314,6 +314,20 @@ export default function NewBroadcastPage() {
                 </span>
               </label>
             </div>
+            <div className="mt-3 pt-3 border-t">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.channels.hostProducerChannel || false}
+                  onChange={(e) => handleChannelChange("hostProducerChannel", e.target.checked)}
+                  className="rounded text-accent focus:ring-accent"
+                />
+                <span className="flex items-center gap-2">
+                  <span className="px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded">Host Producer Channel</span>
+                  Also send to host&apos;s prod Slack ID
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Basic info */}

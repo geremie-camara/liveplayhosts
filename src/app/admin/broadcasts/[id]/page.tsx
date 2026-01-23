@@ -468,9 +468,18 @@ export default function BroadcastDetailPage({
                   />
                   <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">SMS</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.channels.hostProducerChannel || false}
+                    onChange={(e) => handleChannelChange("hostProducerChannel", e.target.checked)}
+                    className="rounded text-accent focus:ring-accent"
+                  />
+                  <span className="px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded">Host Producer</span>
+                </label>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {broadcast.channels.slack && (
                   <span className="px-3 py-1 bg-purple-100 text-purple-600 rounded-full text-sm">Slack</span>
                 )}
@@ -479,6 +488,9 @@ export default function BroadcastDetailPage({
                 )}
                 {broadcast.channels.sms && (
                   <span className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-sm">SMS</span>
+                )}
+                {broadcast.channels.hostProducerChannel && (
+                  <span className="px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-sm">Host Producer</span>
                 )}
               </div>
             )}
