@@ -189,6 +189,7 @@ export default function DirectoryList() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Instagram</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">TikTok</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Communication</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Location</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -299,6 +300,9 @@ export default function DirectoryList() {
                           <span className="text-gray-400 text-sm">-</span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-600">
+                      {host.location || <span className="text-gray-400">-</span>}
                     </td>
                   </tr>
                 ))}
