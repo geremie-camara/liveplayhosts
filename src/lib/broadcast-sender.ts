@@ -300,21 +300,36 @@ export async function sendBroadcast(broadcastId: string): Promise<{
 
     // 3. Get target hosts - prefer specific user IDs, fall back to role-based targeting
     let hosts: Host[];
+    let targetSource = "";
 
     // Check for targetUserIds (from userSelection.selectedUserIds)
     if (broadcast.targetUserIds && broadcast.targetUserIds.length > 0) {
       hosts = await getHostsByIds(broadcast.targetUserIds);
+      targetSource = `targetUserIds: ${broadcast.targetUserIds.join(", ")}`;
     } else if (broadcast.userSelection?.selectedUserIds && broadcast.userSelection.selectedUserIds.length > 0) {
       // Also check userSelection for backwards compatibility
       hosts = await getHostsByIds(broadcast.userSelection.selectedUserIds);
-    } else {
+      targetSource = `userSelection.selectedUserIds: ${broadcast.userSelection.selectedUserIds.join(", ")}`;
+    } else if (broadcast.targetRoles && broadcast.targetRoles.length > 0) {
       // Fall back to role-based targeting (legacy support)
       hosts = await getTargetHosts(broadcast.targetRoles);
+      targetSource = `targetRoles: ${broadcast.targetRoles.join(", ")}`;
+    } else {
+      await updateBroadcastStatus(broadcastId, "failed");
+      console.error("Broadcast has no targeting data:", {
+        targetUserIds: broadcast.targetUserIds,
+        userSelection: broadcast.userSelection,
+        targetRoles: broadcast.targetRoles,
+      });
+      return { success: false, error: "No targeting data found (no userIds, userSelection, or roles)" };
     }
+
+    console.log(`Broadcast ${broadcastId} targeting: ${targetSource}, found ${hosts.length} hosts`);
 
     if (hosts.length === 0) {
       await updateBroadcastStatus(broadcastId, "failed");
-      return { success: false, error: "No recipients found for the selected users" };
+      console.error(`No hosts found for broadcast ${broadcastId}. Target: ${targetSource}`);
+      return { success: false, error: `No recipients found. Target: ${targetSource}` };
     }
 
     // 4. Initialize stats
