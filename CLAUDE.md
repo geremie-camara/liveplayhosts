@@ -199,7 +199,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
-| 2026-01-23 | pending | Add 3-column user selection for broadcasts with role/location filters |
+| 2026-01-23 | c425c82 | Add 3-column user selection for broadcasts with role/location filters |
 | 2026-01-23 | cdb2b1b | Update header: larger logo, add Host Login button |
 | 2026-01-23 | d412387 | Rebrand to LivePlay (one word) across the site |
 | 2026-01-23 | fb490f3 | Security hardening: XSS fix, CORS restriction, security headers, auth on uploads |
