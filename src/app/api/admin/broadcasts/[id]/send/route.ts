@@ -121,6 +121,10 @@ export async function POST(
       success: true,
       status: "sent",
       stats: sendResult.stats,
+      debug: {
+        SLACK_BOT_TOKEN: process.env.SLACK_BOT_TOKEN ? `${process.env.SLACK_BOT_TOKEN.substring(0, 15)}...` : "NOT SET",
+        RESEND_API_KEY: process.env.RESEND_API_KEY ? "SET" : "NOT SET",
+      },
     });
   } catch (error) {
     console.error("Error sending broadcast:", error);
