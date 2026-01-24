@@ -6,7 +6,11 @@ frontend:
         - npm ci
     build:
       commands:
+        - echo "=== Available env vars ==="
+        - env | grep -E '^(SLACK_|RESEND_)' | sed 's/=.*/=***/' || echo "No SLACK/RESEND vars found"
+        - echo "=== Writing to .env.production ==="
         - env | grep -E '^(NEXT_|CLERK_|S3_|RESEND_|NOTIFICATION_|SLACK_|CRON_)' >> .env.production
+        - cat .env.production | grep SLACK || echo "SLACK not in .env.production"
         - npm run build
   artifacts:
     baseDirectory: .next
