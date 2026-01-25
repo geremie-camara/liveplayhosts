@@ -29,10 +29,18 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
   const [loading, setLoading] = useState(true);
   const [searchFilter, setSearchFilter] = useState("");
   const [searchSelected, setSearchSelected] = useState("");
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Auto-expand if there are pre-selected users (e.g., from template)
+  useEffect(() => {
+    if (value.selectedUserIds.length > 0) {
+      setIsExpanded(true);
+    }
+  }, [value.selectedUserIds.length]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -218,8 +226,60 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
     );
   }
 
+  // Collapsed view - show summary and expand button
+  if (!isExpanded) {
+    return (
+      <div className="border rounded-lg p-4 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
+              <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="font-medium text-gray-900">
+                {value.selectedUserIds.length > 0
+                  ? `${value.selectedUserIds.length} recipient${value.selectedUserIds.length === 1 ? "" : "s"} selected`
+                  : "No recipients selected"}
+              </p>
+              <p className="text-sm text-gray-500">
+                {users.length} users available
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsExpanded(true)}
+            className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Select Recipients
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-3 gap-4 min-h-[400px]">
+    <div className="space-y-3">
+      {/* Collapse button */}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setIsExpanded(false)}
+          className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+          </svg>
+          Collapse
+        </button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4 min-h-[400px]">
       {/* Left Column: Filters */}
       <div className="border rounded-lg bg-gray-50 p-4 overflow-y-auto">
         <h3 className="font-semibold text-dark mb-3">Filters</h3>
@@ -507,6 +567,7 @@ export default function UserSelector({ value, onChange }: UserSelectorProps) {
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
