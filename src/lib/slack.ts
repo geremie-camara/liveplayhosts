@@ -123,6 +123,11 @@ export async function sendSlackDM(
 
     // Add CTA button if provided
     if (linkUrl) {
+      // Ensure URL has protocol
+      let validUrl = linkUrl;
+      if (!linkUrl.startsWith('http://') && !linkUrl.startsWith('https://')) {
+        validUrl = `https://${linkUrl}`;
+      }
       blocks.push({
         type: "actions",
         elements: [
@@ -132,7 +137,7 @@ export async function sendSlackDM(
               type: "plain_text",
               text: linkText || "Learn More",
             },
-            url: linkUrl,
+            url: validUrl,
           },
         ],
       });
