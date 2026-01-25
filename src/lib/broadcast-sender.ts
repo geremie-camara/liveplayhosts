@@ -13,8 +13,13 @@ import { sendBroadcastEmail, isEmailConfigured } from "./email";
 import { sendBroadcastSms, isSmsConfigured } from "./sms";
 import { getPresignedVideoUrl } from "./s3";
 
+// HTML-encode a URL for use in HTML attributes (encode & as &amp;)
+function htmlEncodeUrl(url: string): string {
+  return url.replace(/&/g, '&amp;');
+}
+
 // Process HTML to replace S3 image URLs with presigned URLs
-async function processHtmlImages(html: string): Promise<string> {
+async function processHtmlImages(html: string, forEmail: boolean = false): Promise<string> {
   // Match all img tags with S3 URLs (including ones that may already be presigned)
   const imgRegex = /<img[^>]+src="(https:\/\/[^"]*s3[^"]*amazonaws\.com[^"]*)"/g;
   const matches = Array.from(html.matchAll(imgRegex));
@@ -32,7 +37,13 @@ async function processHtmlImages(html: string): Promise<string> {
       // Strip any existing query parameters (from old presigned URLs)
       // to get the base S3 URL before generating a fresh presigned URL
       const baseUrl = originalUrl.split('?')[0];
-      const presignedUrl = await getPresignedVideoUrl(baseUrl);
+      let presignedUrl = await getPresignedVideoUrl(baseUrl);
+
+      // For email HTML, encode & as &amp; for proper HTML attribute encoding
+      if (forEmail) {
+        presignedUrl = htmlEncodeUrl(presignedUrl);
+      }
+
       processedHtml = processedHtml.replace(originalUrl, presignedUrl);
     } catch (error) {
       console.error(`Failed to get presigned URL for image: ${originalUrl}`, error);
@@ -185,7 +196,8 @@ async function sendToHost(
   broadcast: Broadcast,
   host: Host,
   delivery: BroadcastDelivery,
-  senderName: string
+  senderName: string,
+  emailBodyHtml?: string // Separate HTML for email with proper encoding
 ): Promise<{ slack: boolean; email: boolean; sms: boolean }> {
   const results = { slack: false, email: false, sms: false };
 
@@ -232,10 +244,11 @@ async function sendToHost(
       await updateDeliveryStatus(delivery.id, "email", "skipped", undefined, "No email address");
     } else {
       console.log(`Sending email to ${host.email} for host ${host.id}`);
+      // Use email-specific HTML with proper encoding if provided
       const emailResult = await sendBroadcastEmail(
         host.email,
         broadcast.subject,
-        broadcast.bodyHtml,
+        emailBodyHtml || broadcast.bodyHtml,
         broadcast.videoUrl,
         broadcast.linkUrl,
         broadcast.linkText,
@@ -424,17 +437,20 @@ export async function sendBroadcast(broadcastId: string): Promise<{
     }
 
     // Process bodyHtml to replace S3 image URLs with presigned URLs
-    let bodyHtml = broadcast.bodyHtml;
-    if (bodyHtml && bodyHtml.includes('s3') && bodyHtml.includes('amazonaws.com')) {
+    // Create separate versions for Slack (raw URLs) and Email (HTML-encoded URLs)
+    let bodyHtmlForSlack = broadcast.bodyHtml;
+    let bodyHtmlForEmail = broadcast.bodyHtml;
+    if (broadcast.bodyHtml && broadcast.bodyHtml.includes('s3') && broadcast.bodyHtml.includes('amazonaws.com')) {
       console.log(`Processing images in bodyHtml...`);
-      bodyHtml = await processHtmlImages(bodyHtml);
+      bodyHtmlForSlack = await processHtmlImages(broadcast.bodyHtml, false);
+      bodyHtmlForEmail = await processHtmlImages(broadcast.bodyHtml, true);
     }
 
-    // Create a modified broadcast object with presigned URLs
+    // Create a modified broadcast object with presigned URLs (for Slack)
     const broadcastWithPresignedUrl = {
       ...broadcast,
       videoUrl,
-      bodyHtml,
+      bodyHtml: bodyHtmlForSlack,
     };
 
     // 4. Initialize stats
@@ -462,7 +478,8 @@ export async function sendBroadcast(broadcastId: string): Promise<{
       const delivery = await createDeliveryRecord(broadcast, host);
 
       // Send via all channels (using presigned video URL)
-      const results = await sendToHost(broadcastWithPresignedUrl, host, delivery, senderName);
+      // Pass email-specific HTML with properly encoded URLs
+      const results = await sendToHost(broadcastWithPresignedUrl, host, delivery, senderName, bodyHtmlForEmail);
 
       // Update stats
       if (broadcast.channels.slack) {

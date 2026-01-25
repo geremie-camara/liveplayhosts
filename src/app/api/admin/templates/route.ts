@@ -52,16 +52,16 @@ export async function POST(request: NextRequest) {
   try {
     const body: TemplateFormData = await request.json();
 
-    // Validate required fields
-    if (!body.name || !body.subject || !body.bodyHtml || !body.bodySms) {
+    // Validate required fields (bodySms is optional since SMS channel is optional)
+    if (!body.name || !body.subject || !body.bodyHtml) {
       return NextResponse.json(
-        { error: "Missing required fields: name, subject, bodyHtml, bodySms" },
+        { error: "Missing required fields: name, subject, bodyHtml" },
         { status: 400 }
       );
     }
 
-    // Validate SMS length
-    if (body.bodySms.length > 160) {
+    // Validate SMS length if provided
+    if (body.bodySms && body.bodySms.length > 160) {
       return NextResponse.json(
         { error: "SMS body must be 160 characters or less" },
         { status: 400 }
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       name: body.name,
       subject: body.subject,
       bodyHtml: body.bodyHtml,
-      bodySms: body.bodySms,
+      bodySms: body.bodySms || "",
       videoUrl: body.videoUrl,
       linkUrl: body.linkUrl,
       linkText: body.linkText,
