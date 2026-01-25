@@ -107,13 +107,28 @@ export async function sendSlackDM(
       },
     ];
 
-    // Add video link if provided (Slack will unfurl it with preview)
+    // Add video section if provided
     if (videoUrl) {
+      // Ensure video URL has protocol
+      let validVideoUrl = videoUrl;
+      if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+        validVideoUrl = `https://${videoUrl}`;
+      }
       blocks.push({
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `📹 *Video:* ${videoUrl}`,
+          text: `:movie_camera: *Video attached*`,
+        },
+        accessory: {
+          type: "button",
+          text: {
+            type: "plain_text",
+            text: "▶️ Watch Video",
+            emoji: true,
+          },
+          url: validVideoUrl,
+          action_id: "watch_video",
         },
       });
     }
