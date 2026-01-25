@@ -11,6 +11,7 @@ import {
 import { sendSlackDM, isSlackConfigured } from "./slack";
 import { sendBroadcastEmail, isEmailConfigured } from "./email";
 import { sendBroadcastSms, isSmsConfigured } from "./sms";
+import { getPresignedVideoUrl } from "./s3";
 
 // Get broadcast by ID
 export async function getBroadcast(broadcastId: string): Promise<Broadcast | null> {
@@ -385,6 +386,20 @@ export async function sendBroadcast(broadcastId: string): Promise<{
       return { success: false, error: `No recipients found. Target: ${targetSource}` };
     }
 
+    // Generate presigned URL for video if present (7 day expiration)
+    let videoUrl = broadcast.videoUrl;
+    if (videoUrl && videoUrl.includes('s3') && videoUrl.includes('amazonaws.com')) {
+      console.log(`Generating presigned URL for video: ${videoUrl}`);
+      videoUrl = await getPresignedVideoUrl(videoUrl);
+      console.log(`Presigned URL generated: ${videoUrl.substring(0, 100)}...`);
+    }
+
+    // Create a modified broadcast object with the presigned video URL
+    const broadcastWithPresignedUrl = {
+      ...broadcast,
+      videoUrl,
+    };
+
     // 4. Initialize stats
     const stats: BroadcastStats = {
       totalRecipients: hosts.length,
@@ -409,8 +424,8 @@ export async function sendBroadcast(broadcastId: string): Promise<{
       // Create delivery record
       const delivery = await createDeliveryRecord(broadcast, host);
 
-      // Send via all channels
-      const results = await sendToHost(broadcast, host, delivery, senderName);
+      // Send via all channels (using presigned video URL)
+      const results = await sendToHost(broadcastWithPresignedUrl, host, delivery, senderName);
 
       // Update stats
       if (broadcast.channels.slack) {
