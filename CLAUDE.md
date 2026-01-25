@@ -125,6 +125,7 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - **Scheduling**: Send immediately or schedule for later
 - **Templates**: Reusable message templates with saved user selections
 - **Video attachments**: Upload videos to S3, served via presigned URLs (7-day expiration)
+- **Image support**: Paste, drag-drop, or upload images in message body (stored in S3)
 - **Message Center**: Users can view all messages on dashboard
 - **Delivery tracking**: Track Slack/Email/SMS delivery status and read receipts
 - **Rate limiting**: Max 50 broadcasts per day per user
@@ -200,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | bf69312 | Add image paste/upload support, fix rich text formatting (typography plugin) |
 | 2026-01-25 | bddd81c | Fix S3 video access: generate presigned URLs (7-day expiration) for broadcasts |
 | 2026-01-25 | 2d06b7f | Fix video in Slack: use Watch Video button instead of unsupported video block |
 | 2026-01-25 | 8d0303a | Fix sender name lookup to check clerkUserId |
