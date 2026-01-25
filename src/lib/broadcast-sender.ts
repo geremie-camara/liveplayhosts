@@ -154,7 +154,8 @@ async function updateDeliveryStatus(
 async function sendToHost(
   broadcast: Broadcast,
   host: Host,
-  delivery: BroadcastDelivery
+  delivery: BroadcastDelivery,
+  senderName: string
 ): Promise<{ slack: boolean; email: boolean; sms: boolean }> {
   const results = { slack: false, email: false, sms: false };
 
@@ -174,7 +175,8 @@ async function sendToHost(
         broadcast.bodyHtml,
         broadcast.videoUrl,
         broadcast.linkUrl,
-        broadcast.linkText
+        broadcast.linkText,
+        senderName
       );
 
       await updateDeliveryStatus(
@@ -206,7 +208,8 @@ async function sendToHost(
         broadcast.bodyHtml,
         broadcast.videoUrl,
         broadcast.linkUrl,
-        broadcast.linkText
+        broadcast.linkText,
+        senderName
       );
 
       await updateDeliveryStatus(
@@ -261,7 +264,8 @@ async function sendToHost(
         broadcast.bodyHtml,
         broadcast.videoUrl,
         broadcast.linkUrl,
-        broadcast.linkText
+        broadcast.linkText,
+        senderName
       );
     } catch (error) {
       console.error(`Failed to send to Slack Channel ID for ${host.id}:`, error);
@@ -354,6 +358,15 @@ export async function sendBroadcast(broadcastId: string): Promise<{
 
     console.log(`Broadcast ${broadcastId} targeting: ${targetSource}, found ${hosts.length} hosts`);
 
+    // Get sender's name
+    let senderName = "LivePlay Team";
+    if (broadcast.createdBy) {
+      const senderHosts = await getHostsByIds([broadcast.createdBy]);
+      if (senderHosts.length > 0) {
+        senderName = `${senderHosts[0].firstName} ${senderHosts[0].lastName}`.trim();
+      }
+    }
+
     if (hosts.length === 0) {
       await updateBroadcastStatus(broadcastId, "failed");
       console.error(`No hosts found for broadcast ${broadcastId}. Target: ${targetSource}`);
@@ -385,7 +398,7 @@ export async function sendBroadcast(broadcastId: string): Promise<{
       const delivery = await createDeliveryRecord(broadcast, host);
 
       // Send via all channels
-      const results = await sendToHost(broadcast, host, delivery);
+      const results = await sendToHost(broadcast, host, delivery, senderName);
 
       // Update stats
       if (broadcast.channels.slack) {

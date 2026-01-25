@@ -76,7 +76,8 @@ export async function sendSlackDM(
   bodyHtml: string,
   videoUrl?: string,
   linkUrl?: string,
-  linkText?: string
+  linkText?: string,
+  senderName?: string
 ): Promise<SlackDMResult> {
   try {
     const client = getSlackClient();
@@ -88,12 +89,8 @@ export async function sendSlackDM(
     const truncatedSubject = subject ? subject.substring(0, 150) : "Message";
 
     // Build blocks for rich formatting
-    const blocks: Array<{
-      type: string;
-      text?: { type: string; text: string };
-      accessory?: { type: string; text?: { type: string; text: string }; url?: string };
-      elements?: Array<{ type: string; text: { type: string; text: string }; url: string }>;
-    }> = [
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const blocks: any[] = [
       {
         type: "header",
         text: {
@@ -143,10 +140,23 @@ export async function sendSlackDM(
       });
     }
 
+    // Add "Sent by" footer if sender name provided
+    if (senderName) {
+      blocks.push({
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: `_Sent by ${senderName}_`,
+          },
+        ],
+      });
+    }
+
     // Send message
     const result = await client.chat.postMessage({
       channel: slackId,
-      text: `${subject}\n\n${mrkdwnBody}`, // Fallback text
+      text: `${subject}\n\n${mrkdwnBody}${senderName ? `\n\nSent by ${senderName}` : ""}`, // Fallback text
       blocks,
       unfurl_links: true,
       unfurl_media: true,

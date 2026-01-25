@@ -23,7 +23,8 @@ function generateEmailHtml(
   bodyHtml: string,
   videoUrl?: string,
   linkUrl?: string,
-  linkText?: string
+  linkText?: string,
+  senderName?: string
 ): string {
   // Video thumbnail section
   const videoSection = videoUrl
@@ -83,6 +84,7 @@ function generateEmailHtml(
 
     <!-- Footer -->
     <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #8a8a9a;">
+      ${senderName ? `<p style="margin: 0 0 10px 0; font-style: italic;">Sent by ${senderName}</p>` : ""}
       <p style="margin: 0 0 10px 0;">
         This message was sent from LivePlay Hosts
       </p>
@@ -105,12 +107,13 @@ export async function sendBroadcastEmail(
   bodyHtml: string,
   videoUrl?: string,
   linkUrl?: string,
-  linkText?: string
+  linkText?: string,
+  senderName?: string
 ): Promise<EmailResult> {
   try {
     const resend = getResendClient();
 
-    const html = generateEmailHtml(subject, bodyHtml, videoUrl, linkUrl, linkText);
+    const html = generateEmailHtml(subject, bodyHtml, videoUrl, linkUrl, linkText, senderName);
 
     const result = await resend.emails.send({
       from: DEFAULT_FROM,
