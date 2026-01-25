@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | dca0903 | Reorganize broadcast page: sequential layout, preview/actions at bottom, Save as Template |
 | 2026-01-25 | bf69312 | Add image paste/upload support, fix rich text formatting (typography plugin) |
 | 2026-01-25 | bddd81c | Fix S3 video access: generate presigned URLs (7-day expiration) for broadcasts |
 | 2026-01-25 | 2d06b7f | Fix video in Slack: use Watch Video button instead of unsupported video block |
