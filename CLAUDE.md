@@ -127,7 +127,8 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - **Video attachments**: Upload videos to S3, playable in email/Slack/Message Center
 - **Message Center**: Users can view all messages on dashboard
 - **Delivery tracking**: Track Slack/Email/SMS delivery status and read receipts
-- **Rate limiting**: Max 3 broadcasts per day per user
+- **Rate limiting**: Max 50 broadcasts per day per user
+- **Sender attribution**: "Sent by [name]" footer in Slack and Email messages
 
 ### Admin Pages
 - `/admin/broadcasts` - List all broadcasts
@@ -199,6 +200,9 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | 2d06b7f | Fix video in Slack: use Watch Video button instead of unsupported video block |
+| 2026-01-25 | 8d0303a | Fix sender name lookup to check clerkUserId |
+| 2026-01-25 | 283a7fa | Add "Sent by [name]" footer to Slack and Email broadcasts |
 | 2026-01-25 | 9ab56dc | Fix Slack invalid_blocks error, clean up debug code (Amplify env var must use branch=main) |
 | 2026-01-23 | 1f123e3 | Fix Slack button block, increase rate limit to 50/day, add debug scripts |
 | 2026-01-23 | c84419f | Add comprehensive logging for broadcast channel delivery |
