@@ -40,7 +40,7 @@ export default function RichTextEditor({
         throw new Error("Failed to get upload URL");
       }
 
-      const { uploadUrl, fileUrl } = await response.json();
+      const { uploadUrl, viewUrl } = await response.json();
 
       // Upload to S3
       const uploadResponse = await fetch(uploadUrl, {
@@ -55,7 +55,9 @@ export default function RichTextEditor({
         throw new Error("Failed to upload image");
       }
 
-      return fileUrl;
+      // Return the presigned viewUrl for immediate display
+      // When broadcast is sent, all S3 URLs will get fresh presigned URLs
+      return viewUrl;
     } catch (error) {
       console.error("Image upload failed:", error);
       alert("Failed to upload image. Please try again.");

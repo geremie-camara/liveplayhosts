@@ -181,21 +181,29 @@ export async function POST(request: NextRequest) {
   const key = `${folder}/${timestamp}-${randomId}-${sanitizedFilename}`;
 
   try {
-    const command = new PutObjectCommand({
+    const putCommand = new PutObjectCommand({
       Bucket: S3_BUCKETS.VIDEOS,
       Key: key,
       ContentType: fileType,
     });
 
-    // Generate pre-signed URL valid for 15 minutes
-    const uploadUrl = await getSignedUrl(s3Client, command, { expiresIn: 900 });
+    // Generate pre-signed URL valid for 15 minutes for upload
+    const uploadUrl = await getSignedUrl(s3Client, putCommand, { expiresIn: 900 });
 
-    // Construct the public URL for the file
+    // Construct the permanent URL for the file (for storage in DB)
     const fileUrl = `https://${S3_BUCKETS.VIDEOS}.s3.us-west-2.amazonaws.com/${key}`;
+
+    // Generate pre-signed URL for immediate viewing (valid for 1 hour)
+    const getCommand = new GetObjectCommand({
+      Bucket: S3_BUCKETS.VIDEOS,
+      Key: key,
+    });
+    const viewUrl = await getSignedUrl(s3Client, getCommand, { expiresIn: 3600 });
 
     return NextResponse.json({
       uploadUrl,
       fileUrl,
+      viewUrl, // Presigned URL for immediate preview
       key,
     });
   } catch (error) {

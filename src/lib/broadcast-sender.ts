@@ -15,7 +15,7 @@ import { getPresignedVideoUrl } from "./s3";
 
 // Process HTML to replace S3 image URLs with presigned URLs
 async function processHtmlImages(html: string): Promise<string> {
-  // Match all img tags with S3 URLs
+  // Match all img tags with S3 URLs (including ones that may already be presigned)
   const imgRegex = /<img[^>]+src="(https:\/\/[^"]*s3[^"]*amazonaws\.com[^"]*)"/g;
   const matches = Array.from(html.matchAll(imgRegex));
 
@@ -29,7 +29,10 @@ async function processHtmlImages(html: string): Promise<string> {
     const match = matches[i];
     const originalUrl = match[1];
     try {
-      const presignedUrl = await getPresignedVideoUrl(originalUrl);
+      // Strip any existing query parameters (from old presigned URLs)
+      // to get the base S3 URL before generating a fresh presigned URL
+      const baseUrl = originalUrl.split('?')[0];
+      const presignedUrl = await getPresignedVideoUrl(baseUrl);
       processedHtml = processedHtml.replace(originalUrl, presignedUrl);
     } catch (error) {
       console.error(`Failed to get presigned URL for image: ${originalUrl}`, error);

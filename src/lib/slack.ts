@@ -8,9 +8,25 @@ const getSlackClient = () => {
   return new WebClient(process.env.SLACK_BOT_TOKEN);
 };
 
+// Extract image URLs from HTML
+export function extractImagesFromHtml(html: string): string[] {
+  const imgRegex = /<img[^>]+src="([^"]+)"/gi;
+  const images: string[] = [];
+  let match;
+
+  while ((match = imgRegex.exec(html)) !== null) {
+    images.push(match[1]);
+  }
+
+  return images;
+}
+
 // Convert HTML to Slack mrkdwn format
 export function htmlToMrkdwn(html: string): string {
   let text = html;
+
+  // Remove img tags (they'll be handled separately as image blocks)
+  text = text.replace(/<img[^>]*>/gi, "");
 
   // Convert headings
   text = text.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "*$1*\n\n");
@@ -82,6 +98,9 @@ export async function sendSlackDM(
   try {
     const client = getSlackClient();
 
+    // Extract images from HTML before converting to mrkdwn
+    const images = extractImagesFromHtml(bodyHtml);
+
     // Convert HTML to mrkdwn
     const mrkdwnBody = htmlToMrkdwn(bodyHtml) || "No content";
 
@@ -106,6 +125,20 @@ export async function sendSlackDM(
         },
       },
     ];
+
+    // Add image blocks for each inline image
+    for (let i = 0; i < images.length; i++) {
+      let imageUrl = images[i];
+      // Ensure URL has protocol
+      if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        imageUrl = `https://${imageUrl}`;
+      }
+      blocks.push({
+        type: "image",
+        image_url: imageUrl,
+        alt_text: `Image ${i + 1}`,
+      });
+    }
 
     // Add video section if provided
     if (videoUrl) {
