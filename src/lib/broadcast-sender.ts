@@ -358,10 +358,22 @@ export async function sendBroadcast(broadcastId: string): Promise<{
 
     console.log(`Broadcast ${broadcastId} targeting: ${targetSource}, found ${hosts.length} hosts`);
 
-    // Get sender's name
+    // Get sender's name (createdBy can be either host ID or Clerk user ID)
     let senderName = "LivePlay Team";
     if (broadcast.createdBy) {
-      const senderHosts = await getHostsByIds([broadcast.createdBy]);
+      // First try by host ID
+      let senderHosts = await getHostsByIds([broadcast.createdBy]);
+      // If not found, search by clerkUserId
+      if (senderHosts.length === 0) {
+        const allHosts = await dynamoDb.send(
+          new ScanCommand({
+            TableName: TABLES.HOSTS,
+            FilterExpression: "clerkUserId = :clerkId",
+            ExpressionAttributeValues: { ":clerkId": broadcast.createdBy },
+          })
+        );
+        senderHosts = (allHosts.Items || []) as Host[];
+      }
       if (senderHosts.length > 0) {
         senderName = `${senderHosts[0].firstName} ${senderHosts[0].lastName}`.trim();
       }
