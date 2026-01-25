@@ -82,7 +82,10 @@ export async function sendSlackDM(
     const client = getSlackClient();
 
     // Convert HTML to mrkdwn
-    const mrkdwnBody = htmlToMrkdwn(bodyHtml);
+    const mrkdwnBody = htmlToMrkdwn(bodyHtml) || "No content";
+
+    // Truncate subject for header block (max 150 chars)
+    const truncatedSubject = subject ? subject.substring(0, 150) : "Message";
 
     // Build blocks for rich formatting
     const blocks: Array<{
@@ -95,7 +98,7 @@ export async function sendSlackDM(
         type: "header",
         text: {
           type: "plain_text",
-          text: subject,
+          text: truncatedSubject,
         },
       },
       {
