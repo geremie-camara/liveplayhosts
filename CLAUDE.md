@@ -152,7 +152,7 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - `GET/POST /api/cron/send-broadcasts` - Process scheduled sends
 
 ### New Environment Variables
-- `SLACK_BOT_TOKEN` - Slack bot token for DMs
+- `SLACK_BOT_TOKEN` - Slack bot token for DMs (**Important:** In Amplify, set branch to "main", not "All branches")
 - `CRON_SECRET` - Auth secret for cron endpoint
 
 ### New Dependencies
@@ -199,6 +199,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | 9ab56dc | Fix Slack invalid_blocks error, clean up debug code (Amplify env var must use branch=main) |
 | 2026-01-23 | 1f123e3 | Fix Slack button block, increase rate limit to 50/day, add debug scripts |
 | 2026-01-23 | c84419f | Add comprehensive logging for broadcast channel delivery |
 | 2026-01-23 | 263e4a7 | Fix: Send route now checks targetUserIds (was only checking targetRoles) |
