@@ -3,7 +3,8 @@
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
-import { useCallback, useEffect } from "react";
+import Image from "@tiptap/extension-image";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface RichTextEditorProps {
   content: string;
@@ -16,6 +17,54 @@ export default function RichTextEditor({
   onChange,
   placeholder = "Write your message here...",
 }: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  // Upload image to S3 and return URL
+  const uploadImage = async (file: File): Promise<string | null> => {
+    try {
+      setUploading(true);
+
+      // Get presigned upload URL
+      const response = await fetch("/api/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          folder: "broadcast-images",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get upload URL");
+      }
+
+      const { uploadUrl, fileUrl } = await response.json();
+
+      // Upload to S3
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("Failed to upload image");
+      }
+
+      return fileUrl;
+    } catch (error) {
+      console.error("Image upload failed:", error);
+      alert("Failed to upload image. Please try again.");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -29,12 +78,56 @@ export default function RichTextEditor({
           class: "text-accent underline",
         },
       }),
+      Image.configure({
+        HTMLAttributes: {
+          class: "max-w-full h-auto rounded-lg my-4",
+        },
+      }),
     ],
     content,
     editorProps: {
       attributes: {
         class:
           "prose prose-sm max-w-none focus:outline-none min-h-[200px] px-4 py-3",
+      },
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.startsWith("image/")) {
+            event.preventDefault();
+            const file = item.getAsFile();
+            if (file) {
+              uploadImage(file).then((url) => {
+                if (url && editor) {
+                  editor.chain().focus().setImage({ src: url }).run();
+                }
+              });
+            }
+            return true;
+          }
+        }
+        return false;
+      },
+      handleDrop: (view, event) => {
+        const files = event.dataTransfer?.files;
+        if (!files || files.length === 0) return false;
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          if (file.type.startsWith("image/")) {
+            event.preventDefault();
+            uploadImage(file).then((url) => {
+              if (url && editor) {
+                editor.chain().focus().setImage({ src: url }).run();
+              }
+            });
+            return true;
+          }
+        }
+        return false;
       },
     },
     onUpdate: ({ editor }) => {
@@ -66,6 +159,26 @@ export default function RichTextEditor({
 
     editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run();
   }, [editor]);
+
+  const handleImageUpload = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  const handleFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !editor) return;
+
+      const url = await uploadImage(file);
+      if (url) {
+        editor.chain().focus().setImage({ src: url }).run();
+      }
+
+      // Reset input
+      event.target.value = "";
+    },
+    [editor]
+  );
 
   if (!editor) {
     return (
@@ -104,6 +217,15 @@ export default function RichTextEditor({
 
   return (
     <div className="border rounded-lg overflow-hidden">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+      />
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-1 p-2 border-b bg-gray-50">
         {/* Text formatting */}
@@ -202,6 +324,26 @@ export default function RichTextEditor({
 
         <div className="w-px h-6 bg-gray-300 mx-1" />
 
+        {/* Image */}
+        <ToolbarButton
+          onClick={handleImageUpload}
+          disabled={uploading}
+          title="Add Image"
+        >
+          {uploading ? (
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+            </svg>
+          )}
+        </ToolbarButton>
+
+        <div className="w-px h-6 bg-gray-300 mx-1" />
+
         {/* Blockquote */}
         <ToolbarButton
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
@@ -251,9 +393,10 @@ export default function RichTextEditor({
       {/* Editor */}
       <EditorContent editor={editor} />
 
-      {/* Character count */}
-      <div className="px-4 py-2 border-t bg-gray-50 text-xs text-gray-500">
-        {editor.storage.characterCount?.characters?.() || editor.getText().length} characters
+      {/* Footer with upload hint */}
+      <div className="px-4 py-2 border-t bg-gray-50 text-xs text-gray-500 flex justify-between">
+        <span>Tip: Paste or drag images directly into the editor</span>
+        <span>{editor.getText().length} characters</span>
       </div>
     </div>
   );

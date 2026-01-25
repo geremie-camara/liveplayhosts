@@ -17,6 +17,8 @@
     "@aws-sdk/s3-request-presigner": "^3.971.0",
     "@clerk/nextjs": "^6.36.8",
     "@slack/web-api": "^7.13.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tiptap/extension-image": "^3.17.1",
     "@tiptap/extension-link": "^3.17.0",
     "@tiptap/react": "^3.17.0",
     "@tiptap/starter-kit": "^3.17.0",

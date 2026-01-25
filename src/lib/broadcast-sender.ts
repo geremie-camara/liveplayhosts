@@ -13,6 +13,32 @@ import { sendBroadcastEmail, isEmailConfigured } from "./email";
 import { sendBroadcastSms, isSmsConfigured } from "./sms";
 import { getPresignedVideoUrl } from "./s3";
 
+// Process HTML to replace S3 image URLs with presigned URLs
+async function processHtmlImages(html: string): Promise<string> {
+  // Match all img tags with S3 URLs
+  const imgRegex = /<img[^>]+src="(https:\/\/[^"]*s3[^"]*amazonaws\.com[^"]*)"/g;
+  const matches = Array.from(html.matchAll(imgRegex));
+
+  if (matches.length === 0) {
+    return html;
+  }
+
+  let processedHtml = html;
+
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const originalUrl = match[1];
+    try {
+      const presignedUrl = await getPresignedVideoUrl(originalUrl);
+      processedHtml = processedHtml.replace(originalUrl, presignedUrl);
+    } catch (error) {
+      console.error(`Failed to get presigned URL for image: ${originalUrl}`, error);
+    }
+  }
+
+  return processedHtml;
+}
+
 // Get broadcast by ID
 export async function getBroadcast(broadcastId: string): Promise<Broadcast | null> {
   const result = await dynamoDb.send(
@@ -394,10 +420,18 @@ export async function sendBroadcast(broadcastId: string): Promise<{
       console.log(`Presigned URL generated: ${videoUrl.substring(0, 100)}...`);
     }
 
-    // Create a modified broadcast object with the presigned video URL
+    // Process bodyHtml to replace S3 image URLs with presigned URLs
+    let bodyHtml = broadcast.bodyHtml;
+    if (bodyHtml && bodyHtml.includes('s3') && bodyHtml.includes('amazonaws.com')) {
+      console.log(`Processing images in bodyHtml...`);
+      bodyHtml = await processHtmlImages(bodyHtml);
+    }
+
+    // Create a modified broadcast object with presigned URLs
     const broadcastWithPresignedUrl = {
       ...broadcast,
       videoUrl,
+      bodyHtml,
     };
 
     // 4. Initialize stats
