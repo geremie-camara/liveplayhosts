@@ -28,13 +28,13 @@ export function htmlToMrkdwn(html: string): string {
   // Remove img tags (they'll be handled separately as image blocks)
   text = text.replace(/<img[^>]*>/gi, "");
 
-  // Convert headings - use visual differentiation since Slack doesn't have font sizes
-  // H1: Bold with separator lines
-  text = text.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "*━━ $1 ━━*\n\n");
-  // H2: Bold with arrow prefix
-  text = text.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "*▸ $1*\n\n");
-  // H3: Bold italic
-  text = text.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "*_$1_*\n");
+  // Convert headings (Slack doesn't support underline, only bold/italic/strike)
+  // H1: Bold ALL CAPS
+  text = text.replace(/<h1[^>]*>(.*?)<\/h1>/gi, (_, content) => `*${String(content).toUpperCase()}*\n\n`);
+  // H2: Bold
+  text = text.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "*$1*\n\n");
+  // H3: Bold
+  text = text.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "*$1*\n");
 
   // Convert bold and italic
   text = text.replace(/<strong[^>]*>(.*?)<\/strong>/gi, "*$1*");
