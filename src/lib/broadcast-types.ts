@@ -73,6 +73,9 @@ export interface BroadcastTemplate {
   subject: string;               // Email subject template
   bodyHtml: string;              // HTML body template
   bodySms: string;               // SMS body template
+  videoUrl?: string;             // Optional video attachment (S3 URL)
+  linkUrl?: string;              // Optional CTA link
+  linkText?: string;             // CTA button text
   defaultChannels: BroadcastChannels;
   defaultUserSelection?: UserSelection; // Saved user selection
   variables: TemplateVariable[];
@@ -135,6 +138,9 @@ export interface TemplateFormData {
   subject: string;
   bodyHtml: string;
   bodySms: string;
+  videoUrl?: string;
+  linkUrl?: string;
+  linkText?: string;
   defaultChannels: BroadcastChannels;
   defaultUserSelection?: UserSelection;
   variables: TemplateVariable[];

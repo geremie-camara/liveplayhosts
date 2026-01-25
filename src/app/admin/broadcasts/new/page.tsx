@@ -12,9 +12,12 @@ export default function NewBroadcastPage() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const [templates, setTemplates] = useState<BroadcastTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [previewMode, setPreviewMode] = useState<"email" | "slack" | "sms">("email");
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState("");
 
   const [formData, setFormData] = useState<BroadcastFormData>({
     title: "",
@@ -61,6 +64,9 @@ export default function NewBroadcastPage() {
         subject: template.subject,
         bodyHtml: template.bodyHtml,
         bodySms: template.bodySms,
+        videoUrl: template.videoUrl || "",
+        linkUrl: template.linkUrl || "",
+        linkText: template.linkText || "",
         channels: template.defaultChannels,
         templateId: template.id,
         userSelection: template.defaultUserSelection || prev.userSelection,
@@ -238,6 +244,53 @@ export default function NewBroadcastPage() {
     }
   };
 
+  const handleSaveAsTemplate = async () => {
+    if (!templateName.trim()) {
+      alert("Please enter a template name");
+      return;
+    }
+
+    if (!formData.subject.trim() || !formData.bodyHtml.trim()) {
+      alert("Subject and message body are required to save as template");
+      return;
+    }
+
+    setSavingTemplate(true);
+    try {
+      const res = await fetch("/api/admin/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: templateName,
+          subject: formData.subject,
+          bodyHtml: formData.bodyHtml,
+          bodySms: formData.bodySms || "",
+          videoUrl: formData.videoUrl,
+          linkUrl: formData.linkUrl,
+          linkText: formData.linkText,
+          defaultChannels: formData.channels,
+          defaultUserSelection: formData.userSelection,
+          variables: [],
+        }),
+      });
+
+      if (res.ok) {
+        alert("Template saved successfully!");
+        setShowTemplateModal(false);
+        setTemplateName("");
+        fetchTemplates(); // Refresh templates list
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to save template");
+      }
+    } catch (error) {
+      console.error("Error saving template:", error);
+      alert("Failed to save template");
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
   return (
     <>
       <div className="mb-8">
@@ -254,232 +307,353 @@ export default function NewBroadcastPage() {
         <p className="text-gray-600 mt-2">Create and send a new message to your hosts.</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        {/* Form */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Template selector */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Start from template (optional)
+      <div className="max-w-4xl space-y-6">
+        {/* Template selector */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Start from template (optional)
+          </label>
+          <select
+            value={selectedTemplate}
+            onChange={(e) => handleTemplateSelect(e.target.value)}
+            className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
+          >
+            <option value="">Select a template...</option>
+            {templates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Channels */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="font-semibold text-dark mb-4">Delivery Channels *</h2>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.channels.slack}
+                onChange={(e) => handleChannelChange("slack", e.target.checked)}
+                className="rounded text-accent focus:ring-accent"
+              />
+              <span className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded">Slack</span>
+                Full message as DM
+              </span>
             </label>
-            <select
-              value={selectedTemplate}
-              onChange={(e) => handleTemplateSelect(e.target.value)}
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.channels.email}
+                onChange={(e) => handleChannelChange("email", e.target.checked)}
+                className="rounded text-accent focus:ring-accent"
+              />
+              <span className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">Email</span>
+                Full formatted email
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.channels.sms}
+                onChange={(e) => handleChannelChange("sms", e.target.checked)}
+                className="rounded text-accent focus:ring-accent"
+              />
+              <span className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">SMS</span>
+                Short text + link
+              </span>
+            </label>
+          </div>
+          <div className="mt-3 pt-3 border-t">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.channels.hostProducerChannel || false}
+                onChange={(e) => handleChannelChange("hostProducerChannel", e.target.checked)}
+                className="rounded text-accent focus:ring-accent"
+              />
+              <span className="flex items-center gap-2">
+                <span className="px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded">Host Producer Channel</span>
+                Also send to host&apos;s prod Slack ID
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Basic info */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+          <h2 className="font-semibold text-dark">Message Details</h2>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Title (internal reference) *
+            </label>
+            <input
+              type="text"
+              value={formData.title}
+              onChange={(e) => handleChange("title", e.target.value)}
               className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
-            >
-              <option value="">Select a template...</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Channels - moved to top */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-semibold text-dark mb-4">Delivery Channels *</h2>
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.channels.slack}
-                  onChange={(e) => handleChannelChange("slack", e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs bg-purple-100 text-purple-600 rounded">Slack</span>
-                  Full message as DM
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.channels.email}
-                  onChange={(e) => handleChannelChange("email", e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs bg-blue-100 text-blue-600 rounded">Email</span>
-                  Full formatted email
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.channels.sms}
-                  onChange={(e) => handleChannelChange("sms", e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded">SMS</span>
-                  Short text + link
-                </span>
-              </label>
-            </div>
-            <div className="mt-3 pt-3 border-t">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.channels.hostProducerChannel || false}
-                  onChange={(e) => handleChannelChange("hostProducerChannel", e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
-                />
-                <span className="flex items-center gap-2">
-                  <span className="px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded">Host Producer Channel</span>
-                  Also send to host&apos;s prod Slack ID
-                </span>
-              </label>
-            </div>
-          </div>
-
-          {/* Basic info */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-            <h2 className="font-semibold text-dark">Message Details</h2>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Title (internal reference) *
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => handleChange("title", e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
-                placeholder="e.g., Weekly Update - Jan 2025"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Subject *
-              </label>
-              <input
-                type="text"
-                value={formData.subject}
-                onChange={(e) => handleChange("subject", e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
-                placeholder="e.g., Important Update from LivePlay"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Message Body *
-              </label>
-              <RichTextEditor
-                content={formData.bodyHtml}
-                onChange={(html) => handleChange("bodyHtml", html)}
-                placeholder="Write your message here..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                SMS Text * <span className="text-gray-400">({formData.bodySms.length}/160)</span>
-              </label>
-              <textarea
-                value={formData.bodySms}
-                onChange={(e) => handleChange("bodySms", e.target.value)}
-                maxLength={160}
-                rows={2}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent ${
-                  formData.bodySms.length > 160 ? "border-red-500" : ""
-                }`}
-                placeholder="Short message for SMS (link to full message will be added)"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                A link to the full message will be automatically added to SMS.
-              </p>
-            </div>
-          </div>
-
-          {/* Optional fields */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
-            <h2 className="font-semibold text-dark">Optional Content</h2>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Video Attachment
-              </label>
-              <VideoUpload
-                value={formData.videoUrl || undefined}
-                onChange={(url) => handleChange("videoUrl", url || "")}
-                folder="broadcast-videos"
-                placeholder="Upload a video to include with your broadcast"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Video will be embedded in email and message center, and linked in Slack.
-              </p>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CTA Link URL
-                </label>
-                <input
-                  type="url"
-                  value={formData.linkUrl || ""}
-                  onChange={(e) => handleChange("linkUrl", e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
-                  placeholder="https://..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CTA Button Text
-                </label>
-                <input
-                  type="text"
-                  value={formData.linkText || ""}
-                  onChange={(e) => handleChange("linkText", e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
-                  placeholder="Learn More"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* User Selection */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-semibold text-dark mb-4">Select Recipients *</h2>
-            <UserSelector
-              value={formData.userSelection || { filterRoles: [], filterLocations: [], selectedUserIds: [] }}
-              onChange={handleUserSelectionChange}
+              placeholder="e.g., Weekly Update - Jan 2025"
             />
           </div>
 
-          {/* Schedule */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-semibold text-dark mb-4">Schedule (Optional)</h2>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Subject *
+            </label>
+            <input
+              type="text"
+              value={formData.subject}
+              onChange={(e) => handleChange("subject", e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
+              placeholder="e.g., Important Update from LivePlay"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Message Body *
+            </label>
+            <RichTextEditor
+              content={formData.bodyHtml}
+              onChange={(html) => handleChange("bodyHtml", html)}
+              placeholder="Write your message here..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              SMS Text {formData.channels.sms && "*"} <span className="text-gray-400">({formData.bodySms.length}/160)</span>
+            </label>
+            <textarea
+              value={formData.bodySms}
+              onChange={(e) => handleChange("bodySms", e.target.value)}
+              maxLength={160}
+              rows={2}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent ${
+                formData.bodySms.length > 160 ? "border-red-500" : ""
+              }`}
+              placeholder="Short message for SMS (link to full message will be added)"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              A link to the full message will be automatically added to SMS.
+            </p>
+          </div>
+        </div>
+
+        {/* Optional fields */}
+        <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+          <h2 className="font-semibold text-dark">Optional Content</h2>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Video Attachment
+            </label>
+            <VideoUpload
+              value={formData.videoUrl || undefined}
+              onChange={(url) => handleChange("videoUrl", url || "")}
+              folder="broadcast-videos"
+              placeholder="Upload a video to include with your broadcast"
+            />
+            <p className="text-xs text-gray-500 mt-2">
+              Video will be embedded in email and message center, and linked in Slack.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Send at specific time
+                CTA Link URL
               </label>
               <input
-                type="datetime-local"
-                value={formData.scheduledAt || ""}
-                onChange={(e) => handleChange("scheduledAt", e.target.value)}
-                min={new Date().toISOString().slice(0, 16)}
+                type="url"
+                value={formData.linkUrl || ""}
+                onChange={(e) => handleChange("linkUrl", e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
+                placeholder="https://..."
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Leave empty to send immediately, or select a future date/time.
-              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                CTA Button Text
+              </label>
+              <input
+                type="text"
+                value={formData.linkText || ""}
+                onChange={(e) => handleChange("linkText", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
+                placeholder="Learn More"
+              />
             </div>
           </div>
         </div>
 
-        {/* Preview & Actions */}
-        <div className="space-y-6">
-          {/* Actions */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 space-y-3">
-            <h2 className="font-semibold text-dark mb-4">Actions</h2>
+        {/* User Selection */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="font-semibold text-dark mb-4">Select Recipients *</h2>
+          <UserSelector
+            value={formData.userSelection || { filterRoles: [], filterLocations: [], selectedUserIds: [] }}
+            onChange={handleUserSelectionChange}
+          />
+        </div>
+
+        {/* Schedule */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="font-semibold text-dark mb-4">Schedule (Optional)</h2>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Send at specific time
+            </label>
+            <input
+              type="datetime-local"
+              value={formData.scheduledAt || ""}
+              onChange={(e) => handleChange("scheduledAt", e.target.value)}
+              min={new Date().toISOString().slice(0, 16)}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Leave empty to send immediately, or select a future date/time.
+            </p>
+          </div>
+        </div>
+
+        {/* Preview */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-semibold text-dark">Preview</h2>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setPreviewMode("email")}
+                className={`px-3 py-1 text-xs rounded ${
+                  previewMode === "email"
+                    ? "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                Email
+              </button>
+              <button
+                onClick={() => setPreviewMode("slack")}
+                className={`px-3 py-1 text-xs rounded ${
+                  previewMode === "slack"
+                    ? "bg-purple-100 text-purple-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                Slack
+              </button>
+              <button
+                onClick={() => setPreviewMode("sms")}
+                className={`px-3 py-1 text-xs rounded ${
+                  previewMode === "sms"
+                    ? "bg-green-100 text-green-600"
+                    : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                SMS
+              </button>
+            </div>
+          </div>
+
+          <div className="border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
+            {previewMode === "email" && (
+              <div>
+                <div className="text-xs text-gray-500 mb-2">Subject: {formData.subject || "(no subject)"}</div>
+                <div
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: formData.bodyHtml || "<p>(no content)</p>" }}
+                />
+                {formData.videoUrl && (
+                  <div className="mt-4 p-4 bg-gray-200 rounded text-center text-sm text-gray-600">
+                    [Video: {formData.videoUrl}]
+                  </div>
+                )}
+                {formData.linkUrl && (
+                  <div className="mt-4">
+                    <span className="inline-block px-4 py-2 bg-accent text-white rounded text-sm">
+                      {formData.linkText || "Learn More"}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {previewMode === "slack" && (
+              <div className="font-mono text-sm">
+                <div className="font-bold mb-2">{formData.subject || "(no subject)"}</div>
+                <div className="whitespace-pre-wrap">
+                  {formData.bodyHtml
+                    ? formData.bodyHtml.replace(/<[^>]+>/g, "").trim()
+                    : "(no content)"}
+                </div>
+                {formData.videoUrl && (
+                  <div className="mt-2 text-blue-600">{formData.videoUrl}</div>
+                )}
+                {formData.linkUrl && (
+                  <div className="mt-2">
+                    <span className="text-blue-600">[{formData.linkText || "Learn More"}]</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {previewMode === "sms" && (
+              <div className="font-mono text-sm">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  New message: {formData.subject || "(subject)"}. {formData.bodySms || "(message)"}
+                  {" "}Read: https://liveplayhosts.com/messages/...
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  ~{(formData.bodySms?.length || 0) + 60} characters
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Summary */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="font-semibold text-dark mb-4">Summary</h2>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Recipients:</span>
+              <span className="font-medium">{formData.userSelection?.selectedUserIds.length || 0} users</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Channels:</span>
+              <span className="font-medium">
+                {[
+                  formData.channels.slack && "Slack",
+                  formData.channels.email && "Email",
+                  formData.channels.sms && "SMS",
+                ]
+                  .filter(Boolean)
+                  .join(", ") || "None"}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Schedule:</span>
+              <span className="font-medium">
+                {formData.scheduledAt
+                  ? new Date(formData.scheduledAt).toLocaleString()
+                  : "Immediate"}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h2 className="font-semibold text-dark mb-4">Actions</h2>
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={handleSaveDraft}
               disabled={saving || sending}
-              className="w-full px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-2"
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
             >
               {saving ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600" />
@@ -491,11 +665,22 @@ export default function NewBroadcastPage() {
               Save as Draft
             </button>
 
+            <button
+              onClick={() => setShowTemplateModal(true)}
+              disabled={saving || sending}
+              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Save as Template
+            </button>
+
             {formData.scheduledAt ? (
               <button
                 onClick={handleSchedule}
                 disabled={saving || sending}
-                className="w-full px-4 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 flex items-center gap-2"
               >
                 {sending ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -510,7 +695,7 @@ export default function NewBroadcastPage() {
               <button
                 onClick={handleSendNow}
                 disabled={saving || sending}
-                className="w-full px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="px-6 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50 flex items-center gap-2"
               >
                 {sending ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -523,133 +708,54 @@ export default function NewBroadcastPage() {
               </button>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Preview */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold text-dark">Preview</h2>
-              <div className="flex gap-1">
-                <button
-                  onClick={() => setPreviewMode("email")}
-                  className={`px-3 py-1 text-xs rounded ${
-                    previewMode === "email"
-                      ? "bg-blue-100 text-blue-600"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  Email
-                </button>
-                <button
-                  onClick={() => setPreviewMode("slack")}
-                  className={`px-3 py-1 text-xs rounded ${
-                    previewMode === "slack"
-                      ? "bg-purple-100 text-purple-600"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  Slack
-                </button>
-                <button
-                  onClick={() => setPreviewMode("sms")}
-                  className={`px-3 py-1 text-xs rounded ${
-                    previewMode === "sms"
-                      ? "bg-green-100 text-green-600"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  SMS
-                </button>
-              </div>
+      {/* Save as Template Modal */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-dark mb-4">Save as Template</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Save the current message content, video, CTA link, channels, and recipients as a reusable template.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Template Name *
+              </label>
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
+                placeholder="e.g., Weekly Host Update"
+                autoFocus
+              />
             </div>
-
-            <div className="border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
-              {previewMode === "email" && (
-                <div>
-                  <div className="text-xs text-gray-500 mb-2">Subject: {formData.subject || "(no subject)"}</div>
-                  <div
-                    className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: formData.bodyHtml || "<p>(no content)</p>" }}
-                  />
-                  {formData.videoUrl && (
-                    <div className="mt-4 p-4 bg-gray-200 rounded text-center text-sm text-gray-600">
-                      [Video: {formData.videoUrl}]
-                    </div>
-                  )}
-                  {formData.linkUrl && (
-                    <div className="mt-4">
-                      <span className="inline-block px-4 py-2 bg-accent text-white rounded text-sm">
-                        {formData.linkText || "Learn More"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {previewMode === "slack" && (
-                <div className="font-mono text-sm">
-                  <div className="font-bold mb-2">{formData.subject || "(no subject)"}</div>
-                  <div className="whitespace-pre-wrap">
-                    {formData.bodyHtml
-                      ? formData.bodyHtml.replace(/<[^>]+>/g, "").trim()
-                      : "(no content)"}
-                  </div>
-                  {formData.videoUrl && (
-                    <div className="mt-2 text-blue-600">{formData.videoUrl}</div>
-                  )}
-                  {formData.linkUrl && (
-                    <div className="mt-2">
-                      <span className="text-blue-600">[{formData.linkText || "Learn More"}]</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {previewMode === "sms" && (
-                <div className="font-mono text-sm">
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    New message: {formData.subject || "(subject)"}. {formData.bodySms || "(message)"}
-                    {" "}Read: https://liveplayhosts.com/messages/...
-                  </div>
-                  <div className="text-xs text-gray-500 mt-2">
-                    ~{(formData.bodySms?.length || 0) + 60} characters
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
-            <h2 className="font-semibold text-dark mb-4">Summary</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Recipients:</span>
-                <span className="font-medium">{formData.userSelection?.selectedUserIds.length || 0} users</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Channels:</span>
-                <span className="font-medium">
-                  {[
-                    formData.channels.slack && "Slack",
-                    formData.channels.email && "Email",
-                    formData.channels.sms && "SMS",
-                  ]
-                    .filter(Boolean)
-                    .join(", ") || "None"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Schedule:</span>
-                <span className="font-medium">
-                  {formData.scheduledAt
-                    ? new Date(formData.scheduledAt).toLocaleString()
-                    : "Immediate"}
-                </span>
-              </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowTemplateModal(false);
+                  setTemplateName("");
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAsTemplate}
+                disabled={savingTemplate || !templateName.trim()}
+                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 disabled:opacity-50 flex items-center gap-2"
+              >
+                {savingTemplate && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                )}
+                Save Template
+              </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }
