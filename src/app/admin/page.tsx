@@ -1,6 +1,64 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
+interface DashboardCounts {
+  applicants: number;
+  hosts: number;
+  producers: number;
+  management: number;
+  total: number;
+}
+
 export default function AdminPage() {
+  const [counts, setCounts] = useState<DashboardCounts>({
+    applicants: 0,
+    hosts: 0,
+    producers: 0,
+    management: 0,
+    total: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchCounts();
+  }, []);
+
+  async function fetchCounts() {
+    try {
+      const response = await fetch("/api/hosts?countOnly=true");
+      if (response.ok) {
+        const hosts = await response.json();
+        const newCounts: DashboardCounts = {
+          applicants: 0,
+          hosts: 0,
+          producers: 0,
+          management: 0,
+          total: hosts.length,
+        };
+
+        hosts.forEach((host: { role: string }) => {
+          if (host.role === "applicant") {
+            newCounts.applicants++;
+          } else if (host.role === "host") {
+            newCounts.hosts++;
+          } else if (host.role === "producer") {
+            newCounts.producers++;
+          } else if (["talent", "admin", "owner", "finance", "hr"].includes(host.role)) {
+            newCounts.management++;
+          }
+        });
+
+        setCounts(newCounts);
+      }
+    } catch (error) {
+      console.error("Error fetching counts:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <>
       <div className="mb-8">
@@ -12,20 +70,38 @@ export default function AdminPage() {
 
       {/* Quick Stats */}
       <div className="grid md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="text-3xl font-bold text-yellow-600">2</div>
+        <Link
+          href="/admin/users?tab=applicants"
+          className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow"
+        >
+          <div className="flex items-center justify-between">
+            <div className={`text-3xl font-bold ${counts.applicants > 0 ? "text-red-600" : "text-gray-400"}`}>
+              {loading ? "..." : counts.applicants}
+            </div>
+            {counts.applicants > 0 && (
+              <span className="px-3 py-1 text-sm font-bold bg-red-500 text-white rounded-full animate-pulse">
+                Action Needed
+              </span>
+            )}
+          </div>
           <div className="text-gray-600 mt-1">Pending Applicants</div>
+        </Link>
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="text-3xl font-bold text-green-600">
+            {loading ? "..." : counts.hosts}
+          </div>
+          <div className="text-gray-600 mt-1">Active Hosts</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="text-3xl font-bold text-blue-600">1</div>
-          <div className="text-gray-600 mt-1">Invited</div>
+          <div className="text-3xl font-bold text-purple-600">
+            {loading ? "..." : counts.producers}
+          </div>
+          <div className="text-gray-600 mt-1">Producers</div>
         </div>
         <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="text-3xl font-bold text-green-600">3</div>
-          <div className="text-gray-600 mt-1">Active Users</div>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-          <div className="text-3xl font-bold text-primary">6</div>
+          <div className="text-3xl font-bold text-primary">
+            {loading ? "..." : counts.total}
+          </div>
           <div className="text-gray-600 mt-1">Total Users</div>
         </div>
       </div>
@@ -58,9 +134,14 @@ export default function AdminPage() {
         </Link>
 
         <Link
-          href="/admin/users?status=applicant"
-          className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow"
+          href="/admin/users?tab=applicants"
+          className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow relative"
         >
+          {counts.applicants > 0 && (
+            <span className="absolute top-4 right-4 px-2.5 py-1 text-xs font-bold bg-red-500 text-white rounded-full">
+              {counts.applicants}
+            </span>
+          )}
           <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mb-4">
             <svg
               className="w-6 h-6 text-yellow-600"
@@ -79,6 +160,31 @@ export default function AdminPage() {
           <h3 className="text-lg font-semibold text-dark">Review Applications</h3>
           <p className="text-gray-600 mt-1">
             Review pending applications and approve or reject.
+          </p>
+        </Link>
+
+        <Link
+          href="/admin/broadcasts"
+          className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow"
+        >
+          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4">
+            <svg
+              className="w-6 h-6 text-blue-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-dark">Broadcasts</h3>
+          <p className="text-gray-600 mt-1">
+            Send messages via Slack, Email, and SMS.
           </p>
         </Link>
 
@@ -107,6 +213,37 @@ export default function AdminPage() {
           </p>
         </Link>
 
+        <Link
+          href="/admin/locations"
+          className="bg-white rounded-2xl shadow-sm p-6 hover:shadow-md transition-shadow"
+        >
+          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4">
+            <svg
+              className="w-6 h-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-dark">Locations</h3>
+          <p className="text-gray-600 mt-1">
+            Manage location tags for user filtering.
+          </p>
+        </Link>
+
         <div className="bg-white rounded-2xl shadow-sm p-6 opacity-50 cursor-not-allowed">
           <div className="w-12 h-12 bg-secondary-100 rounded-xl flex items-center justify-center mb-4">
             <svg
@@ -126,34 +263,6 @@ export default function AdminPage() {
           <h3 className="text-lg font-semibold text-dark">Analytics</h3>
           <p className="text-gray-600 mt-1">
             View performance metrics and reports. (Coming soon)
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm p-6 opacity-50 cursor-not-allowed">
-          <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-            <svg
-              className="w-6 h-6 text-gray-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-semibold text-dark">Settings</h3>
-          <p className="text-gray-600 mt-1">
-            Configure system settings. (Coming soon)
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Host, UserRole, ROLE_CONFIG } from "@/lib/types";
 import { ROLE_NAMES, ROLE_COLORS } from "@/lib/roles";
@@ -21,15 +22,35 @@ function formatPhone(phone: string): string {
   return phone; // Return original if can't format
 }
 
+interface RoleCounts {
+  all: number;
+  hosts: number;
+  producers: number;
+  applicants: number;
+  rejected: number;
+  management: number;
+}
+
 export default function AdminUsersPage() {
+  const searchParams = useSearchParams();
+  const initialTab = (searchParams.get("tab") as Tab) || "all";
+
   const [hosts, setHosts] = useState<Host[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>("all");
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [search, setSearch] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [addingHost, setAddingHost] = useState(false);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [counts, setCounts] = useState<RoleCounts>({
+    all: 0,
+    hosts: 0,
+    producers: 0,
+    applicants: 0,
+    rejected: 0,
+    management: 0,
+  });
   const [newHost, setNewHost] = useState({
     firstName: "",
     lastName: "",
@@ -41,8 +62,50 @@ export default function AdminUsersPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    fetchCounts();
+  }, []);
+
+  useEffect(() => {
     fetchHosts();
   }, [activeTab, roleFilter, search]);
+
+  async function fetchCounts() {
+    try {
+      const response = await fetch("/api/hosts?countOnly=true");
+      if (response.ok) {
+        const allHosts: Host[] = await response.json();
+        const newCounts: RoleCounts = {
+          all: 0,
+          hosts: 0,
+          producers: 0,
+          applicants: 0,
+          rejected: 0,
+          management: 0,
+        };
+
+        allHosts.forEach((host) => {
+          if (host.role === "applicant") {
+            newCounts.applicants++;
+          } else if (host.role === "rejected") {
+            newCounts.rejected++;
+          } else if (host.role === "host") {
+            newCounts.hosts++;
+            newCounts.all++;
+          } else if (host.role === "producer") {
+            newCounts.producers++;
+            newCounts.all++;
+          } else if (["talent", "admin", "owner", "finance", "hr"].includes(host.role)) {
+            newCounts.management++;
+            newCounts.all++;
+          }
+        });
+
+        setCounts(newCounts);
+      }
+    } catch (error) {
+      console.error("Error fetching counts:", error);
+    }
+  }
 
   async function fetchHosts() {
     setLoading(true);
@@ -128,6 +191,7 @@ export default function AdminUsersPage() {
           role: "host",
         });
         fetchHosts();
+        fetchCounts();
       } else {
         const data = await response.json();
         alert(data.error || "Failed to add user");
@@ -153,6 +217,7 @@ export default function AdminUsersPage() {
           alert(data.message);
         }
         fetchHosts();
+        fetchCounts();
       }
     } catch (error) {
       console.error("Error approving user:", error);
@@ -168,6 +233,7 @@ export default function AdminUsersPage() {
       });
       if (response.ok) {
         fetchHosts();
+        fetchCounts();
       }
     } catch (error) {
       console.error("Error rejecting user:", error);
@@ -184,6 +250,7 @@ export default function AdminUsersPage() {
       if (response.ok) {
         setDeleteConfirm(null);
         fetchHosts();
+        fetchCounts();
       } else {
         const data = await response.json();
         alert(data.error || "Failed to delete user");
@@ -222,63 +289,87 @@ export default function AdminUsersPage() {
           <nav className="-mb-px flex gap-6 overflow-x-auto">
             <button
               onClick={() => setActiveTab("all")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "all"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               All Users
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.all}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("hosts")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "hosts"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Hosts
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.hosts}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("producers")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "producers"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Producers
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.producers}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("applicants")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "applicants"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Applicants
+              {counts.applicants > 0 ? (
+                <span className="px-2 py-0.5 text-xs rounded-full bg-red-500 text-white font-semibold">
+                  {counts.applicants}
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                  0
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab("rejected")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "rejected"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Rejected
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.rejected}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("management")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "management"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Management
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.management}
+              </span>
             </button>
           </nav>
         </div>

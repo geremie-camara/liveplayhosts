@@ -23,6 +23,13 @@ interface DirectoryHost {
 
 type Tab = "all" | "hosts" | "producers" | "management";
 
+interface TabCounts {
+  all: number;
+  hosts: number;
+  producers: number;
+  management: number;
+}
+
 function formatPhone(phone: string): string {
   if (!phone) return "";
   const digits = phone.replace(/\D/g, "");
@@ -41,10 +48,50 @@ export default function DirectoryList() {
   const [activeTab, setActiveTab] = useState<Tab>("all");
   const [search, setSearch] = useState("");
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [counts, setCounts] = useState<TabCounts>({
+    all: 0,
+    hosts: 0,
+    producers: 0,
+    management: 0,
+  });
+
+  useEffect(() => {
+    fetchCounts();
+  }, []);
 
   useEffect(() => {
     fetchHosts();
   }, [activeTab, search]);
+
+  async function fetchCounts() {
+    try {
+      // Fetch all active users to count
+      const response = await fetch("/api/directory");
+      if (response.ok) {
+        const allHosts: DirectoryHost[] = await response.json();
+        const newCounts: TabCounts = {
+          all: allHosts.length,
+          hosts: 0,
+          producers: 0,
+          management: 0,
+        };
+
+        allHosts.forEach((host) => {
+          if (host.role === "host") {
+            newCounts.hosts++;
+          } else if (host.role === "producer") {
+            newCounts.producers++;
+          } else if (["talent", "admin", "owner", "finance", "hr"].includes(host.role)) {
+            newCounts.management++;
+          }
+        });
+
+        setCounts(newCounts);
+      }
+    } catch (error) {
+      console.error("Error fetching counts:", error);
+    }
+  }
 
   async function fetchHosts() {
     setLoading(true);
@@ -118,43 +165,55 @@ export default function DirectoryList() {
           <nav className="-mb-px flex gap-6 overflow-x-auto">
             <button
               onClick={() => setActiveTab("all")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "all"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               All
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.all}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("hosts")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "hosts"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Hosts
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.hosts}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("producers")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "producers"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Producers
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.producers}
+              </span>
             </button>
             <button
               onClick={() => setActiveTab("management")}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap flex items-center gap-2 ${
                 activeTab === "management"
                   ? "border-accent text-accent"
                   : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
               }`}
             >
               Management
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                {counts.management}
+              </span>
             </button>
           </nav>
         </div>
