@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-26 | ea49f74 | Add PWA icons for home screen installation |
 | 2026-01-26 | 486ffdd | Optimize training pages for mobile (responsive text, padding, grids) |
 | 2026-01-26 | 17666f3 | Optimize messages and dashboard pages for mobile (responsive padding, text, grids) |
 | 2026-01-26 | 8d2a10d | Optimize profile form for mobile (responsive grids, smaller media) |
