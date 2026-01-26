@@ -169,11 +169,14 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 ### New Environment Variables
 - `SLACK_BOT_TOKEN` - Slack bot token for DMs (**Important:** In Amplify, set branch to "main", not "All branches")
 - `CRON_SECRET` - Auth secret for cron endpoint
+- `TWILIO_ACCOUNT_SID` - Twilio account SID for SMS
+- `TWILIO_AUTH_TOKEN` - Twilio auth token for SMS
+- `TWILIO_PHONE_NUMBER` - Twilio phone number (E.164 format, e.g., +1XXXXXXXXXX)
 
 ### New Dependencies
 - `@slack/web-api` - Slack messaging
 - `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-link` - WYSIWYG editor
-- `@aws-sdk/client-sns` - SMS via AWS SNS
+- `twilio` - SMS via Twilio
 
 ## DynamoDB Tables
 

@@ -1,15 +1,15 @@
-import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+import Twilio from "twilio";
 
-// Initialize SNS client using the same AWS credentials as S3
-// Note: SMS uses us-east-1 region (us-west-2 requires registered origination number)
-const getSnsClient = () => {
-  return new SNSClient({
-    region: "us-east-1",
-    credentials: {
-      accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
-      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
-    },
-  });
+// Initialize Twilio client
+const getTwilioClient = () => {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  if (!accountSid || !authToken) {
+    return null;
+  }
+
+  return Twilio(accountSid, authToken);
 };
 
 interface SMSResult {
@@ -54,26 +54,24 @@ export function truncateForSms(message: string, maxLength: number = 160): string
 
 // Build SMS message with link
 export function buildSmsMessage(
-  subject: string,
   bodySms: string,
   messageUrl: string
 ): string {
-  // Template: "New message from LivePlay: {subject}. {bodySms} Read more: {url}"
-  const prefix = `New message: ${subject}. `;
-  const suffix = ` Read: ${messageUrl}`;
+  // Append the URL to the message
+  const suffix = ` ${messageUrl}`;
 
   // Calculate available space for body
-  const availableForBody = 160 - prefix.length - suffix.length;
+  const availableForBody = 160 - suffix.length;
 
   let body = bodySms;
   if (body.length > availableForBody) {
     body = body.substring(0, availableForBody - 3) + "...";
   }
 
-  return `${prefix}${body}${suffix}`;
+  return `${body}${suffix}`;
 }
 
-// Send SMS via AWS SNS
+// Send SMS via Twilio
 export async function sendSms(
   phoneNumber: string,
   message: string
@@ -87,29 +85,33 @@ export async function sendSms(
       };
     }
 
+    const client = getTwilioClient();
+    if (!client) {
+      return {
+        success: false,
+        error: "Twilio not configured (missing TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN)",
+      };
+    }
+
+    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+    if (!twilioPhoneNumber) {
+      return {
+        success: false,
+        error: "Twilio phone number not configured (missing TWILIO_PHONE_NUMBER)",
+      };
+    }
+
     const formattedPhone = formatPhoneE164(phoneNumber);
-    const client = getSnsClient();
 
-    const command = new PublishCommand({
-      PhoneNumber: formattedPhone,
-      Message: truncateForSms(message),
-      MessageAttributes: {
-        "AWS.SNS.SMS.SMSType": {
-          DataType: "String",
-          StringValue: "Transactional", // Higher delivery priority
-        },
-        "AWS.SNS.SMS.SenderID": {
-          DataType: "String",
-          StringValue: "LivePlay", // Sender ID (may not be supported in all regions)
-        },
-      },
+    const result = await client.messages.create({
+      body: truncateForSms(message),
+      from: twilioPhoneNumber,
+      to: formattedPhone,
     });
-
-    const result = await client.send(command);
 
     return {
       success: true,
-      messageId: result.MessageId,
+      messageId: result.sid,
     };
   } catch (error) {
     console.error("Failed to send SMS:", error);
@@ -130,13 +132,17 @@ export async function sendBroadcastSms(
   // Build URL to message in message center
   const messageUrl = `https://www.liveplayhosts.com/messages/${broadcastId}`;
 
-  // Build the full SMS message
-  const message = buildSmsMessage(subject, bodySms, messageUrl);
+  // Build the full SMS message (bodySms already includes the subject from auto-populate)
+  const message = buildSmsMessage(bodySms, messageUrl);
 
   return sendSms(phoneNumber, message);
 }
 
-// Check if SNS is configured (uses same credentials as S3)
+// Check if Twilio is configured
 export function isSmsConfigured(): boolean {
-  return !!(process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY);
+  return !!(
+    process.env.TWILIO_ACCOUNT_SID &&
+    process.env.TWILIO_AUTH_TOKEN &&
+    process.env.TWILIO_PHONE_NUMBER
+  );
 }
