@@ -1,18 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import RichTextEditor from "@/components/RichTextEditor";
 import VideoUpload from "@/components/VideoUpload";
 import UserSelector from "@/components/UserSelector";
-import { BroadcastFormData, BroadcastTemplate, BroadcastChannels, UserSelection } from "@/lib/broadcast-types";
+import { Broadcast, BroadcastFormData, BroadcastTemplate, BroadcastChannels, UserSelection } from "@/lib/broadcast-types";
 
 export default function NewBroadcastPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const duplicateId = searchParams.get("duplicate");
+
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [savingTemplate, setSavingTemplate] = useState(false);
+  const [loadingDuplicate, setLoadingDuplicate] = useState(!!duplicateId);
   const [templates, setTemplates] = useState<BroadcastTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState("");
   const [previewMode, setPreviewMode] = useState<"email" | "slack" | "sms">("email");
@@ -39,7 +43,42 @@ export default function NewBroadcastPage() {
 
   useEffect(() => {
     fetchTemplates();
-  }, []);
+    if (duplicateId) {
+      fetchDuplicateBroadcast(duplicateId);
+    }
+  }, [duplicateId]);
+
+  const fetchDuplicateBroadcast = async (id: string) => {
+    setLoadingDuplicate(true);
+    try {
+      const res = await fetch(`/api/admin/broadcasts/${id}`);
+      if (res.ok) {
+        const broadcast: Broadcast = await res.json();
+        setFormData({
+          title: `Copy of ${broadcast.title}`,
+          subject: broadcast.subject,
+          bodyHtml: broadcast.bodyHtml,
+          bodySms: broadcast.bodySms || "",
+          videoUrl: broadcast.videoUrl || "",
+          linkUrl: broadcast.linkUrl || "",
+          linkText: broadcast.linkText || "",
+          targetRoles: broadcast.targetRoles || [],
+          targetUserIds: broadcast.targetUserIds,
+          userSelection: broadcast.userSelection || {
+            filterRoles: broadcast.targetRoles || [],
+            filterLocations: broadcast.targetLocations || [],
+            selectedUserIds: broadcast.targetUserIds || [],
+          },
+          channels: broadcast.channels,
+          scheduledAt: "",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching broadcast to duplicate:", error);
+    } finally {
+      setLoadingDuplicate(false);
+    }
+  };
 
   const fetchTemplates = async () => {
     try {
@@ -303,10 +342,22 @@ export default function NewBroadcastPage() {
           </svg>
           Back to Broadcasts
         </Link>
-        <h1 className="text-3xl font-bold text-primary">New Broadcast</h1>
-        <p className="text-gray-600 mt-2">Create and send a new message to your hosts.</p>
+        <h1 className="text-3xl font-bold text-primary">
+          {duplicateId ? "Resend Broadcast" : "New Broadcast"}
+        </h1>
+        <p className="text-gray-600 mt-2">
+          {duplicateId
+            ? "Create a new broadcast based on a previous one. Modify as needed and send."
+            : "Create and send a new message to your hosts."}
+        </p>
       </div>
 
+      {loadingDuplicate ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+          <span className="ml-3 text-gray-600">Loading broadcast data...</span>
+        </div>
+      ) : (
       <div className="max-w-4xl space-y-6">
         {/* Template selector */}
         <div className="bg-white rounded-2xl shadow-sm p-6">
@@ -710,6 +761,7 @@ export default function NewBroadcastPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Save as Template Modal */}
       {showTemplateModal && (

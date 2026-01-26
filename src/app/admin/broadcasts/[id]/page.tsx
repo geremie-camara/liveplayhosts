@@ -551,7 +551,7 @@ export default function BroadcastDetailPage() {
 
         {/* Actions sidebar */}
         <div className="space-y-6">
-          {isEditable && (
+          {isEditable ? (
             <div className="bg-white rounded-2xl shadow-sm p-6 space-y-3">
               <h2 className="font-semibold text-dark mb-4">Actions</h2>
               <button
@@ -582,6 +582,19 @@ export default function BroadcastDetailPage() {
                 )}
                 Send Now
               </button>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-sm p-6 space-y-3">
+              <h2 className="font-semibold text-dark mb-4">Actions</h2>
+              <Link
+                href={`/admin/broadcasts/new?duplicate=${id}`}
+                className="w-full px-4 py-3 bg-accent text-white rounded-lg hover:bg-accent/90 flex items-center justify-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+                Resend as New
+              </Link>
             </div>
           )}
 
