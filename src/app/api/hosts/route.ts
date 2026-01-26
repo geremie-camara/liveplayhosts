@@ -134,32 +134,150 @@ export async function POST(request: NextRequest) {
     // Send email notification for new applications
     if (body.source === "application" && process.env.RESEND_API_KEY) {
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const notificationEmails = (process.env.NOTIFICATION_EMAILS || "").split(",").filter(Boolean);
+      // Default to a fallback email if NOTIFICATION_EMAILS is not set
+      const notificationEmails = (process.env.NOTIFICATION_EMAILS || "geremie@liveplayservices.com").split(",").filter(Boolean);
 
-      if (notificationEmails.length > 0) {
+      console.log(`Sending application notification email to: ${notificationEmails.join(", ")}`);
+
+      try {
+        const result = await resend.emails.send({
+          from: "LivePlay <noreply@liveplayhosts.com>",
+          to: notificationEmails,
+          subject: `New Host Application: ${newHost.firstName} ${newHost.lastName}`,
+          html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <img src="https://www.liveplayhosts.com/logo.png" alt="LivePlay" style="height: 40px; width: auto;" />
+    </div>
+    <div style="background: white; border-radius: 16px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+      <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1a1a2e;">
+        New Host Application
+      </h1>
+      <div style="background: #fef3c7; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #92400e; font-weight: 500;">Action Required: Review this application</p>
+      </div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #6b7280; width: 120px;">Name</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #1a1a2e; font-weight: 500;">${newHost.firstName} ${newHost.lastName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #6b7280;">Email</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;"><a href="mailto:${newHost.email}" style="color: #667eea;">${newHost.email}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #6b7280;">Phone</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;"><a href="tel:${newHost.phone}" style="color: #667eea;">${newHost.phone}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #6b7280;">Location</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #1a1a2e;">${newHost.address.city}, ${newHost.address.state} ${newHost.address.zip}</td>
+        </tr>
+        ${newHost.socialProfiles?.instagram ? `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #6b7280;">Instagram</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;"><a href="https://instagram.com/${newHost.socialProfiles.instagram.replace('@', '')}" style="color: #667eea;" target="_blank">${newHost.socialProfiles.instagram}</a></td>
+        </tr>
+        ` : ""}
+        ${newHost.socialProfiles?.tiktok ? `
+        <tr>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee; color: #6b7280;">TikTok</td>
+          <td style="padding: 12px 0; border-bottom: 1px solid #eee;"><a href="https://tiktok.com/${newHost.socialProfiles.tiktok.replace('@', '')}" style="color: #667eea;" target="_blank">${newHost.socialProfiles.tiktok}</a></td>
+        </tr>
+        ` : ""}
+      </table>
+      <div style="margin-top: 24px;">
+        <p style="color: #6b7280; margin: 0 0 8px 0; font-weight: 500;">Experience:</p>
+        <p style="color: #1a1a2e; margin: 0; white-space: pre-wrap;">${newHost.experience}</p>
+      </div>
+      ${newHost.headshotUrl || newHost.videoReelUrl ? `
+      <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #eee;">
+        <p style="color: #6b7280; margin: 0 0 12px 0; font-weight: 500;">Attachments:</p>
+        ${newHost.headshotUrl ? `<p style="margin: 0 0 8px 0;"><a href="${newHost.headshotUrl}" style="color: #667eea;" target="_blank">View Headshot Photo</a></p>` : ""}
+        ${newHost.videoReelUrl ? `<p style="margin: 0;"><a href="${newHost.videoReelUrl}" style="color: #667eea;" target="_blank">View Video Reel</a></p>` : ""}
+      </div>
+      ` : ""}
+      <div style="margin-top: 30px; text-align: center;">
+        <a href="https://www.liveplayhosts.com/admin/users?tab=applicants" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+          Review Application
+        </a>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #8a8a9a;">
+      <p style="margin: 0;">This notification was sent from LivePlay Hosts</p>
+    </div>
+  </div>
+</body>
+</html>
+          `,
+        });
+        console.log(`Application notification email sent successfully:`, result);
+
+        // Also send confirmation email to the applicant
         try {
           await resend.emails.send({
-            from: "LivePlay Hosts <onboarding@resend.dev>",
-            to: notificationEmails,
-            subject: `New Host Application: ${newHost.firstName} ${newHost.lastName}`,
+            from: "LivePlay <noreply@liveplayhosts.com>",
+            to: [newHost.email],
+            subject: "We received your application!",
             html: `
-              <h2>New Host Application Received</h2>
-              <p><strong>Name:</strong> ${newHost.firstName} ${newHost.lastName}</p>
-              <p><strong>Email:</strong> ${newHost.email}</p>
-              <p><strong>Phone:</strong> ${newHost.phone}</p>
-              <p><strong>Location:</strong> ${newHost.address.city}, ${newHost.address.state}</p>
-              <p><strong>Experience:</strong></p>
-              <p>${newHost.experience}</p>
-              ${newHost.headshotUrl ? `<p><strong>Headshot:</strong> <a href="${newHost.headshotUrl}">View</a></p>` : ""}
-              ${newHost.videoReelUrl ? `<p><strong>Video Reel:</strong> <a href="${newHost.videoReelUrl}">View</a></p>` : ""}
-              <hr />
-              <p><a href="https://www.liveplayhosts.com/admin/users">View in Admin Panel</a></p>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f5f5f5;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="text-align: center; margin-bottom: 30px;">
+      <img src="https://www.liveplayhosts.com/logo.png" alt="LivePlay" style="height: 40px; width: auto;" />
+    </div>
+    <div style="background: white; border-radius: 16px; padding: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+      <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; color: #1a1a2e;">
+        Thanks for applying, ${newHost.firstName}!
+      </h1>
+      <p style="font-size: 16px; line-height: 1.6; color: #4a4a5a; margin: 0 0 16px 0;">
+        We've received your application to become a LivePlay Host. Our team will review your submission and get back to you soon.
+      </p>
+      <p style="font-size: 16px; line-height: 1.6; color: #4a4a5a; margin: 0 0 24px 0;">
+        In the meantime, make sure to follow us on social media to see what our hosts are up to!
+      </p>
+      <div style="background: #f0fdf4; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+        <p style="margin: 0; color: #166534; font-weight: 500;">What happens next?</p>
+        <ul style="margin: 12px 0 0 0; padding-left: 20px; color: #166534;">
+          <li style="margin-bottom: 8px;">Our team reviews your application</li>
+          <li style="margin-bottom: 8px;">If selected, we'll reach out to schedule an interview</li>
+          <li>You'll complete our training program and start hosting!</li>
+        </ul>
+      </div>
+      <p style="font-size: 16px; line-height: 1.6; color: #4a4a5a; margin: 0;">
+        Questions? Reply to this email and we'll get back to you.
+      </p>
+    </div>
+    <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #8a8a9a;">
+      <p style="margin: 0 0 10px 0;">LivePlay Hosts</p>
+      <p style="margin: 0;">
+        <a href="https://www.liveplayhosts.com" style="color: #667eea; text-decoration: none;">www.liveplayhosts.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
             `,
           });
-        } catch (emailError) {
-          console.error("Failed to send notification email:", emailError);
-          // Don't fail the request if email fails
+          console.log(`Confirmation email sent to applicant: ${newHost.email}`);
+        } catch (applicantEmailError) {
+          console.error("Failed to send applicant confirmation email:", applicantEmailError);
         }
+      } catch (emailError) {
+        console.error("Failed to send notification email:", emailError);
+        // Don't fail the request if email fails
       }
     }
 
