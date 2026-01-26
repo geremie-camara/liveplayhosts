@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { WeeklyAvailability, DayAvailability, BlockedDateRange } from "@/lib/types";
 
 const DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
@@ -55,13 +55,61 @@ export default function AvailabilityForm() {
   const [weekly, setWeekly] = useState<WeeklyAvailability>(DEFAULT_AVAILABILITY);
   const [blockedDates, setBlockedDates] = useState<BlockedDateRange[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  // Track if initial data has loaded (to prevent auto-save on first load)
+  const hasLoadedRef = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // New blocked date form
   const [newBlockedStart, setNewBlockedStart] = useState("");
   const [newBlockedEnd, setNewBlockedEnd] = useState("");
   const [newBlockedReason, setNewBlockedReason] = useState("");
+
+  // Auto-save function
+  const autoSave = useCallback(async (weeklyData: WeeklyAvailability, blockedData: BlockedDateRange[]) => {
+    setSaveStatus("saving");
+
+    try {
+      const response = await fetch("/api/availability", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekly: weeklyData, blockedDates: blockedData }),
+      });
+
+      if (response.ok) {
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      } else {
+        setSaveStatus("error");
+        setTimeout(() => setSaveStatus("idle"), 3000);
+      }
+    } catch (error) {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  }, []);
+
+  // Debounced auto-save when weekly or blockedDates change
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save (500ms debounce)
+    saveTimeoutRef.current = setTimeout(() => {
+      autoSave(weekly, blockedDates);
+    }, 500);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [weekly, blockedDates, autoSave]);
 
   useEffect(() => {
     fetchAvailability();
@@ -83,30 +131,10 @@ export default function AvailabilityForm() {
       console.error("Error fetching availability:", error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function saveAvailability() {
-    setSaving(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch("/api/availability", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weekly, blockedDates }),
-      });
-
-      if (response.ok) {
-        setMessage({ type: "success", text: "Availability saved successfully!" });
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        setMessage({ type: "error", text: "Failed to save availability" });
-      }
-    } catch (error) {
-      setMessage({ type: "error", text: "Failed to save availability" });
-    } finally {
-      setSaving(false);
+      // Mark as loaded after a brief delay to ensure state has settled
+      setTimeout(() => {
+        hasLoadedRef.current = true;
+      }, 100);
     }
   }
 
@@ -153,23 +181,43 @@ export default function AvailabilityForm() {
   return (
     <div className="max-w-4xl pb-6">
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Availability</h1>
-        <p className="text-gray-600 mt-1 text-sm sm:text-base">
-          Set your weekly schedule and block off dates when you&apos;re not available.
-        </p>
-      </div>
-
-      {message && (
-        <div
-          className={`mb-6 p-4 rounded-lg ${
-            message.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-red-50 text-red-800 border border-red-200"
-          }`}
-        >
-          {message.text}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-primary">Availability</h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
+              Set your weekly schedule and block off dates when you&apos;re not available.
+            </p>
+          </div>
+          {/* Auto-save status indicator */}
+          <div className="flex-shrink-0">
+            {saveStatus === "saving" && (
+              <span className="flex items-center gap-2 text-sm text-gray-500">
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                <span className="hidden sm:inline">Saving...</span>
+              </span>
+            )}
+            {saveStatus === "saved" && (
+              <span className="flex items-center gap-2 text-sm text-green-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="hidden sm:inline">Saved</span>
+              </span>
+            )}
+            {saveStatus === "error" && (
+              <span className="flex items-center gap-2 text-sm text-red-600">
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span className="hidden sm:inline">Error saving</span>
+              </span>
+            )}
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Weekly Availability */}
       <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
@@ -412,17 +460,6 @@ export default function AvailabilityForm() {
             ))}
           </div>
         )}
-      </div>
-
-      {/* Save Button - Sticky on mobile */}
-      <div className="sm:flex sm:justify-end">
-        <button
-          onClick={saveAvailability}
-          disabled={saving}
-          className="w-full sm:w-auto px-6 py-3 bg-accent text-white font-semibold rounded-lg hover:bg-accent-600 transition-colors disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save Availability"}
-        </button>
       </div>
     </div>
   );
