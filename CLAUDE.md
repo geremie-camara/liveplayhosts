@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | 246e187 | Fix broadcasts page crash: handle undefined targetRoles, show user count |
 | 2026-01-25 | 2685197 | Add Sent By column to broadcasts list, fix preview for sent messages (presigned URLs) |
 | 2026-01-25 | 661bfb2 | Fix application email: correct from address, add applicant confirmation email |
 | 2026-01-25 | f0799df | Add user counts to tabs, red badge for applicants in admin pages |
