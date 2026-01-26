@@ -1,9 +1,46 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component, ErrorInfo, ReactNode } from "react";
 import Link from "next/link";
 import { Broadcast, BROADCAST_STATUS_CONFIG, BroadcastStatus } from "@/lib/broadcast-types";
 import { ROLE_NAMES } from "@/lib/roles";
+
+// Error boundary to catch rendering errors
+class ErrorBoundary extends Component<
+  { children: ReactNode; fallback?: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode; fallback?: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Broadcasts page error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 bg-red-50 border border-red-200 rounded-lg">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Something went wrong</h2>
+          <p className="text-red-600 mb-4">Error: {this.state.error?.message}</p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function AdminBroadcastsPage() {
   const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
@@ -108,7 +145,7 @@ export default function AdminBroadcastsPage() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-primary">Broadcasts</h1>
@@ -354,6 +391,6 @@ export default function AdminBroadcastsPage() {
           Manage Templates
         </Link>
       </div>
-    </>
+    </ErrorBoundary>
   );
 }
