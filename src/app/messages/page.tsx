@@ -62,9 +62,9 @@ export default function MessagesPage() {
 
   return (
     <>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">Messages</h1>
-        <p className="text-gray-600 mt-2">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">Messages</h1>
+        <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
           {unreadCount > 0
             ? `You have ${unreadCount} unread message${unreadCount > 1 ? "s" : ""}`
             : "All messages read"}
@@ -73,7 +73,7 @@ export default function MessagesPage() {
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {messages.length === 0 ? (
-          <div className="p-12 text-center">
+          <div className="p-8 sm:p-12 text-center">
             <svg
               className="w-16 h-16 mx-auto text-gray-300 mb-4"
               fill="none"
@@ -98,35 +98,36 @@ export default function MessagesPage() {
               <Link
                 key={message.id}
                 href={`/messages/${message.id}`}
-                className={`block p-6 hover:bg-gray-50 transition-colors ${
+                className={`block p-4 sm:p-6 hover:bg-gray-50 transition-colors ${
                   !message.isRead ? "bg-accent/5" : ""
                 }`}
               >
-                <div className="flex items-start gap-4">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div className="flex-shrink-0 mt-1">
                     {!message.isRead ? (
-                      <div className="w-3 h-3 bg-accent rounded-full"></div>
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-accent rounded-full"></div>
                     ) : (
-                      <div className="w-3 h-3 bg-gray-200 rounded-full"></div>
+                      <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-gray-200 rounded-full"></div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-4">
+                    {/* Mobile: Stack subject and date */}
+                    <div className="sm:flex sm:items-center sm:justify-between sm:gap-4">
                       <h3
-                        className={`text-lg truncate ${
+                        className={`text-base sm:text-lg truncate ${
                           !message.isRead ? "font-semibold text-dark" : "font-medium text-gray-700"
                         }`}
                       >
                         {message.subject}
                       </h3>
-                      <span className="text-sm text-gray-500 flex-shrink-0">
+                      <span className="text-xs sm:text-sm text-gray-500 flex-shrink-0">
                         {formatDate(message.sentAt)}
                       </span>
                     </div>
                     <p className="text-gray-500 text-sm mt-1 line-clamp-2">
                       {message.bodyHtml.replace(/<[^>]+>/g, "").substring(0, 150)}...
                     </p>
-                    <div className="flex items-center gap-2 mt-2">
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       {message.senderName && (
                         <span className="text-xs text-gray-500">
                           From: <span className="font-medium text-gray-700">{message.senderName}</span>
@@ -144,7 +145,7 @@ export default function MessagesPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 hidden sm:block">
                     <svg
                       className="w-5 h-5 text-gray-400"
                       fill="none"

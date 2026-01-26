@@ -99,12 +99,12 @@ export default async function DashboardPage() {
     <AuthenticatedLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-primary">
+            <h1 className="text-2xl sm:text-3xl font-bold text-primary">
               Welcome back, {user.firstName || "there"}!
             </h1>
-            <p className="text-gray-600 mt-2">
+            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
               Here&apos;s your dashboard. Manage your schedule, access training,
               and more.
             </p>
@@ -140,9 +140,9 @@ export default async function DashboardPage() {
         )}
 
         {/* Dashboard Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Quick Stats */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-dark mb-4">Quick Stats</h3>
             <div className="space-y-4">
               {canViewSchedule && (
@@ -163,7 +163,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Training Progress */}
-          <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-dark mb-4">
               Training Progress
             </h3>
@@ -189,7 +189,7 @@ export default async function DashboardPage() {
 
           {/* Upcoming Schedule */}
           {canViewSchedule ? (
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-dark mb-4">
                 Upcoming Schedule
               </h3>
@@ -204,7 +204,7 @@ export default async function DashboardPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-dark mb-4">
                 Schedule Access
               </h3>
@@ -222,7 +222,7 @@ export default async function DashboardPage() {
 
           {/* Analytics - Only for producers and admins */}
           {canViewAnalytics && (
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-dark mb-4">
                 Performance Analytics
               </h3>
@@ -241,7 +241,7 @@ export default async function DashboardPage() {
 
           {/* Admin Quick Actions - Only for admins */}
           {canManageUsers && (
-            <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
               <h3 className="text-lg font-semibold text-dark mb-4">
                 Admin Actions
               </h3>
@@ -265,13 +265,13 @@ export default async function DashboardPage() {
           )}
 
           {/* Message Center */}
-          <div className={canViewAnalytics ? "lg:col-span-2" : "md:col-span-2 lg:col-span-1"}>
+          <div className={canViewAnalytics ? "lg:col-span-2" : "sm:col-span-2 lg:col-span-1"}>
             <MessageCenter />
           </div>
 
           {/* Welcome Message - Only if not many items */}
           {!canViewAnalytics && !canManageUsers && (
-            <div className="bg-white rounded-2xl shadow-sm p-6 md:col-span-2 lg:col-span-2">
+            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 sm:col-span-2 lg:col-span-2">
               <h3 className="text-lg font-semibold text-dark mb-4">
                 Welcome
               </h3>

@@ -74,10 +74,10 @@ export default function MessageDetailPage() {
 
   return (
     <>
-      <div className="mb-8">
+      <div className="mb-4 sm:mb-8">
         <Link
           href="/messages"
-          className="text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 mb-4"
+          className="text-gray-500 hover:text-gray-700 inline-flex items-center gap-1 mb-4 text-sm sm:text-base"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -88,20 +88,20 @@ export default function MessageDetailPage() {
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b">
-          <h1 className="text-2xl font-bold text-primary">{message.subject}</h1>
-          <div className="flex items-center gap-4 mt-2 text-gray-500">
+        <div className="p-4 sm:p-6 border-b">
+          <h1 className="text-xl sm:text-2xl font-bold text-primary">{message.subject}</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-sm sm:text-base text-gray-500">
             {message.senderName && (
               <span>
                 From: <span className="font-medium text-gray-700">{message.senderName}</span>
               </span>
             )}
-            <span>{formatDate(message.sentAt)}</span>
+            <span className="text-xs sm:text-sm">{formatDate(message.sentAt)}</span>
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Video */}
           {message.videoUrl && (
             <div className="mb-6">
