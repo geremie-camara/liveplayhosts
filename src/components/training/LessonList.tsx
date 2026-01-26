@@ -146,7 +146,7 @@ export default function LessonList({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {sections.map((section) => {
         const isExpanded = expandedSections[section.id];
         const sectionCompletedCount = section.lessons.filter(
@@ -159,11 +159,11 @@ export default function LessonList({
             {/* Section header */}
             <button
               onClick={() => toggleSection(section.id)}
-              className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                 <svg
-                  className={`w-5 h-5 text-gray-400 transition-transform ${
+                  className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 transition-transform flex-shrink-0 ${
                     isExpanded ? "rotate-90" : ""
                   }`}
                   fill="none"
@@ -177,14 +177,14 @@ export default function LessonList({
                     d="M9 5l7 7-7 7"
                   />
                 </svg>
-                <div className="text-left">
-                  <h3 className="font-semibold text-dark">{section.title}</h3>
+                <div className="text-left min-w-0">
+                  <h3 className="font-semibold text-dark text-sm sm:text-base truncate">{section.title}</h3>
                   {section.description && (
-                    <p className="text-sm text-gray-500">{section.description}</p>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">{section.description}</p>
                   )}
                 </div>
               </div>
-              <span className="text-sm text-gray-500">
+              <span className="text-xs sm:text-sm text-gray-500 flex-shrink-0 ml-2">
                 {sectionCompletedCount}/{sectionTotalCount}
               </span>
             </button>
@@ -200,13 +200,13 @@ export default function LessonList({
                     <div key={lesson.id}>
                       {isLocked ? (
                         <div
-                          className="px-4 py-3 flex items-center justify-between text-gray-400 cursor-not-allowed"
+                          className="px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between text-gray-400 cursor-not-allowed"
                           title="Complete previous lessons to unlock"
                         >
-                          <div className="flex items-center gap-3">
-                            <span className="text-gray-300">{getLessonIcon(lesson.type)}</span>
-                            <div>
-                              <p className="font-medium">{lesson.title}</p>
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                            <span className="text-gray-300 flex-shrink-0">{getLessonIcon(lesson.type)}</span>
+                            <div className="min-w-0">
+                              <p className="font-medium text-sm sm:text-base truncate">{lesson.title}</p>
                               <p className="text-xs">
                                 {LESSON_TYPE_CONFIG[lesson.type].label} &middot;{" "}
                                 {lesson.estimatedDuration} min
@@ -214,7 +214,7 @@ export default function LessonList({
                             </div>
                           </div>
                           <svg
-                            className="w-5 h-5"
+                            className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ml-2"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
@@ -230,17 +230,17 @@ export default function LessonList({
                       ) : (
                         <Link
                           href={`/training/lessons/${lesson.id}`}
-                          className={`px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors ${
+                          className={`px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between hover:bg-gray-50 transition-colors ${
                             isCurrent ? "bg-accent/5 border-l-2 border-accent" : ""
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <span className={isCurrent ? "text-accent" : "text-gray-400"}>
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                            <span className={`flex-shrink-0 ${isCurrent ? "text-accent" : "text-gray-400"}`}>
                               {getLessonIcon(lesson.type)}
                             </span>
-                            <div>
+                            <div className="min-w-0">
                               <p
-                                className={`font-medium ${
+                                className={`font-medium text-sm sm:text-base truncate ${
                                   isCurrent ? "text-accent" : "text-dark"
                                 }`}
                               >
@@ -252,7 +252,7 @@ export default function LessonList({
                               </p>
                             </div>
                           </div>
-                          {getProgressIcon(lesson.id)}
+                          <span className="flex-shrink-0 ml-2">{getProgressIcon(lesson.id)}</span>
                         </Link>
                       )}
                     </div>

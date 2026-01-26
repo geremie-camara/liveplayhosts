@@ -77,26 +77,26 @@ export default function CourseCard({ course, progress }: CourseCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-4 sm:p-5">
           {/* Category */}
           <span
-            className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${categoryConfig.color} mb-3`}
+            className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${categoryConfig.color} mb-2 sm:mb-3`}
           >
             {categoryConfig.label}
           </span>
 
           {/* Title */}
-          <h3 className="text-lg font-semibold text-dark group-hover:text-accent transition-colors mb-2">
+          <h3 className="text-base sm:text-lg font-semibold text-dark group-hover:text-accent transition-colors mb-2">
             {course.title}
           </h3>
 
           {/* Description */}
-          <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+          <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 mb-3 sm:mb-4">
             {course.description}
           </p>
 
           {/* Meta info */}
-          <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500">
             <div className="flex items-center gap-1">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path

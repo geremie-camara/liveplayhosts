@@ -169,8 +169,8 @@ export default async function CourseDetailPage({ params }: PageProps) {
     <AuthenticatedLayout>
       <div className="max-w-7xl mx-auto">
         {/* Breadcrumb */}
-        <nav className="mb-6">
-          <ol className="flex items-center gap-2 text-sm text-gray-500">
+        <nav className="mb-4 sm:mb-6">
+          <ol className="flex items-center gap-2 text-xs sm:text-sm text-gray-500 flex-wrap">
             <li>
               <Link href="/training" className="hover:text-accent">
                 Training
@@ -185,11 +185,11 @@ export default async function CourseDetailPage({ params }: PageProps) {
                 />
               </svg>
             </li>
-            <li className="text-dark font-medium">{course.title}</li>
+            <li className="text-dark font-medium truncate max-w-[200px] sm:max-w-none">{course.title}</li>
           </ol>
         </nav>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6 sm:gap-8">
           {/* Main content */}
           <div className="lg:col-span-2">
             {/* Course header */}
@@ -239,11 +239,11 @@ export default async function CourseDetailPage({ params }: PageProps) {
               </div>
 
               {/* Course info */}
-              <div className="p-6">
-                <h1 className="text-2xl font-bold text-dark mb-2">{course.title}</h1>
-                <p className="text-gray-600 mb-4">{course.description}</p>
+              <div className="p-4 sm:p-6">
+                <h1 className="text-xl sm:text-2xl font-bold text-dark mb-2">{course.title}</h1>
+                <p className="text-gray-600 mb-4 text-sm sm:text-base">{course.description}</p>
 
-                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
                   <div className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -294,10 +294,10 @@ export default async function CourseDetailPage({ params }: PageProps) {
 
                 {/* Continue button */}
                 {nextLesson && (
-                  <div className="mt-6">
+                  <div className="mt-4 sm:mt-6">
                     <Link
                       href={`/training/lessons/${nextLesson.id}`}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent/90 transition-colors"
+                      className="inline-flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-accent text-white font-medium rounded-lg hover:bg-accent/90 transition-colors text-sm sm:text-base"
                     >
                       {completedLessons > 0 ? "Continue" : "Start"} Course
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,7 +337,7 @@ export default async function CourseDetailPage({ params }: PageProps) {
 
             {/* Lesson list */}
             <div>
-              <h2 className="text-lg font-semibold text-dark mb-4">Course Content</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-dark mb-3 sm:mb-4">Course Content</h2>
               {sections.length > 0 ? (
                 <LessonList
                   sections={sections}
@@ -365,12 +365,12 @@ export default async function CourseDetailPage({ params }: PageProps) {
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar - Hidden on mobile, shows below main content */}
           <div className="lg:col-span-1">
-            <div className="sticky top-6 space-y-6">
+            <div className="lg:sticky lg:top-6 space-y-4 sm:space-y-6">
               {/* Progress card */}
-              <div className="bg-white rounded-2xl shadow-sm p-6">
-                <h3 className="font-semibold text-dark mb-4">Your Progress</h3>
+              <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+                <h3 className="font-semibold text-dark mb-3 sm:mb-4 text-sm sm:text-base">Your Progress</h3>
                 <CourseProgress
                   progress={{
                     courseId,
@@ -392,8 +392,8 @@ export default async function CourseDetailPage({ params }: PageProps) {
 
               {/* Quick navigation */}
               {sections.length > 0 && (
-                <div className="bg-white rounded-2xl shadow-sm p-6">
-                  <h3 className="font-semibold text-dark mb-4">Sections</h3>
+                <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+                  <h3 className="font-semibold text-dark mb-3 sm:mb-4 text-sm sm:text-base">Sections</h3>
                   <nav className="space-y-2">
                     {sections.map((section, index) => {
                       const sectionCompleted = section.lessons.every(

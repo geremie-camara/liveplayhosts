@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-26 | 17666f3 | Optimize messages and dashboard pages for mobile (responsive padding, text, grids) |
 | 2026-01-26 | 8d2a10d | Optimize profile form for mobile (responsive grids, smaller media) |
 | 2026-01-26 | 80345b1 | Redesign availability page for mobile (compact schedule, stacked forms) |
 | 2026-01-26 | ef91f64 | Add mobile card views to admin pages (users, broadcasts, training) |

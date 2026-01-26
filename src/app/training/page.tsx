@@ -136,24 +136,24 @@ export default async function TrainingPage() {
     <AuthenticatedLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-primary">Training Center</h1>
-          <p className="text-gray-600 mt-2">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-primary">Training Center</h1>
+          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
             Complete your training modules to become a certified host.
           </p>
         </div>
 
         {/* Progress Overview */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-dark">Your Progress</h2>
-              <p className="text-gray-600">
+              <h2 className="text-base sm:text-lg font-semibold text-dark">Your Progress</h2>
+              <p className="text-gray-600 text-sm sm:text-base">
                 {completedCourses} of {totalCourses} courses completed
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <div className="w-48">
+              <div className="w-full sm:w-48">
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-600">Overall</span>
                   <span className="text-primary font-medium">{overallPercent}%</span>
@@ -205,17 +205,17 @@ export default async function TrainingPage() {
           const config = CATEGORY_CONFIG[category];
 
           return (
-            <div key={category} className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
+            <div key={category} className="mb-6 sm:mb-8">
+              <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${config.color}`}>
                   {config.label}
                 </span>
-                <span className="text-gray-500 text-sm">
+                <span className="text-gray-500 text-xs sm:text-sm">
                   {categoryCourses.length} course{categoryCourses.length > 1 ? "s" : ""}
                 </span>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {categoryCourses.map((course) => (
                   <CourseCard
                     key={course.id}
