@@ -222,10 +222,10 @@ export default function ProfileForm() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-primary">My Profile</h1>
-        <p className="text-gray-600 mt-1">Update your personal information</p>
+    <div className="max-w-4xl mx-auto pb-6">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-primary">My Profile</h1>
+        <p className="text-gray-600 mt-1 text-sm sm:text-base">Update your personal information</p>
       </div>
 
       {error && (
@@ -243,7 +243,7 @@ export default function ProfileForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Role Display (read-only) */}
         {host && (
-          <div className="bg-white rounded-2xl shadow-sm p-6">
+          <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-dark mb-4">Your Role</h2>
             <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${ROLE_COLORS[host.role as UserRole]}`}>
               {ROLE_NAMES[host.role as UserRole]}
@@ -252,11 +252,11 @@ export default function ProfileForm() {
         )}
 
         {/* Personal Information */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-dark mb-4">
             Personal Information
           </h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 First Name
@@ -334,7 +334,7 @@ export default function ProfileForm() {
         </div>
 
         {/* Address */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-dark mb-4">Address</h2>
           <div className="space-y-4">
             <div>
@@ -349,19 +349,19 @@ export default function ProfileForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
             </div>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  City
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                City
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   State
@@ -391,9 +391,9 @@ export default function ProfileForm() {
         </div>
 
         {/* Social Profiles */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-dark mb-4">Social Profiles</h2>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Instagram
@@ -444,7 +444,7 @@ export default function ProfileForm() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               />
             </div>
-            <div className="md:col-span-2">
+            <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Other Social
               </label>
@@ -460,20 +460,20 @@ export default function ProfileForm() {
         </div>
 
         {/* Media (Headshot & Video) */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-dark mb-4">Media</h2>
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="space-y-6 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
             {/* Headshot */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+            <div className="flex flex-col items-center sm:items-start">
+              <label className="block text-sm font-medium text-gray-700 mb-2 self-start">
                 Headshot
               </label>
               {formData.headshotUrl && signedHeadshotUrl ? (
-                <div className="space-y-3">
+                <div className="space-y-3 text-center sm:text-left">
                   <img
                     src={signedHeadshotUrl}
                     alt={`${formData.firstName} ${formData.lastName}`}
-                    className="w-40 h-40 rounded-full object-cover border-4 border-gray-100"
+                    className="w-28 h-28 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-gray-100 mx-auto sm:mx-0"
                   />
                   <a
                     href={signedHeadshotUrl}
@@ -485,7 +485,7 @@ export default function ProfileForm() {
                   </a>
                 </div>
               ) : formData.headshotUrl ? (
-                <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
+                <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full bg-gray-200 flex items-center justify-center">
                   <span className="text-gray-400 text-sm">Loading...</span>
                 </div>
               ) : formData.headshotExternalUrl ? (
@@ -493,11 +493,11 @@ export default function ProfileForm() {
                   <img
                     src={formData.headshotExternalUrl}
                     alt={`${formData.firstName} ${formData.lastName}`}
-                    className="w-40 h-40 rounded-full object-cover border-4 border-gray-100"
+                    className="w-28 h-28 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-gray-100 mx-auto sm:mx-0"
                   />
                 </div>
               ) : (
-                <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center">
+                <div className="w-28 h-28 sm:w-40 sm:h-40 rounded-full bg-gray-200 flex items-center justify-center">
                   <span className="text-gray-400 text-sm">No headshot</span>
                 </div>
               )}
@@ -515,7 +515,7 @@ export default function ProfileForm() {
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        {formData.headshotUrl ? "Replace" : "Upload"} Headshot
+                        {formData.headshotUrl ? "Replace" : "Upload"}
                       </>
                     )}
                   </span>
@@ -544,7 +544,7 @@ export default function ProfileForm() {
                   <video
                     src={signedVideoUrl}
                     controls
-                    className="w-full max-w-sm rounded-lg"
+                    className="w-full rounded-lg"
                   />
                   <a
                     href={signedVideoUrl}
@@ -556,11 +556,11 @@ export default function ProfileForm() {
                   </a>
                 </div>
               ) : formData.videoReelUrl ? (
-                <div className="w-full max-w-sm h-40 bg-gray-200 rounded-lg flex items-center justify-center">
+                <div className="w-full aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
                   <span className="text-gray-400 text-sm">Loading...</span>
                 </div>
               ) : (
-                <div className="w-full max-w-sm h-40 bg-gray-200 rounded-lg flex items-center justify-center">
+                <div className="w-full aspect-video bg-gray-200 rounded-lg flex items-center justify-center">
                   <span className="text-gray-400 text-sm">No video</span>
                 </div>
               )}
@@ -600,7 +600,7 @@ export default function ProfileForm() {
         </div>
 
         {/* Experience */}
-        <div className="bg-white rounded-2xl shadow-sm p-6">
+        <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-dark mb-4">Experience</h2>
           <textarea
             name="experience"
@@ -613,11 +613,11 @@ export default function ProfileForm() {
         </div>
 
         {/* Submit */}
-        <div className="flex justify-end">
+        <div className="sm:flex sm:justify-end">
           <button
             type="submit"
             disabled={saving}
-            className="px-6 py-3 bg-accent text-white font-semibold rounded-lg hover:bg-accent-600 transition-colors disabled:opacity-50"
+            className="w-full sm:w-auto px-6 py-3 bg-accent text-white font-semibold rounded-lg hover:bg-accent-600 transition-colors disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
