@@ -163,7 +163,7 @@ export default function AdminBroadcastsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
         <div className="bg-white rounded-2xl shadow-sm p-6">
           <div className="text-3xl font-bold text-primary">{counts.total}</div>
           <div className="text-gray-600 mt-1">Total Broadcasts</div>
@@ -233,144 +233,230 @@ export default function AdminBroadcastsPage() {
             </Link>
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="text-left text-sm text-gray-500 border-b">
-                <th className="px-6 py-3 font-medium">Title</th>
-                <th className="px-6 py-3 font-medium">Recipients</th>
-                <th className="px-6 py-3 font-medium">Channels</th>
-                <th className="px-6 py-3 font-medium">Status</th>
-                <th className="px-6 py-3 font-medium">Date</th>
-                <th className="px-6 py-3 font-medium">Sent By</th>
-                <th className="px-6 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Mobile: Card View */}
+            <div className="md:hidden divide-y divide-gray-100">
               {broadcasts.map((broadcast) => {
                 const statusConfig = BROADCAST_STATUS_CONFIG[broadcast.status as BroadcastStatus];
                 return (
-                  <tr key={broadcast.id} className="border-b last:border-b-0 hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="font-medium text-dark">{broadcast.title}</div>
-                        <div className="text-sm text-gray-500 truncate max-w-xs">
-                          {broadcast.subject}
-                        </div>
+                  <div key={broadcast.id} className="p-4">
+                    {/* Header: Title + Status */}
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-dark">{broadcast.title}</h3>
+                        <p className="text-sm text-gray-500 truncate">{broadcast.subject}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {broadcast.targetUserIds && broadcast.targetUserIds.length > 0 ? (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                            {broadcast.targetUserIds.length} user{broadcast.targetUserIds.length !== 1 ? 's' : ''}
-                          </span>
-                        ) : broadcast.targetRoles && broadcast.targetRoles.length > 0 ? (
-                          <>
-                            {broadcast.targetRoles.slice(0, 3).map((role) => (
-                              <span
-                                key={role}
-                                className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
-                              >
-                                {ROLE_NAMES[role] || role}
-                              </span>
-                            ))}
-                            {broadcast.targetRoles.length > 3 && (
-                              <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                                +{broadcast.targetRoles.length - 3}
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {broadcast.channels?.slack && (
-                          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-600 rounded" title="Slack">
-                            Slack
-                          </span>
-                        )}
-                        {broadcast.channels?.email && (
-                          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded" title="Email">
-                            Email
-                          </span>
-                        )}
-                        {broadcast.channels?.sms && (
-                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded" title="SMS">
-                            SMS
-                          </span>
-                        )}
-                        {!broadcast.channels && (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig?.color}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusConfig?.color}`}>
                         {statusConfig?.label || broadcast.status}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {broadcast.sentAt
-                        ? formatDate(broadcast.sentAt)
-                        : broadcast.scheduledAt
-                        ? `Scheduled: ${formatDate(broadcast.scheduledAt)}`
-                        : formatDate(broadcast.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {broadcast.senderName || "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          href={`/admin/broadcasts/${broadcast.id}`}
-                          className="p-2 text-gray-400 hover:text-accent rounded-lg hover:bg-gray-100"
-                          title={broadcast.status === "draft" ? "Edit" : "View"}
+                    </div>
+
+                    {/* Meta Info */}
+                    <div className="flex flex-wrap items-center gap-2 mb-3 text-sm">
+                      {/* Channels */}
+                      {broadcast.channels?.slack && (
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-600 rounded text-xs">Slack</span>
+                      )}
+                      {broadcast.channels?.email && (
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-600 rounded text-xs">Email</span>
+                      )}
+                      {broadcast.channels?.sms && (
+                        <span className="px-2 py-0.5 bg-green-100 text-green-600 rounded text-xs">SMS</span>
+                      )}
+                      <span className="text-gray-400">•</span>
+                      {/* Recipients */}
+                      {broadcast.targetUserIds && broadcast.targetUserIds.length > 0 ? (
+                        <span className="text-gray-600">
+                          {broadcast.targetUserIds.length} user{broadcast.targetUserIds.length !== 1 ? 's' : ''}
+                        </span>
+                      ) : broadcast.targetRoles && broadcast.targetRoles.length > 0 ? (
+                        <span className="text-gray-600">
+                          {broadcast.targetRoles.length} role{broadcast.targetRoles.length !== 1 ? 's' : ''}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">No recipients</span>
+                      )}
+                    </div>
+
+                    {/* Date & Sender */}
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
+                      <span>
+                        {broadcast.sentAt
+                          ? formatDate(broadcast.sentAt)
+                          : broadcast.scheduledAt
+                          ? `Scheduled: ${formatDate(broadcast.scheduledAt)}`
+                          : formatDate(broadcast.createdAt)}
+                      </span>
+                      {broadcast.senderName && (
+                        <span>by {broadcast.senderName}</span>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/admin/broadcasts/${broadcast.id}`}
+                        className="flex-1 px-3 py-2 text-sm font-medium text-center text-accent border border-accent rounded-lg"
+                      >
+                        {broadcast.status === "draft" ? "Edit" : "View"}
+                      </Link>
+                      {broadcast.status === "draft" && (
+                        <button
+                          onClick={() => handleDelete(broadcast.id)}
+                          disabled={deleting === broadcast.id}
+                          className="px-3 py-2 text-red-500 border border-red-200 rounded-lg disabled:opacity-50"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            {broadcast.status === "draft" ? (
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            ) : (
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                              />
-                            )}
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
-                        </Link>
-                        {broadcast.status === "draft" && (
-                          <button
-                            onClick={() => handleDelete(broadcast.id)}
-                            disabled={deleting === broadcast.id}
-                            className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 disabled:opacity-50"
-                            title="Delete"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Desktop: Table View */}
+            <table className="hidden md:table w-full">
+              <thead>
+                <tr className="text-left text-sm text-gray-500 border-b">
+                  <th className="px-6 py-3 font-medium">Title</th>
+                  <th className="px-6 py-3 font-medium">Recipients</th>
+                  <th className="px-6 py-3 font-medium">Channels</th>
+                  <th className="px-6 py-3 font-medium">Status</th>
+                  <th className="px-6 py-3 font-medium">Date</th>
+                  <th className="px-6 py-3 font-medium">Sent By</th>
+                  <th className="px-6 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {broadcasts.map((broadcast) => {
+                  const statusConfig = BROADCAST_STATUS_CONFIG[broadcast.status as BroadcastStatus];
+                  return (
+                    <tr key={broadcast.id} className="border-b last:border-b-0 hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div>
+                          <div className="font-medium text-dark">{broadcast.title}</div>
+                          <div className="text-sm text-gray-500 truncate max-w-xs">
+                            {broadcast.subject}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap gap-1">
+                          {broadcast.targetUserIds && broadcast.targetUserIds.length > 0 ? (
+                            <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                              {broadcast.targetUserIds.length} user{broadcast.targetUserIds.length !== 1 ? 's' : ''}
+                            </span>
+                          ) : broadcast.targetRoles && broadcast.targetRoles.length > 0 ? (
+                            <>
+                              {broadcast.targetRoles.slice(0, 3).map((role) => (
+                                <span
+                                  key={role}
+                                  className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
+                                >
+                                  {ROLE_NAMES[role] || role}
+                                </span>
+                              ))}
+                              {broadcast.targetRoles.length > 3 && (
+                                <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                                  +{broadcast.targetRoles.length - 3}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {broadcast.channels?.slack && (
+                            <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-600 rounded" title="Slack">
+                              Slack
+                            </span>
+                          )}
+                          {broadcast.channels?.email && (
+                            <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded" title="Email">
+                              Email
+                            </span>
+                          )}
+                          {broadcast.channels?.sms && (
+                            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded" title="SMS">
+                              SMS
+                            </span>
+                          )}
+                          {!broadcast.channels && (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusConfig?.color}`}>
+                          {statusConfig?.label || broadcast.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {broadcast.sentAt
+                          ? formatDate(broadcast.sentAt)
+                          : broadcast.scheduledAt
+                          ? `Scheduled: ${formatDate(broadcast.scheduledAt)}`
+                          : formatDate(broadcast.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {broadcast.senderName || "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/admin/broadcasts/${broadcast.id}`}
+                            className="p-2 text-gray-400 hover:text-accent rounded-lg hover:bg-gray-100"
+                            title={broadcast.status === "draft" ? "Edit" : "View"}
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              {broadcast.status === "draft" ? (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              ) : (
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                />
+                              )}
+                            </svg>
+                          </Link>
+                          {broadcast.status === "draft" && (
+                            <button
+                              onClick={() => handleDelete(broadcast.id)}
+                              disabled={deleting === broadcast.id}
+                              className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-gray-100 disabled:opacity-50"
+                              title="Delete"
+                            >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </>
         )}
       </div>
 

@@ -408,166 +408,312 @@ export default function AdminUsersPage() {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-gray-500">Loading...</div>
-        ) : hosts.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No users found.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-4 py-4 text-left text-sm font-semibold text-gray-600 w-16"></th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">First Name</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Last Name</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Communication</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Location</th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {hosts.map((host) => (
-                  <tr key={host.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4">
-                      {signedUrls[host.id] ? (
-                        <img
-                          src={signedUrls[host.id]}
-                          alt={`${host.firstName} ${host.lastName}`}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : host.headshotExternalUrl ? (
-                        <img
-                          src={host.headshotExternalUrl}
-                          alt={`${host.firstName} ${host.lastName}`}
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-sm font-medium">
-                            {host.firstName?.charAt(0)}{host.lastName?.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-dark">{host.firstName}</div>
-                      {host.phone && (
-                        <a href={`tel:${host.phone.replace(/\D/g, "")}`} className="text-sm text-accent underline">
-                          {formatPhone(host.phone)}
-                        </a>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-dark">{host.lastName}</td>
-                    <td className="px-6 py-4">
-                      <a href={`mailto:${host.email}`} className="text-accent underline">
-                        {host.email}
-                      </a>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {host.slackId ? (
-                          <a
-                            href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2 py-1 text-xs font-medium text-white bg-accent rounded hover:bg-accent-600 transition-colors"
-                            title="Open DM in Slack"
-                          >
-                            DM
-                          </a>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                        {host.slackChannelId ? (
-                          <a
-                            href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackChannelId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
-                            title="Open Prod Channel in Slack"
-                          >
-                            Prod
-                          </a>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                        {host.phone ? (
-                          <a
-                            href={`https://wa.me/${host.phone.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded hover:bg-green-600 transition-colors"
-                            title="Message on WhatsApp"
-                          >
-                            WA
-                          </a>
-                        ) : (
-                          <span className="text-gray-400 text-sm">-</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
+      {/* Users Content */}
+      {loading ? (
+        <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-500">Loading...</div>
+      ) : hosts.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-sm p-8 text-center text-gray-500">No users found.</div>
+      ) : (
+        <>
+          {/* Mobile: Card View */}
+          <div className="md:hidden space-y-4">
+            {hosts.map((host) => (
+              <div key={host.id} className="bg-white rounded-2xl shadow-sm p-4">
+                {/* Header: Avatar + Name + Role */}
+                <div className="flex items-start gap-3 mb-3">
+                  {signedUrls[host.id] ? (
+                    <img
+                      src={signedUrls[host.id]}
+                      alt={`${host.firstName} ${host.lastName}`}
+                      className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : host.headshotExternalUrl ? (
+                    <img
+                      src={host.headshotExternalUrl}
+                      alt={`${host.firstName} ${host.lastName}`}
+                      className="w-14 h-14 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-500 text-lg font-medium">
+                        {host.firstName?.charAt(0)}{host.lastName?.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-dark text-lg">
+                      {host.firstName} {host.lastName}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
                         {ROLE_NAMES[host.role]}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      {host.location || <span className="text-gray-400">-</span>}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {host.role === "applicant" && (
-                          <>
+                      {host.location && (
+                        <span className="text-sm text-gray-500">{host.location}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Info */}
+                <div className="space-y-2 mb-3">
+                  {host.phone && (
+                    <a
+                      href={`tel:${host.phone.replace(/\D/g, "")}`}
+                      className="flex items-center gap-2 text-sm text-accent"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      {formatPhone(host.phone)}
+                    </a>
+                  )}
+                  <a
+                    href={`mailto:${host.email}`}
+                    className="flex items-center gap-2 text-sm text-accent truncate"
+                  >
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span className="truncate">{host.email}</span>
+                  </a>
+                </div>
+
+                {/* Communication Buttons */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {host.slackId && (
+                    <a
+                      href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-accent rounded-lg"
+                    >
+                      Slack DM
+                    </a>
+                  )}
+                  {host.slackChannelId && (
+                    <a
+                      href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackChannelId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-purple-600 rounded-lg"
+                    >
+                      Prod
+                    </a>
+                  )}
+                  {host.phone && (
+                    <a
+                      href={`https://wa.me/${host.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-green-500 rounded-lg"
+                    >
+                      WhatsApp
+                    </a>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+                  {host.role === "applicant" && (
+                    <>
+                      <button
+                        onClick={() => handleApprove(host.id, "host")}
+                        className="flex-1 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        onClick={() => handleReject(host.id)}
+                        className="flex-1 px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-lg"
+                      >
+                        Reject
+                      </button>
+                    </>
+                  )}
+                  {host.role === "rejected" && (
+                    <button
+                      onClick={() => handleApprove(host.id, "host")}
+                      className="flex-1 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg"
+                    >
+                      Approve
+                    </button>
+                  )}
+                  <Link
+                    href={`/admin/users/${host.id}`}
+                    className="flex-1 px-3 py-2 text-sm font-medium text-center text-primary border border-primary rounded-lg"
+                  >
+                    {host.role === "applicant" ? "Review" : "Edit"}
+                  </Link>
+                  <button
+                    onClick={() => setDeleteConfirm(host)}
+                    className="px-3 py-2 text-red-500 border border-red-200 rounded-lg"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: Table View */}
+          <div className="hidden md:block bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-4 text-left text-sm font-semibold text-gray-600 w-16"></th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">First Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Last Name</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Communication</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Role</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Location</th>
+                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {hosts.map((host) => (
+                    <tr key={host.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        {signedUrls[host.id] ? (
+                          <img
+                            src={signedUrls[host.id]}
+                            alt={`${host.firstName} ${host.lastName}`}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : host.headshotExternalUrl ? (
+                          <img
+                            src={host.headshotExternalUrl}
+                            alt={`${host.firstName} ${host.lastName}`}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <span className="text-gray-500 text-sm font-medium">
+                              {host.firstName?.charAt(0)}{host.lastName?.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-medium text-dark">{host.firstName}</div>
+                        {host.phone && (
+                          <a href={`tel:${host.phone.replace(/\D/g, "")}`} className="text-sm text-accent underline">
+                            {formatPhone(host.phone)}
+                          </a>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-dark">{host.lastName}</td>
+                      <td className="px-6 py-4">
+                        <a href={`mailto:${host.email}`} className="text-accent underline">
+                          {host.email}
+                        </a>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {host.slackId ? (
+                            <a
+                              href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 text-xs font-medium text-white bg-accent rounded hover:bg-accent-600 transition-colors"
+                              title="Open DM in Slack"
+                            >
+                              DM
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
+                          {host.slackChannelId ? (
+                            <a
+                              href={`https://slack.com/app_redirect?team=TN9K8GS6A&channel=${host.slackChannelId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 text-xs font-medium text-white bg-purple-600 rounded hover:bg-purple-700 transition-colors"
+                              title="Open Prod Channel in Slack"
+                            >
+                              Prod
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
+                          {host.phone ? (
+                            <a
+                              href={`https://wa.me/${host.phone.replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 text-xs font-medium text-white bg-green-500 rounded hover:bg-green-600 transition-colors"
+                              title="Message on WhatsApp"
+                            >
+                              WA
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${ROLE_COLORS[host.role]}`}>
+                          {ROLE_NAMES[host.role]}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-600">
+                        {host.location || <span className="text-gray-400">-</span>}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {host.role === "applicant" && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(host.id, "host")}
+                                className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() => handleReject(host.id)}
+                                className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          )}
+                          {host.role === "rejected" && (
                             <button
                               onClick={() => handleApprove(host.id, "host")}
                               className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                             >
                               Approve
                             </button>
-                            <button
-                              onClick={() => handleReject(host.id)}
-                              className="px-3 py-1 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-                            >
-                              Reject
-                            </button>
-                          </>
-                        )}
-                        {host.role === "rejected" && (
-                          <button
-                            onClick={() => handleApprove(host.id, "host")}
-                            className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                          )}
+                          <Link
+                            href={`/admin/users/${host.id}`}
+                            className="px-3 py-1 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary-50 transition-colors"
                           >
-                            Approve
+                            {host.role === "applicant" ? "Review" : "Edit"}
+                          </Link>
+                          <button
+                            onClick={() => setDeleteConfirm(host)}
+                            className="p-1.5 text-red-500 hover:text-red-700 transition-colors"
+                            title="Delete user"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                           </button>
-                        )}
-                        <Link
-                          href={`/admin/users/${host.id}`}
-                          className="px-3 py-1 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary-50 transition-colors"
-                        >
-                          {host.role === "applicant" ? "Review" : "Edit"}
-                        </Link>
-                        <button
-                          onClick={() => setDeleteConfirm(host)}
-                          className="p-1.5 text-red-500 hover:text-red-700 transition-colors"
-                          title="Delete user"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Add User Modal */}
       {showAddModal && (
