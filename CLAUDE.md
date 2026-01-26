@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | 661bfb2 | Fix application email: correct from address, add applicant confirmation email |
 | 2026-01-25 | f0799df | Add user counts to tabs, red badge for applicants in admin pages |
 | 2026-01-25 | bfaa509 | Fix messages not appearing: auth fix, presigned URLs, sidebar layout |
 | 2026-01-25 | dad45b0 | Make UserSelector collapsible - starts compact, expands on click |
