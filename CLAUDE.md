@@ -6,6 +6,19 @@ A host management platform for LivePlay Mobile. Hosts can apply, manage their pr
 
 - **"giddyup"** - When the user says "giddyup", perform all three: push to git, deploy, and update CLAUDE.md with changes
 
+## Development Standards
+
+### Mobile-First Design (Required)
+
+All new features MUST be optimized for mobile. Use these patterns:
+
+- **Text**: Responsive sizes (`text-sm sm:text-base`, `text-xl sm:text-2xl`)
+- **Padding**: Responsive spacing (`p-4 sm:p-6`, `gap-4 sm:gap-6`)
+- **Grids**: Mobile-first breakpoints (`sm:grid-cols-2 lg:grid-cols-3`)
+- **Tables**: Card view on mobile, table on desktop (`md:hidden` / `hidden md:block`)
+- **Touch targets**: Minimum 44px tap targets on mobile
+- **Layout**: Stack vertically on mobile, side-by-side on desktop
+
 ## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
