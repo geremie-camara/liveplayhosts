@@ -185,7 +185,7 @@ export default function AdminBroadcastsPage() {
             <thead>
               <tr className="text-left text-sm text-gray-500 border-b">
                 <th className="px-6 py-3 font-medium">Title</th>
-                <th className="px-6 py-3 font-medium">Target Roles</th>
+                <th className="px-6 py-3 font-medium">Recipients</th>
                 <th className="px-6 py-3 font-medium">Channels</th>
                 <th className="px-6 py-3 font-medium">Status</th>
                 <th className="px-6 py-3 font-medium">Date</th>
@@ -208,18 +208,28 @@ export default function AdminBroadcastsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {broadcast.targetRoles.slice(0, 3).map((role) => (
-                          <span
-                            key={role}
-                            className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
-                          >
-                            {ROLE_NAMES[role] || role}
-                          </span>
-                        ))}
-                        {broadcast.targetRoles.length > 3 && (
+                        {broadcast.targetUserIds && broadcast.targetUserIds.length > 0 ? (
                           <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
-                            +{broadcast.targetRoles.length - 3}
+                            {broadcast.targetUserIds.length} user{broadcast.targetUserIds.length !== 1 ? 's' : ''}
                           </span>
+                        ) : broadcast.targetRoles && broadcast.targetRoles.length > 0 ? (
+                          <>
+                            {broadcast.targetRoles.slice(0, 3).map((role) => (
+                              <span
+                                key={role}
+                                className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded"
+                              >
+                                {ROLE_NAMES[role] || role}
+                              </span>
+                            ))}
+                            {broadcast.targetRoles.length > 3 && (
+                              <span className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded">
+                                +{broadcast.targetRoles.length - 3}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-gray-400">—</span>
                         )}
                       </div>
                     </td>
