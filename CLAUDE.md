@@ -217,6 +217,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-26 | a07e07a | Switch SMS from AWS SNS to Twilio |
 | 2026-01-26 | c1ee5a2 | Auto-populate SMS text from subject in broadcast form |
 | 2026-01-26 | 95cbf3a | Add auto-save to availability form (removes save button) |
 | 2026-01-26 | ea49f74 | Add PWA icons for home screen installation |
