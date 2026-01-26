@@ -127,6 +127,11 @@ export default function MessagesPage() {
                       {message.bodyHtml.replace(/<[^>]+>/g, "").substring(0, 150)}...
                     </p>
                     <div className="flex items-center gap-2 mt-2">
+                      {message.senderName && (
+                        <span className="text-xs text-gray-500">
+                          From: <span className="font-medium text-gray-700">{message.senderName}</span>
+                        </span>
+                      )}
                       {message.videoUrl && (
                         <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-600 rounded">
                           Video

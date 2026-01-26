@@ -90,7 +90,14 @@ export default function MessageDetailPage() {
         {/* Header */}
         <div className="p-6 border-b">
           <h1 className="text-2xl font-bold text-primary">{message.subject}</h1>
-          <p className="text-gray-500 mt-2">{formatDate(message.sentAt)}</p>
+          <div className="flex items-center gap-4 mt-2 text-gray-500">
+            {message.senderName && (
+              <span>
+                From: <span className="font-medium text-gray-700">{message.senderName}</span>
+              </span>
+            )}
+            <span>{formatDate(message.sentAt)}</span>
+          </div>
         </div>
 
         {/* Body */}

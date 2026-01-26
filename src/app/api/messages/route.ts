@@ -2,11 +2,60 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { ScanCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { UserRole } from "@/lib/types";
+import { UserRole, Host } from "@/lib/types";
 import { hasPermission } from "@/lib/roles";
 import { getUserDeliveries } from "@/lib/broadcast-sender";
 import { Broadcast, UserMessage } from "@/lib/broadcast-types";
 import { getPresignedVideoUrl } from "@/lib/s3";
+
+// Cache for sender names to avoid repeated lookups
+const senderNameCache: Record<string, string> = {};
+
+async function getSenderName(createdBy: string): Promise<string> {
+  if (!createdBy) return "LivePlay Team";
+
+  // Check cache first
+  if (senderNameCache[createdBy]) {
+    return senderNameCache[createdBy];
+  }
+
+  try {
+    // First try by host ID
+    const hostResult = await dynamoDb.send(
+      new GetCommand({
+        TableName: TABLES.HOSTS,
+        Key: { id: createdBy },
+      })
+    );
+
+    if (hostResult.Item) {
+      const host = hostResult.Item as Host;
+      const name = `${host.firstName} ${host.lastName}`.trim();
+      senderNameCache[createdBy] = name;
+      return name;
+    }
+
+    // If not found, search by clerkUserId
+    const clerkResult = await dynamoDb.send(
+      new ScanCommand({
+        TableName: TABLES.HOSTS,
+        FilterExpression: "clerkUserId = :clerkId",
+        ExpressionAttributeValues: { ":clerkId": createdBy },
+      })
+    );
+
+    if (clerkResult.Items && clerkResult.Items.length > 0) {
+      const host = clerkResult.Items[0] as Host;
+      const name = `${host.firstName} ${host.lastName}`.trim();
+      senderNameCache[createdBy] = name;
+      return name;
+    }
+  } catch (error) {
+    console.error(`Error looking up sender name for ${createdBy}:`, error);
+  }
+
+  return "LivePlay Team";
+}
 
 // Process HTML to replace S3 image URLs with presigned URLs
 async function processHtmlImages(html: string): Promise<string> {
@@ -136,6 +185,9 @@ export async function GET() {
           bodyHtml = await processHtmlImages(bodyHtml);
         }
 
+        // Get sender name
+        const senderName = await getSenderName(broadcast.createdBy);
+
         messages.push({
           id: broadcast.id,
           broadcastId: broadcast.id,
@@ -147,6 +199,7 @@ export async function GET() {
           sentAt: broadcast.sentAt || delivery.createdAt,
           readAt: delivery.readAt,
           isRead: !!delivery.readAt,
+          senderName,
         });
       }
     }

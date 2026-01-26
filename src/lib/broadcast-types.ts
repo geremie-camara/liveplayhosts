@@ -167,6 +167,7 @@ export interface UserMessage {
   sentAt: string;
   readAt?: string;
   isRead: boolean;
+  senderName?: string;           // Name of person who sent the message
 }
 
 // Status display configuration
