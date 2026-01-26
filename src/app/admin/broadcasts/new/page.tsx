@@ -22,6 +22,7 @@ export default function NewBroadcastPage() {
   const [previewMode, setPreviewMode] = useState<"email" | "slack" | "sms">("email");
   const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [templateName, setTemplateName] = useState("");
+  const [smsManuallyEdited, setSmsManuallyEdited] = useState(false);
 
   const [formData, setFormData] = useState<BroadcastFormData>({
     title: "",
@@ -41,6 +42,12 @@ export default function NewBroadcastPage() {
     scheduledAt: "",
   });
 
+  // Generate SMS text from subject
+  const generateSmsText = (subject: string): string => {
+    if (!subject.trim()) return "";
+    return `You have a new message from LivePlayHosts.com: ${subject}`;
+  };
+
   useEffect(() => {
     fetchTemplates();
     if (duplicateId) {
@@ -54,11 +61,20 @@ export default function NewBroadcastPage() {
       const res = await fetch(`/api/admin/broadcasts/${id}`);
       if (res.ok) {
         const broadcast: Broadcast = await res.json();
+
+        // If original had SMS text, use it and mark as manually edited
+        // Otherwise, generate from subject
+        const smsText = broadcast.bodySms?.trim()
+          ? broadcast.bodySms
+          : generateSmsText(broadcast.subject);
+
+        setSmsManuallyEdited(!!broadcast.bodySms?.trim());
+
         setFormData({
           title: `Copy of ${broadcast.title}`,
           subject: broadcast.subject,
           bodyHtml: broadcast.bodyHtml,
-          bodySms: broadcast.bodySms || "",
+          bodySms: smsText,
           videoUrl: broadcast.videoUrl || "",
           linkUrl: broadcast.linkUrl || "",
           linkText: broadcast.linkText || "",
@@ -98,11 +114,19 @@ export default function NewBroadcastPage() {
 
     const template = templates.find((t) => t.id === templateId);
     if (template) {
+      // If template has SMS text, use it and mark as manually edited
+      // Otherwise, generate from subject
+      const smsText = template.bodySms?.trim()
+        ? template.bodySms
+        : generateSmsText(template.subject);
+
+      setSmsManuallyEdited(!!template.bodySms?.trim());
+
       setFormData((prev) => ({
         ...prev,
         subject: template.subject,
         bodyHtml: template.bodyHtml,
-        bodySms: template.bodySms,
+        bodySms: smsText,
         videoUrl: template.videoUrl || "",
         linkUrl: template.linkUrl || "",
         linkText: template.linkText || "",
@@ -114,7 +138,21 @@ export default function NewBroadcastPage() {
   };
 
   const handleChange = (field: keyof BroadcastFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+
+      // Auto-populate SMS text when subject changes (if not manually edited)
+      if (field === "subject" && !smsManuallyEdited) {
+        newData.bodySms = generateSmsText(value as string);
+      }
+
+      return newData;
+    });
+  };
+
+  const handleSmsChange = (value: string) => {
+    setSmsManuallyEdited(true);
+    setFormData((prev) => ({ ...prev, bodySms: value }));
   };
 
   const handleChannelChange = (channel: keyof BroadcastChannels, checked: boolean) => {
@@ -482,16 +520,16 @@ export default function NewBroadcastPage() {
             </label>
             <textarea
               value={formData.bodySms}
-              onChange={(e) => handleChange("bodySms", e.target.value)}
+              onChange={(e) => handleSmsChange(e.target.value)}
               maxLength={160}
               rows={2}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent ${
                 formData.bodySms.length > 160 ? "border-red-500" : ""
               }`}
-              placeholder="Short message for SMS (link to full message will be added)"
+              placeholder="Auto-populated from subject. Edit to customize."
             />
             <p className="text-xs text-gray-500 mt-1">
-              A link to the full message will be automatically added to SMS.
+              Auto-generated from subject. A link to the full message will be added.
             </p>
           </div>
         </div>
@@ -655,11 +693,10 @@ export default function NewBroadcastPage() {
             {previewMode === "sms" && (
               <div className="font-mono text-sm">
                 <div className="p-3 bg-green-100 rounded-lg">
-                  New message: {formData.subject || "(subject)"}. {formData.bodySms || "(message)"}
-                  {" "}Read: https://liveplayhosts.com/messages/...
+                  {formData.bodySms || "(message)"} https://liveplayhosts.com/messages/...
                 </div>
                 <div className="text-xs text-gray-500 mt-2">
-                  ~{(formData.bodySms?.length || 0) + 60} characters
+                  ~{(formData.bodySms?.length || 0) + 40} characters (link adds ~40 chars)
                 </div>
               </div>
             )}

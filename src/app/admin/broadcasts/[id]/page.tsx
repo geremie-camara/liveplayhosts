@@ -27,6 +27,13 @@ export default function BroadcastDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
+  const [smsManuallyEdited, setSmsManuallyEdited] = useState(false);
+
+  // Generate SMS text from subject
+  const generateSmsText = (subject: string): string => {
+    if (!subject.trim()) return "";
+    return `You have a new message from LivePlayHosts.com: ${subject}`;
+  };
 
   const [formData, setFormData] = useState<BroadcastFormData>({
     title: "",
@@ -56,11 +63,20 @@ export default function BroadcastDetailPage() {
       if (res.ok) {
         const data = await res.json();
         setBroadcast(data);
+
+        // If broadcast has SMS text, mark as manually edited to preserve it
+        // Otherwise, generate from subject if editing
+        const smsText = data.bodySms?.trim()
+          ? data.bodySms
+          : generateSmsText(data.subject);
+
+        setSmsManuallyEdited(!!data.bodySms?.trim());
+
         setFormData({
           title: data.title,
           subject: data.subject,
           bodyHtml: data.bodyHtml,
-          bodySms: data.bodySms,
+          bodySms: smsText,
           videoUrl: data.videoUrl || "",
           linkUrl: data.linkUrl || "",
           linkText: data.linkText || "",
@@ -96,7 +112,21 @@ export default function BroadcastDetailPage() {
   const isEditable = broadcast?.status === "draft" || broadcast?.status === "scheduled";
 
   const handleChange = (field: keyof BroadcastFormData, value: unknown) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+
+      // Auto-populate SMS text when subject changes (if not manually edited)
+      if (field === "subject" && !smsManuallyEdited) {
+        newData.bodySms = generateSmsText(value as string);
+      }
+
+      return newData;
+    });
+  };
+
+  const handleSmsChange = (value: string) => {
+    setSmsManuallyEdited(true);
+    setFormData((prev) => ({ ...prev, bodySms: value }));
   };
 
   const handleChannelChange = (channel: keyof BroadcastChannels, checked: boolean) => {
@@ -349,18 +379,24 @@ export default function BroadcastDetailPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                SMS Text ({isEditable ? formData.bodySms.length : broadcast.bodySms.length}/160)
+                SMS Text ({isEditable ? formData.bodySms.length : (broadcast.bodySms?.length || 0)}/160)
               </label>
               {isEditable ? (
-                <textarea
-                  value={formData.bodySms}
-                  onChange={(e) => handleChange("bodySms", e.target.value)}
-                  maxLength={160}
-                  rows={2}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
-                />
+                <>
+                  <textarea
+                    value={formData.bodySms}
+                    onChange={(e) => handleSmsChange(e.target.value)}
+                    maxLength={160}
+                    rows={2}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-accent focus:border-accent"
+                    placeholder="Auto-populated from subject. Edit to customize."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Auto-generated from subject. A link to the full message will be added.
+                  </p>
+                </>
               ) : (
-                <p className="text-gray-900 p-4 bg-gray-50 rounded-lg">{broadcast.bodySms}</p>
+                <p className="text-gray-900 p-4 bg-gray-50 rounded-lg">{broadcast.bodySms || "(No SMS text)"}</p>
               )}
             </div>
 
