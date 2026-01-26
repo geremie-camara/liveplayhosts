@@ -56,14 +56,19 @@ export default function AdminBroadcastsPage() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return "—";
+    try {
+      return new Date(dateString).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+    } catch {
+      return "—";
+    }
   };
 
   const getStatusCounts = () => {
@@ -235,20 +240,23 @@ export default function AdminBroadcastsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        {broadcast.channels.slack && (
+                        {broadcast.channels?.slack && (
                           <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-600 rounded" title="Slack">
                             Slack
                           </span>
                         )}
-                        {broadcast.channels.email && (
+                        {broadcast.channels?.email && (
                           <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-600 rounded" title="Email">
                             Email
                           </span>
                         )}
-                        {broadcast.channels.sms && (
+                        {broadcast.channels?.sms && (
                           <span className="text-xs px-2 py-0.5 bg-green-100 text-green-600 rounded" title="SMS">
                             SMS
                           </span>
+                        )}
+                        {!broadcast.channels && (
+                          <span className="text-gray-400">—</span>
                         )}
                       </div>
                     </td>
