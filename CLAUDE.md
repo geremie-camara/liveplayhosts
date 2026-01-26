@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | dad45b0 | Make UserSelector collapsible - starts compact, expands on click |
 | 2026-01-25 | 844288a | Fix email images (HTML-encode presigned URLs) and template saving (bodySms now optional) |
 | 2026-01-25 | dca0903 | Reorganize broadcast page: sequential layout, preview/actions at bottom, Save as Template |
 | 2026-01-25 | bf69312 | Add image paste/upload support, fix rich text formatting (typography plugin) |
