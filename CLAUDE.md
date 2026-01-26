@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-25 | 85eb978 | Fix broadcast detail page: use useParams() instead of use(params) |
 | 2026-01-25 | 54165f7 | Fix broadcasts page: defensive null checks, robust error handling |
 | 2026-01-25 | 246e187 | Fix broadcasts page crash: handle undefined targetRoles, show user count |
 | 2026-01-25 | 2685197 | Add Sent By column to broadcasts list, fix preview for sent messages (presigned URLs) |
