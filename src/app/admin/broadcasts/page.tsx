@@ -23,10 +23,20 @@ export default function AdminBroadcastsPage() {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        setBroadcasts(data);
+        // Ensure data is an array before setting
+        if (Array.isArray(data)) {
+          setBroadcasts(data);
+        } else {
+          console.error("Invalid API response - expected array:", data);
+          setBroadcasts([]);
+        }
+      } else {
+        console.error("API error:", res.status);
+        setBroadcasts([]);
       }
     } catch (error) {
       console.error("Error fetching broadcasts:", error);
+      setBroadcasts([]);
     } finally {
       setLoading(false);
     }
