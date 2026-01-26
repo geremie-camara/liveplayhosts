@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { currentUser } from "@clerk/nextjs/server";
+import { ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { UserRole } from "@/lib/types";
 import { hasPermission } from "@/lib/roles";
@@ -11,13 +11,15 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { userId, sessionClaims } = await auth();
+  const user = await currentUser();
 
-  if (!userId) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = (sessionClaims?.metadata as { role?: UserRole })?.role;
+  const userId = user.id;
+  const userRole = user.publicMetadata?.role as UserRole | undefined;
+
   if (!userRole || !hasPermission(userRole, "viewMessages")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
@@ -25,8 +27,8 @@ export async function POST(
   const { id: broadcastId } = await params;
 
   try {
-    // Find the user's host record
-    const hostResult = await dynamoDb.send(
+    // Find the user's host record by clerkUserId
+    let hostResult = await dynamoDb.send(
       new ScanCommand({
         TableName: TABLES.HOSTS,
         FilterExpression: "clerkUserId = :clerkUserId",
@@ -36,7 +38,40 @@ export async function POST(
       })
     );
 
-    const host = hostResult.Items?.[0];
+    let host = hostResult.Items?.[0];
+
+    // Fallback: if not found by clerkUserId, try by email
+    if (!host) {
+      const userEmail = user.emailAddresses[0]?.emailAddress;
+      if (userEmail) {
+        hostResult = await dynamoDb.send(
+          new ScanCommand({
+            TableName: TABLES.HOSTS,
+            FilterExpression: "email = :email",
+            ExpressionAttributeValues: {
+              ":email": userEmail.toLowerCase(),
+            },
+          })
+        );
+        host = hostResult.Items?.[0];
+
+        // Auto-fix: Update the host record with clerkUserId for future lookups
+        if (host && !host.clerkUserId) {
+          await dynamoDb.send(
+            new UpdateCommand({
+              TableName: TABLES.HOSTS,
+              Key: { id: host.id },
+              UpdateExpression: "SET clerkUserId = :clerkUserId",
+              ExpressionAttributeValues: {
+                ":clerkUserId": userId,
+              },
+            })
+          );
+          console.log(`Auto-fixed clerkUserId for host ${host.id} (${userEmail})`);
+        }
+      }
+    }
+
     if (!host) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }

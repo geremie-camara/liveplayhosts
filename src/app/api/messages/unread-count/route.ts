@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { UserRole } from "@/lib/types";
@@ -8,13 +8,15 @@ import { getUnreadCount } from "@/lib/broadcast-sender";
 
 // GET /api/messages/unread-count - Get unread message count
 export async function GET() {
-  const { userId, sessionClaims } = await auth();
+  const user = await currentUser();
 
-  if (!userId) {
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userRole = (sessionClaims?.metadata as { role?: UserRole })?.role;
+  const userId = user.id;
+  const userRole = user.publicMetadata?.role as UserRole | undefined;
+
   if (!userRole || !hasPermission(userRole, "viewMessages")) {
     return NextResponse.json({ count: 0 });
   }
@@ -33,16 +35,16 @@ export async function GET() {
 
     let host = hostResult.Items?.[0];
 
-    // Fallback: if not found by clerkUserId, try by email from session
+    // Fallback: if not found by clerkUserId, try by email
     if (!host) {
-      const userEmail = sessionClaims?.email as string | undefined;
+      const userEmail = user.emailAddresses[0]?.emailAddress;
       if (userEmail) {
         hostResult = await dynamoDb.send(
           new ScanCommand({
             TableName: TABLES.HOSTS,
             FilterExpression: "email = :email",
             ExpressionAttributeValues: {
-              ":email": userEmail,
+              ":email": userEmail.toLowerCase(),
             },
           })
         );
