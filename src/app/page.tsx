@@ -14,16 +14,16 @@ export default function Home() {
                 className="h-8 md:h-10 w-auto"
               />
             </a>
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-2 sm:gap-3 items-center">
               <a
                 href="/sign-in"
-                className="bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors duration-200 hidden sm:inline-flex items-center justify-center"
+                className="bg-primary text-white font-semibold py-2 px-4 sm:py-3 sm:px-6 text-sm sm:text-base rounded-lg hover:bg-primary/90 transition-colors duration-200 inline-flex items-center justify-center"
               >
                 Host Login
               </a>
               <a
                 href="#apply"
-                className="btn-cta hidden sm:inline-flex items-center justify-center"
+                className="btn-cta py-2 px-4 sm:py-3 sm:px-6 text-sm sm:text-base inline-flex items-center justify-center"
               >
                 Apply Now
               </a>
