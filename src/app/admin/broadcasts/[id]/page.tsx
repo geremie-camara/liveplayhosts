@@ -602,6 +602,12 @@ export default function BroadcastDetailPage({
                 <span className="text-gray-500">Created:</span>
                 <span className="ml-2 text-gray-900">{formatDate(broadcast.createdAt)}</span>
               </div>
+              {broadcast.senderName && (
+                <div>
+                  <span className="text-gray-500">Sent By:</span>
+                  <span className="ml-2 text-gray-900">{broadcast.senderName}</span>
+                </div>
+              )}
               {broadcast.scheduledAt && (
                 <div>
                   <span className="text-gray-500">Scheduled:</span>

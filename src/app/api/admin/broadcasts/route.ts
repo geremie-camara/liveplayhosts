@@ -1,10 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { PutCommand, ScanCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, ScanCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { UserRole } from "@/lib/types";
+import { UserRole, Host } from "@/lib/types";
 import { hasPermission } from "@/lib/roles";
 import { Broadcast, BroadcastFormData } from "@/lib/broadcast-types";
+
+// Cache for sender names to avoid repeated lookups
+const senderNameCache: Record<string, string> = {};
+
+async function getSenderName(createdBy: string): Promise<string> {
+  if (!createdBy) return "LivePlay Team";
+
+  // Check cache first
+  if (senderNameCache[createdBy]) {
+    return senderNameCache[createdBy];
+  }
+
+  try {
+    // First try by host ID
+    const hostResult = await dynamoDb.send(
+      new GetCommand({
+        TableName: TABLES.HOSTS,
+        Key: { id: createdBy },
+      })
+    );
+
+    if (hostResult.Item) {
+      const host = hostResult.Item as Host;
+      const name = `${host.firstName} ${host.lastName}`.trim();
+      senderNameCache[createdBy] = name;
+      return name;
+    }
+
+    // If not found, search by clerkUserId
+    const clerkResult = await dynamoDb.send(
+      new ScanCommand({
+        TableName: TABLES.HOSTS,
+        FilterExpression: "clerkUserId = :clerkId",
+        ExpressionAttributeValues: { ":clerkId": createdBy },
+      })
+    );
+
+    if (clerkResult.Items && clerkResult.Items.length > 0) {
+      const host = clerkResult.Items[0] as Host;
+      const name = `${host.firstName} ${host.lastName}`.trim();
+      senderNameCache[createdBy] = name;
+      return name;
+    }
+  } catch (error) {
+    console.error(`Error looking up sender name for ${createdBy}:`, error);
+  }
+
+  return "LivePlay Team";
+}
 
 // GET /api/admin/broadcasts - List all broadcasts
 export async function GET(request: NextRequest) {
@@ -55,7 +104,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(broadcasts);
+    // Add sender names to all broadcasts
+    const broadcastsWithSender = await Promise.all(
+      broadcasts.map(async (broadcast) => ({
+        ...broadcast,
+        senderName: await getSenderName(broadcast.createdBy),
+      }))
+    );
+
+    return NextResponse.json(broadcastsWithSender);
   } catch (error) {
     console.error("Error fetching broadcasts:", error);
     return NextResponse.json({ error: "Failed to fetch broadcasts" }, { status: 500 });

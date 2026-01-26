@@ -189,6 +189,7 @@ export default function AdminBroadcastsPage() {
                 <th className="px-6 py-3 font-medium">Channels</th>
                 <th className="px-6 py-3 font-medium">Status</th>
                 <th className="px-6 py-3 font-medium">Date</th>
+                <th className="px-6 py-3 font-medium">Sent By</th>
                 <th className="px-6 py-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -252,6 +253,9 @@ export default function AdminBroadcastsPage() {
                         : broadcast.scheduledAt
                         ? `Scheduled: ${formatDate(broadcast.scheduledAt)}`
                         : formatDate(broadcast.createdAt)}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-700">
+                      {broadcast.senderName || "—"}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">

@@ -57,6 +57,7 @@ export interface Broadcast {
   createdAt: string;             // ISO timestamp
   updatedAt: string;             // ISO timestamp
   stats?: BroadcastStats;        // Populated after sending
+  senderName?: string;           // Name of person who created the broadcast (populated at runtime)
 }
 
 // Template variables for dynamic content

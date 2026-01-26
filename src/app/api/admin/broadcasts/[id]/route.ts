@@ -1,11 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { GetCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, UpdateCommand, DeleteCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { UserRole } from "@/lib/types";
+import { UserRole, Host } from "@/lib/types";
 import { hasPermission } from "@/lib/roles";
 import { Broadcast, BroadcastFormData } from "@/lib/broadcast-types";
 import { getBroadcastDeliveries } from "@/lib/broadcast-sender";
+import { getPresignedVideoUrl } from "@/lib/s3";
+
+// Cache for sender names to avoid repeated lookups
+const senderNameCache: Record<string, string> = {};
+
+async function getSenderName(createdBy: string): Promise<string> {
+  if (!createdBy) return "LivePlay Team";
+
+  if (senderNameCache[createdBy]) {
+    return senderNameCache[createdBy];
+  }
+
+  try {
+    const hostResult = await dynamoDb.send(
+      new GetCommand({
+        TableName: TABLES.HOSTS,
+        Key: { id: createdBy },
+      })
+    );
+
+    if (hostResult.Item) {
+      const host = hostResult.Item as Host;
+      const name = `${host.firstName} ${host.lastName}`.trim();
+      senderNameCache[createdBy] = name;
+      return name;
+    }
+
+    const clerkResult = await dynamoDb.send(
+      new ScanCommand({
+        TableName: TABLES.HOSTS,
+        FilterExpression: "clerkUserId = :clerkId",
+        ExpressionAttributeValues: { ":clerkId": createdBy },
+      })
+    );
+
+    if (clerkResult.Items && clerkResult.Items.length > 0) {
+      const host = clerkResult.Items[0] as Host;
+      const name = `${host.firstName} ${host.lastName}`.trim();
+      senderNameCache[createdBy] = name;
+      return name;
+    }
+  } catch (error) {
+    console.error(`Error looking up sender name for ${createdBy}:`, error);
+  }
+
+  return "LivePlay Team";
+}
+
+// Process HTML to replace S3 image URLs with presigned URLs
+async function processHtmlImages(html: string): Promise<string> {
+  if (!html) return html;
+
+  const imgRegex = /<img[^>]+src="(https:\/\/[^"]*s3[^"]*amazonaws\.com[^"]*)"/g;
+  const matches = Array.from(html.matchAll(imgRegex));
+
+  if (matches.length === 0) {
+    return html;
+  }
+
+  let processedHtml = html;
+
+  for (const match of matches) {
+    const originalUrl = match[1];
+    try {
+      const baseUrl = originalUrl.split('?')[0];
+      const presignedUrl = await getPresignedVideoUrl(baseUrl);
+      processedHtml = processedHtml.replace(originalUrl, presignedUrl);
+    } catch (error) {
+      console.error(`Failed to get presigned URL for image: ${originalUrl}`, error);
+    }
+  }
+
+  return processedHtml;
+}
 
 // GET /api/admin/broadcasts/[id] - Get single broadcast with stats
 export async function GET(
@@ -39,16 +113,43 @@ export async function GET(
 
     const broadcast = result.Item as Broadcast;
 
+    // Generate presigned URL for video if it's an S3 URL
+    let videoUrl = broadcast.videoUrl;
+    if (videoUrl && videoUrl.includes('s3') && videoUrl.includes('amazonaws.com')) {
+      try {
+        const baseUrl = videoUrl.split('?')[0];
+        videoUrl = await getPresignedVideoUrl(baseUrl);
+      } catch (error) {
+        console.error(`Failed to get presigned URL for video: ${videoUrl}`, error);
+      }
+    }
+
+    // Process images in bodyHtml to get presigned URLs
+    let bodyHtml = broadcast.bodyHtml;
+    if (bodyHtml && bodyHtml.includes('s3') && bodyHtml.includes('amazonaws.com')) {
+      bodyHtml = await processHtmlImages(bodyHtml);
+    }
+
+    // Get sender name
+    const senderName = await getSenderName(broadcast.createdBy);
+
+    const processedBroadcast = {
+      ...broadcast,
+      videoUrl,
+      bodyHtml,
+      senderName,
+    };
+
     // If sent, include delivery count
     if (broadcast.status === "sent" || broadcast.status === "sending") {
       const deliveries = await getBroadcastDeliveries(id);
       return NextResponse.json({
-        ...broadcast,
+        ...processedBroadcast,
         deliveryCount: deliveries.length,
       });
     }
 
-    return NextResponse.json(broadcast);
+    return NextResponse.json(processedBroadcast);
   } catch (error) {
     console.error("Error fetching broadcast:", error);
     return NextResponse.json({ error: "Failed to fetch broadcast" }, { status: 500 });
