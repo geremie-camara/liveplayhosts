@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-26 | ef91f64 | Add mobile card views to admin pages (users, broadcasts, training) |
 | 2026-01-26 | 0c0c395 | Add PWA support and mobile-responsive directory (card view on mobile) |
 | 2026-01-26 | 0f5183d | Fix mobile header: show login and apply buttons on all screen sizes |
 | 2026-01-26 | pending | Add comprehensive developer documentation (DEVELOPER.md) |
