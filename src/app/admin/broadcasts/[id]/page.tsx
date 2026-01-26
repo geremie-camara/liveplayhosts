@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import RichTextEditor from "@/components/RichTextEditor";
 import VideoUpload from "@/components/VideoUpload";
@@ -18,12 +18,9 @@ import {
 import { UserRole } from "@/lib/types";
 import { ROLE_NAMES, ACTIVE_ROLES } from "@/lib/roles";
 
-export default function BroadcastDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function BroadcastDetailPage() {
+  const params = useParams();
+  const id = params.id as string;
   const router = useRouter();
   const [broadcast, setBroadcast] = useState<Broadcast | null>(null);
   const [deliveries, setDeliveries] = useState<BroadcastDelivery[]>([]);
