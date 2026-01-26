@@ -548,7 +548,7 @@ export default function AdminUsersPage() {
                           href={`/admin/users/${host.id}`}
                           className="px-3 py-1 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary-50 transition-colors"
                         >
-                          Edit
+                          {host.role === "applicant" ? "Review" : "Edit"}
                         </Link>
                         <button
                           onClick={() => setDeleteConfirm(host)}
