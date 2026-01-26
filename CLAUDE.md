@@ -201,6 +201,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-26 | pending | Add comprehensive developer documentation (DEVELOPER.md) |
 | 2026-01-25 | d0744ba | Add 'Resend as New' button to duplicate sent broadcasts |
 | 2026-01-25 | 85eb978 | Fix broadcast detail page: use useParams() instead of use(params) |
 | 2026-01-25 | 54165f7 | Fix broadcasts page: defensive null checks, robust error handling |
