@@ -72,6 +72,29 @@ export default async function DashboardPage() {
   const canViewAnalytics = hasPermission(role, "viewAnalytics");
   const canManageUsers = hasPermission(role, "manageUsers");
 
+  // Fetch pending applicant count for admins
+  let pendingApplicants = 0;
+  if (canManageUsers) {
+    try {
+      const result = await dynamoDb.send(
+        new ScanCommand({
+          TableName: TABLES.HOSTS,
+          FilterExpression: "#role = :applicant",
+          ExpressionAttributeNames: {
+            "#role": "role",
+          },
+          ExpressionAttributeValues: {
+            ":applicant": "applicant",
+          },
+          Select: "COUNT",
+        })
+      );
+      pendingApplicants = result.Count || 0;
+    } catch (error) {
+      console.error("Error fetching applicant count:", error);
+    }
+  }
+
   return (
     <AuthenticatedLayout>
       <div className="max-w-7xl mx-auto">
@@ -90,6 +113,31 @@ export default async function DashboardPage() {
             {ROLE_NAMES[role]}
           </span>
         </div>
+
+        {/* Pending Applicants Alert */}
+        {canManageUsers && pendingApplicants > 0 && (
+          <a
+            href="/admin/users?tab=applicants"
+            className="block mb-6 bg-red-50 border border-red-200 rounded-2xl p-4 hover:bg-red-100 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold">{pendingApplicants}</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-red-800">
+                    {pendingApplicants === 1 ? "1 Pending Application" : `${pendingApplicants} Pending Applications`}
+                  </p>
+                  <p className="text-sm text-red-600">Click to review and approve or reject</p>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+        )}
 
         {/* Dashboard Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
