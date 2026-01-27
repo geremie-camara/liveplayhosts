@@ -336,6 +336,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | 8c411e7 | Add admin host availability page with view/edit, bulk update script |
 | 2026-01-27 | 9916340 | Add host scheduling priority admin page (high/medium/low, admin-only) |
 | 2026-01-27 | 785aaa6 | Optimize Schedule page header for mobile (Call Out button visible) |
 | 2026-01-27 | cd6dc9a | Fix: typo odUserId -> userId in callouts API |
