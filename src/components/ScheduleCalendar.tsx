@@ -498,33 +498,47 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
   return (
     <div className="space-y-4">
       {/* Header with navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        {/* Month navigation */}
-        <div className="flex items-center gap-2 sm:gap-4">
+      <div className="space-y-3">
+        {/* Top row: Month navigation and Call Out button */}
+        <div className="flex items-center justify-between">
+          {/* Month navigation */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={goToPreviousMonth}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Previous month"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            <h2 className="text-base sm:text-xl font-semibold text-dark min-w-[120px] sm:min-w-[180px] text-center">
+              {MONTH_NAMES[currentMonth]} {currentYear}
+            </h2>
+
+            <button
+              onClick={goToNextMonth}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Next month"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Call Out button - always visible */}
           <button
-            onClick={goToPreviousMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Previous month"
+            onClick={() => setShowCallOut(true)}
+            className="px-3 sm:px-4 py-2 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-500/50"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
+            Call Out
           </button>
+        </div>
 
-          <h2 className="text-lg sm:text-xl font-semibold text-dark min-w-[180px] text-center">
-            {MONTH_NAMES[currentMonth]} {currentYear}
-          </h2>
-
-          <button
-            onClick={goToNextMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Next month"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-
+        {/* Bottom row: Today button and View toggle */}
+        <div className="flex items-center justify-between">
           <button
             onClick={goToToday}
             className="px-3 py-1.5 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
@@ -532,36 +546,29 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
             Today
           </button>
 
-          <button
-            onClick={() => setShowCallOut(true)}
-            className="px-3 py-1.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-500/50"
-          >
-            Call Out
-          </button>
-        </div>
-
-        {/* View toggle */}
-        <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-          <button
-            onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-              viewMode === "list"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            List
-          </button>
-          <button
-            onClick={() => setViewMode("month")}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-              viewMode === "month"
-                ? "bg-white text-primary shadow-sm"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            Calendar
-          </button>
+          {/* View toggle */}
+          <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("list")}
+              className={`px-2 sm:px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                viewMode === "list"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              List
+            </button>
+            <button
+              onClick={() => setViewMode("month")}
+              className={`px-2 sm:px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                viewMode === "month"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Calendar
+            </button>
+          </div>
         </div>
       </div>
 
