@@ -97,6 +97,9 @@ export const PERMISSIONS = {
 
   // Host priority management (scheduling priority - admin only, never visible to hosts)
   manageHostPriority: ["talent", "admin", "owner"] as Role[],
+
+  // Host availability management (view/edit all host availabilities)
+  manageAvailability: ["producer", "talent", "admin", "owner"] as Role[],
 };
 
 // Check if user has permission
