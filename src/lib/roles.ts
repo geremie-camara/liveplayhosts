@@ -91,6 +91,9 @@ export const PERMISSIONS = {
 
   // Location management
   manageLocations: ["talent", "admin", "owner"] as Role[],
+
+  // Call out management
+  manageCallOuts: ["producer", "talent", "admin", "owner"] as Role[],
 };
 
 // Check if user has permission
