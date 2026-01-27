@@ -336,6 +336,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | 0d57821 | Fix: use crypto.randomUUID instead of uuid package |
 | 2026-01-27 | 927acc9 | Fix admin callouts page: remove duplicate AuthenticatedLayout |
 | 2026-01-27 | 5225dca | Add admin Call Outs page for managing call out requests |
 | 2026-01-27 | f112d91 | Add call out tracking with DynamoDB, show "Call Out Pending" on schedule |
