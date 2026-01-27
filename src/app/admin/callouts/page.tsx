@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import { CallOut, CallOutStatus } from "@/lib/schedule-types";
 
 interface CallOutWithUser extends CallOut {
@@ -136,8 +135,7 @@ export default function AdminCalloutsPage() {
   ];
 
   return (
-    <AuthenticatedLayout>
-      <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-primary">
@@ -366,7 +364,6 @@ export default function AdminCalloutsPage() {
             </div>
           </>
         )}
-      </div>
-    </AuthenticatedLayout>
+    </div>
   );
 }
