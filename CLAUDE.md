@@ -293,6 +293,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | f112d91 | Add call out tracking with DynamoDB, show "Call Out Pending" on schedule |
 | 2026-01-27 | 5b7f34b | Add urgency icons to Call Out modal (emergency <48h, reschedule <2wk, green >2wk) |
 | 2026-01-27 | be90261 | Add Call Out button to My Schedule page |
 | 2026-01-26 | 8d4e887 | Add Call Out button with shift selection modal, move schedule widget to top-left |
