@@ -3,7 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { CallOut } from "@/lib/schedule-types";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 
 // GET - Fetch user's call out requests
 export async function GET(request: NextRequest) {
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     // Create a call out record for each shift
     for (const shift of shifts) {
       const callout: CallOut = {
-        id: uuidv4(),
+        id: randomUUID(),
         odUserId: userId,
         shiftId: shift.shiftId,
         shiftDate: shift.startingOn,
