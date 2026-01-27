@@ -51,11 +51,13 @@ export interface ScheduleCalendarMonth {
 
 // Studio colors for calendar display
 export const STUDIO_COLORS: Record<string, string> = {
+  "Main Room": "#3B82F6", // blue
   "Studio A": "#3B82F6", // blue
   "Studio B": "#10B981", // green
   "Studio C": "#F59E0B", // amber
   "Studio D": "#EF4444", // red
   "Studio E": "#8B5CF6", // purple
+  "Green Room": "#F59E0B", // amber
   "Virtual": "#6366F1", // indigo
   default: "#6B7280", // gray
 };

@@ -2,114 +2,107 @@
 
 import { ScheduleEntry, Studio, getStudioColor } from "./schedule-types";
 
-// Mock studios
+// Mock studios (rooms)
 export const MOCK_STUDIOS: Studio[] = [
-  { id: 1, name: "Studio A", color: "#3B82F6" },
+  { id: 1, name: "Main Room", color: "#3B82F6" },
   { id: 2, name: "Studio B", color: "#10B981" },
-  { id: 3, name: "Studio C", color: "#F59E0B" },
+  { id: 3, name: "Green Room", color: "#F59E0B" },
   { id: 4, name: "Virtual", color: "#6366F1" },
 ];
 
-// Helper to create dates relative to today
-function daysFromNow(days: number, hour: number = 10, minute: number = 0): Date {
+// Helper to create a date at a specific hour
+function dateAtHour(daysFromNow: number, hour: number): Date {
   const date = new Date();
-  date.setDate(date.getDate() + days);
-  date.setHours(hour, minute, 0, 0);
+  date.setDate(date.getDate() + daysFromNow);
+  date.setHours(hour, 0, 0, 0);
   return date;
 }
 
-// Generate mock schedule entries for a user
-export function getMockScheduleEntries(userEmail: string): ScheduleEntry[] {
-  // Return different mock data based on user email for testing
-  // In production, this will be replaced with real DB queries
-
-  const mockEntries: ScheduleEntry[] = [
-    {
-      id: 1,
-      talentId: 1,
-      talentName: "Test Host",
-      talentEmail: userEmail,
-      studioId: 1,
-      studioName: "Studio A",
-      studioColor: getStudioColor("Studio A"),
-      startingOn: daysFromNow(0, 14, 0), // Today at 2pm
-      endingOn: daysFromNow(0, 18, 0),   // Today at 6pm
-      notes: "Live shopping event",
-    },
-    {
-      id: 2,
-      talentId: 1,
-      talentName: "Test Host",
-      talentEmail: userEmail,
-      studioId: 2,
-      studioName: "Studio B",
-      studioColor: getStudioColor("Studio B"),
-      startingOn: daysFromNow(1, 10, 0), // Tomorrow at 10am
-      endingOn: daysFromNow(1, 14, 0),   // Tomorrow at 2pm
-    },
-    {
-      id: 3,
-      talentId: 1,
-      talentName: "Test Host",
-      talentEmail: userEmail,
-      studioId: 4,
-      studioName: "Virtual",
-      studioColor: getStudioColor("Virtual"),
-      startingOn: daysFromNow(2, 9, 0),  // Day after tomorrow at 9am
-      endingOn: daysFromNow(2, 12, 0),
-      notes: "Remote session",
-    },
-    {
-      id: 4,
-      talentId: 1,
-      talentName: "Test Host",
-      talentEmail: userEmail,
-      studioId: 1,
-      studioName: "Studio A",
-      studioColor: getStudioColor("Studio A"),
-      startingOn: daysFromNow(5, 13, 0),
-      endingOn: daysFromNow(5, 17, 0),
-    },
-    {
-      id: 5,
-      talentId: 1,
-      talentName: "Test Host",
-      talentEmail: userEmail,
-      studioId: 3,
-      studioName: "Studio C",
-      studioColor: getStudioColor("Studio C"),
-      startingOn: daysFromNow(7, 11, 0),
-      endingOn: daysFromNow(7, 15, 0),
-    },
-    {
-      id: 6,
-      talentId: 1,
-      talentName: "Test Host",
-      talentEmail: userEmail,
-      studioId: 2,
-      studioName: "Studio B",
-      studioColor: getStudioColor("Studio B"),
-      startingOn: daysFromNow(10, 14, 0),
-      endingOn: daysFromNow(10, 18, 0),
-    },
-    {
-      id: 7,
-      talentId: 1,
-      talentName: "Test Host",
-      talentEmail: userEmail,
-      studioId: 4,
-      studioName: "Virtual",
-      studioColor: getStudioColor("Virtual"),
-      startingOn: daysFromNow(14, 10, 0),
-      endingOn: daysFromNow(14, 14, 0),
-    },
-  ];
-
-  // Sort by start time
-  return mockEntries.sort((a, b) => a.startingOn.getTime() - b.startingOn.getTime());
+// Create a single hourly entry
+function createHourlyEntry(
+  id: number,
+  userEmail: string,
+  daysFromNow: number,
+  hour: number,
+  studioName: string
+): ScheduleEntry {
+  const studio = MOCK_STUDIOS.find(s => s.name === studioName) || MOCK_STUDIOS[0];
+  return {
+    id,
+    talentId: 1,
+    talentName: "Test Host",
+    talentEmail: userEmail,
+    studioId: studio.id,
+    studioName: studio.name,
+    studioColor: getStudioColor(studio.name),
+    startingOn: dateAtHour(daysFromNow, hour),
+    endingOn: dateAtHour(daysFromNow, hour + 1),
+  };
 }
 
-// Get upcoming schedule entries (next N entries from today)
+// Generate mock schedule entries for a user
+// Pattern: Hosts move between rooms hourly, with breaks
+export function getMockScheduleEntries(userEmail: string): ScheduleEntry[] {
+  const entries: ScheduleEntry[] = [];
+  let id = 1;
+
+  // Today: 10am-2pm with break at noon
+  // 10am Main Room, 11am Studio B, [12pm break], 1pm Green Room, 2pm Main Room
+  entries.push(createHourlyEntry(id++, userEmail, 0, 10, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 0, 11, "Studio B"));
+  // 12pm break
+  entries.push(createHourlyEntry(id++, userEmail, 0, 13, "Green Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 0, 14, "Main Room"));
+
+  // Tomorrow: 2pm-6pm with break at 4pm
+  // 2pm Main Room, 3pm Main Room, [4pm break], 5pm Studio B, 6pm Virtual
+  entries.push(createHourlyEntry(id++, userEmail, 1, 14, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 1, 15, "Main Room"));
+  // 4pm break
+  entries.push(createHourlyEntry(id++, userEmail, 1, 17, "Studio B"));
+  entries.push(createHourlyEntry(id++, userEmail, 1, 18, "Virtual"));
+
+  // Day 2: 9am-1pm with break at 11am
+  // 9am Green Room, 10am Main Room, [11am break], 12pm Main Room, 1pm Studio B
+  entries.push(createHourlyEntry(id++, userEmail, 2, 9, "Green Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 2, 10, "Main Room"));
+  // 11am break
+  entries.push(createHourlyEntry(id++, userEmail, 2, 12, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 2, 13, "Studio B"));
+
+  // Day 5: 11am-3pm with break at 1pm
+  entries.push(createHourlyEntry(id++, userEmail, 5, 11, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 5, 12, "Virtual"));
+  // 1pm break
+  entries.push(createHourlyEntry(id++, userEmail, 5, 14, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 5, 15, "Green Room"));
+
+  // Day 7: 1pm-5pm with break at 3pm
+  entries.push(createHourlyEntry(id++, userEmail, 7, 13, "Studio B"));
+  entries.push(createHourlyEntry(id++, userEmail, 7, 14, "Main Room"));
+  // 3pm break
+  entries.push(createHourlyEntry(id++, userEmail, 7, 16, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 7, 17, "Green Room"));
+
+  // Day 10: 10am-2pm with break at noon
+  entries.push(createHourlyEntry(id++, userEmail, 10, 10, "Virtual"));
+  entries.push(createHourlyEntry(id++, userEmail, 10, 11, "Main Room"));
+  // noon break
+  entries.push(createHourlyEntry(id++, userEmail, 10, 13, "Studio B"));
+  entries.push(createHourlyEntry(id++, userEmail, 10, 14, "Main Room"));
+
+  // Day 14: 3pm-7pm with break at 5pm
+  entries.push(createHourlyEntry(id++, userEmail, 14, 15, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 14, 16, "Main Room"));
+  // 5pm break
+  entries.push(createHourlyEntry(id++, userEmail, 14, 18, "Green Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 14, 19, "Virtual"));
+
+  // Sort by start time
+  return entries.sort((a, b) => a.startingOn.getTime() - b.startingOn.getTime());
+}
+
+// Get upcoming schedule entries (next N entries from now)
 export function getUpcomingMockEntries(userEmail: string, limit: number = 5): ScheduleEntry[] {
   const now = new Date();
   const entries = getMockScheduleEntries(userEmail);
