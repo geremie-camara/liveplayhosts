@@ -5,9 +5,8 @@ import { ScheduleEntry, Studio, getStudioColor } from "./schedule-types";
 // Mock studios (rooms)
 export const MOCK_STUDIOS: Studio[] = [
   { id: 1, name: "Main Room", color: "#3B82F6" },
-  { id: 2, name: "Studio B", color: "#10B981" },
-  { id: 3, name: "Green Room", color: "#F59E0B" },
-  { id: 4, name: "Virtual", color: "#6366F1" },
+  { id: 2, name: "Speed Bingo", color: "#10B981" },
+  { id: 3, name: "Break", color: "#6B7280" },
 ];
 
 // Helper to create a date at a specific hour
@@ -41,62 +40,59 @@ function createHourlyEntry(
 }
 
 // Generate mock schedule entries for a user
-// Pattern: Hosts move between rooms hourly, with breaks
+// Pattern: Hosts rotate between Main Room, Speed Bingo, and Break
 export function getMockScheduleEntries(userEmail: string): ScheduleEntry[] {
   const entries: ScheduleEntry[] = [];
   let id = 1;
 
-  // Today: 10am-2pm with break at noon
-  // 10am Main Room, 11am Studio B, [12pm break], 1pm Green Room, 2pm Main Room
+  // Today: 10am-3pm
   entries.push(createHourlyEntry(id++, userEmail, 0, 10, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 0, 11, "Studio B"));
-  // 12pm break
-  entries.push(createHourlyEntry(id++, userEmail, 0, 13, "Green Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 0, 11, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 0, 12, "Break"));
+  entries.push(createHourlyEntry(id++, userEmail, 0, 13, "Speed Bingo"));
   entries.push(createHourlyEntry(id++, userEmail, 0, 14, "Main Room"));
 
-  // Tomorrow: 2pm-6pm with break at 4pm
-  // 2pm Main Room, 3pm Main Room, [4pm break], 5pm Studio B, 6pm Virtual
+  // Tomorrow: 2pm-7pm
   entries.push(createHourlyEntry(id++, userEmail, 1, 14, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 1, 15, "Main Room"));
-  // 4pm break
-  entries.push(createHourlyEntry(id++, userEmail, 1, 17, "Studio B"));
-  entries.push(createHourlyEntry(id++, userEmail, 1, 18, "Virtual"));
+  entries.push(createHourlyEntry(id++, userEmail, 1, 15, "Speed Bingo"));
+  entries.push(createHourlyEntry(id++, userEmail, 1, 16, "Break"));
+  entries.push(createHourlyEntry(id++, userEmail, 1, 17, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 1, 18, "Main Room"));
 
-  // Day 2: 9am-1pm with break at 11am
-  // 9am Green Room, 10am Main Room, [11am break], 12pm Main Room, 1pm Studio B
-  entries.push(createHourlyEntry(id++, userEmail, 2, 9, "Green Room"));
+  // Day 2: 9am-2pm
+  entries.push(createHourlyEntry(id++, userEmail, 2, 9, "Speed Bingo"));
   entries.push(createHourlyEntry(id++, userEmail, 2, 10, "Main Room"));
-  // 11am break
+  entries.push(createHourlyEntry(id++, userEmail, 2, 11, "Break"));
   entries.push(createHourlyEntry(id++, userEmail, 2, 12, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 2, 13, "Studio B"));
+  entries.push(createHourlyEntry(id++, userEmail, 2, 13, "Speed Bingo"));
 
-  // Day 5: 11am-3pm with break at 1pm
+  // Day 5: 11am-4pm
   entries.push(createHourlyEntry(id++, userEmail, 5, 11, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 5, 12, "Virtual"));
-  // 1pm break
-  entries.push(createHourlyEntry(id++, userEmail, 5, 14, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 5, 15, "Green Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 5, 12, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 5, 13, "Break"));
+  entries.push(createHourlyEntry(id++, userEmail, 5, 14, "Speed Bingo"));
+  entries.push(createHourlyEntry(id++, userEmail, 5, 15, "Main Room"));
 
-  // Day 7: 1pm-5pm with break at 3pm
-  entries.push(createHourlyEntry(id++, userEmail, 7, 13, "Studio B"));
+  // Day 7: 1pm-6pm
+  entries.push(createHourlyEntry(id++, userEmail, 7, 13, "Speed Bingo"));
   entries.push(createHourlyEntry(id++, userEmail, 7, 14, "Main Room"));
-  // 3pm break
+  entries.push(createHourlyEntry(id++, userEmail, 7, 15, "Break"));
   entries.push(createHourlyEntry(id++, userEmail, 7, 16, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 7, 17, "Green Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 7, 17, "Speed Bingo"));
 
-  // Day 10: 10am-2pm with break at noon
-  entries.push(createHourlyEntry(id++, userEmail, 10, 10, "Virtual"));
-  entries.push(createHourlyEntry(id++, userEmail, 10, 11, "Main Room"));
-  // noon break
-  entries.push(createHourlyEntry(id++, userEmail, 10, 13, "Studio B"));
+  // Day 10: 10am-3pm
+  entries.push(createHourlyEntry(id++, userEmail, 10, 10, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 10, 11, "Speed Bingo"));
+  entries.push(createHourlyEntry(id++, userEmail, 10, 12, "Break"));
+  entries.push(createHourlyEntry(id++, userEmail, 10, 13, "Main Room"));
   entries.push(createHourlyEntry(id++, userEmail, 10, 14, "Main Room"));
 
-  // Day 14: 3pm-7pm with break at 5pm
+  // Day 14: 3pm-8pm
   entries.push(createHourlyEntry(id++, userEmail, 14, 15, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 14, 16, "Main Room"));
-  // 5pm break
-  entries.push(createHourlyEntry(id++, userEmail, 14, 18, "Green Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 14, 19, "Virtual"));
+  entries.push(createHourlyEntry(id++, userEmail, 14, 16, "Speed Bingo"));
+  entries.push(createHourlyEntry(id++, userEmail, 14, 17, "Break"));
+  entries.push(createHourlyEntry(id++, userEmail, 14, 18, "Main Room"));
+  entries.push(createHourlyEntry(id++, userEmail, 14, 19, "Speed Bingo"));
 
   // Sort by start time
   return entries.sort((a, b) => a.startingOn.getTime() - b.startingOn.getTime());
