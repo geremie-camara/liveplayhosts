@@ -135,6 +135,26 @@ Users can set their work availability at `/availability`:
 - **Blocked Dates**: Add date ranges for vacations/time off with optional reason
 - Data stored in `liveplayhosts-availability` table keyed by Clerk userId
 
+### Availability Change Log
+
+Tracks when hosts (not admins) update their availability. Useful for auditing and producer awareness.
+
+- **Admin Page**: `/admin/availability-changelog` - View all host availability changes
+- **API**: `GET /api/admin/availability-changelog` - Paginated changelog with optional userId filter
+- **Table**: `liveplayhosts-availability-changelog`
+
+Each log entry includes:
+- Host name and email
+- Change type: weekly schedule, time off, or both
+- Before/after comparison for weekly changes
+- Added/removed blocked date ranges
+- Timestamp of change
+
+**New Files:**
+- `src/app/admin/availability-changelog/page.tsx`
+- `src/app/api/admin/availability-changelog/route.ts`
+- `scripts/create-availability-changelog-table.mjs`
+
 ## Schedule Integration (Aurora MySQL + Google Calendar)
 
 Integrates with external Aurora MySQL scheduler database to display host schedules and sync to Google Calendar.
@@ -311,6 +331,7 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - `liveplayhosts-broadcast-deliveries` (per-user delivery tracking)
 - `liveplayhosts-locations` (location tags for users)
 - `liveplayhosts-callouts` (call out requests with status tracking)
+- `liveplayhosts-availability-changelog` (host availability change audit log)
 
 ## Scripts
 
@@ -322,6 +343,7 @@ node scripts/create-training-tables.mjs  # Create training DynamoDB tables
 node scripts/create-broadcast-tables.mjs # Create broadcast DynamoDB tables
 node scripts/create-locations-table.mjs  # Create locations table with seed data
 node scripts/create-callouts-table.mjs   # Create call outs table
+node scripts/create-availability-changelog-table.mjs # Create availability changelog table
 node scripts/seed-training-data.mjs      # Seed sample courses
 ```
 
@@ -336,6 +358,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | 0562606 | Add host availability change log (tracks when hosts update their avails) |
 | 2026-01-27 | 8c411e7 | Add admin host availability page with view/edit, bulk update script |
 | 2026-01-27 | 9916340 | Add host scheduling priority admin page (high/medium/low, admin-only) |
 | 2026-01-27 | 785aaa6 | Optimize Schedule page header for mobile (Call Out button visible) |
