@@ -94,6 +94,9 @@ export const PERMISSIONS = {
 
   // Call out management
   manageCallOuts: ["producer", "talent", "admin", "owner"] as Role[],
+
+  // Host priority management (scheduling priority - admin only, never visible to hosts)
+  manageHostPriority: ["talent", "admin", "owner"] as Role[],
 };
 
 // Check if user has permission

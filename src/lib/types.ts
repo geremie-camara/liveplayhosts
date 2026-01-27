@@ -1,6 +1,9 @@
 // User role in the system
 export type UserRole = "applicant" | "rejected" | "host" | "producer" | "talent" | "admin" | "owner" | "finance" | "hr";
 
+// Scheduling priority for hosts
+export type SchedulingPriority = "high" | "medium" | "low";
+
 // Database record for a user
 export interface Host {
   id: string;
@@ -55,6 +58,9 @@ export interface Host {
 
   // Notes (admin can add notes about the host)
   notes?: string;
+
+  // Scheduling priority (high/medium/low)
+  schedulingPriority?: SchedulingPriority;
 }
 
 // Role display configuration
