@@ -306,7 +306,7 @@ See `.env.example` for required variables:
 | 2026-01-26 | ef91f64 | Add mobile card views to admin pages (users, broadcasts, training) |
 | 2026-01-26 | 0c0c395 | Add PWA support and mobile-responsive directory (card view on mobile) |
 | 2026-01-26 | 0f5183d | Fix mobile header: show login and apply buttons on all screen sizes |
-| 2026-01-26 | pending | Add comprehensive developer documentation (DEVELOPER.md) |
+| 2026-01-26 | 03128c8 | Add comprehensive developer documentation (DEVELOPER.md) |
 | 2026-01-25 | d0744ba | Add 'Resend as New' button to duplicate sent broadcasts |
 | 2026-01-25 | 85eb978 | Fix broadcast detail page: use useParams() instead of use(params) |
 | 2026-01-25 | 54165f7 | Fix broadcasts page: defensive null checks, robust error handling |
