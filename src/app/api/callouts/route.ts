@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     for (const shift of shifts) {
       const callout: CallOut = {
         id: randomUUID(),
-        odUserId: userId,
+        userId: userId,
         shiftId: shift.shiftId,
         shiftDate: shift.startingOn,
         shiftTime: shift.shiftTime,
