@@ -142,26 +142,8 @@ export default async function DashboardPage() {
 
         {/* Dashboard Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Quick Stats */}
-          <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-dark mb-4">Quick Stats</h3>
-            <div className="space-y-4">
-              {canViewSchedule && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Upcoming Sessions</span>
-                  <span className="text-2xl font-bold text-primary">0</span>
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Completed This Month</span>
-                <span className="text-2xl font-bold text-accent">0</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Training Progress</span>
-                <span className="text-2xl font-bold text-secondary">0%</span>
-              </div>
-            </div>
-          </div>
+          {/* Upcoming Schedule - Most Important, Top Left */}
+          {canViewSchedule && <ScheduleWidget userEmail={primaryEmail} />}
 
           {/* Training Progress */}
           <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
@@ -188,8 +170,20 @@ export default async function DashboardPage() {
             </a>
           </div>
 
-          {/* Upcoming Schedule */}
-          {canViewSchedule && <ScheduleWidget userEmail={primaryEmail} />}
+          {/* Quick Stats */}
+          <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-semibold text-dark mb-4">Quick Stats</h3>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Completed This Month</span>
+                <span className="text-2xl font-bold text-accent">0</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Training Progress</span>
+                <span className="text-2xl font-bold text-secondary">0%</span>
+              </div>
+            </div>
+          </div>
 
           {/* Analytics - Only for producers and admins */}
           {canViewAnalytics && (

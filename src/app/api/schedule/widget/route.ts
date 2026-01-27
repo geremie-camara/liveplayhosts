@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import {
   getTalentIdByEmail,
@@ -9,7 +9,7 @@ import { toWidgetEntry } from "@/lib/schedule-types";
 import { getUpcomingMockEntries, USING_MOCK_DATA } from "@/lib/mock-schedule-data";
 
 // GET /api/schedule/widget - Get upcoming schedule for dashboard widget
-export async function GET() {
+export async function GET(request: NextRequest) {
   const user = await currentUser();
 
   if (!user) {
@@ -24,13 +24,18 @@ export async function GET() {
     return NextResponse.json({ error: "No email found" }, { status: 400 });
   }
 
+  // Get limit from query params (default 5, max 100)
+  const searchParams = request.nextUrl.searchParams;
+  const limitParam = searchParams.get("limit");
+  const limit = Math.min(Math.max(parseInt(limitParam || "5") || 5, 1), 100);
+
   try {
     // Check if we should use mock data or real database
     const useMockData = USING_MOCK_DATA || !isSchedulerDbConfigured();
 
     if (useMockData) {
       // Use mock data for development
-      const entries = getUpcomingMockEntries(primaryEmail, 5);
+      const entries = getUpcomingMockEntries(primaryEmail, limit);
       const widgetEntries = entries.map(toWidgetEntry);
 
       return NextResponse.json({
@@ -48,7 +53,7 @@ export async function GET() {
     }
 
     // Get upcoming schedule entries
-    const entries = await getUpcomingSchedule(talentId, 5);
+    const entries = await getUpcomingSchedule(talentId, limit);
     const widgetEntries = entries.map(toWidgetEntry);
 
     return NextResponse.json({

@@ -9,16 +9,20 @@ interface ScheduleWidgetProps {
 
 export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
   const [entries, setEntries] = useState<ScheduleWidgetEntry[]>([]);
+  const [allEntries, setAllEntries] = useState<ScheduleWidgetEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCallOut, setShowCallOut] = useState(false);
+  const [selectedShifts, setSelectedShifts] = useState<Set<number>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     async function fetchSchedule() {
       try {
+        // Fetch widget entries (limited)
         const response = await fetch("/api/schedule/widget");
         if (!response.ok) {
           if (response.status === 404) {
-            // User not found in scheduler DB
             setEntries([]);
             setError("not_in_system");
           } else {
@@ -29,6 +33,13 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
 
         const data = await response.json();
         setEntries(data.entries || []);
+
+        // Fetch all entries for call out modal
+        const allResponse = await fetch("/api/schedule/widget?limit=50");
+        if (allResponse.ok) {
+          const allData = await allResponse.json();
+          setAllEntries(allData.entries || []);
+        }
       } catch (err) {
         console.error("Error fetching schedule:", err);
         setError("fetch_error");
@@ -39,6 +50,40 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
 
     fetchSchedule();
   }, [userEmail]);
+
+  const toggleShift = (id: number) => {
+    const newSelected = new Set(selectedShifts);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedShifts(newSelected);
+  };
+
+  const handleCallOut = async () => {
+    if (selectedShifts.size === 0) return;
+
+    setSubmitting(true);
+    try {
+      // TODO: Implement actual call out API
+      // For now, just show an alert
+      const selectedEntries = allEntries.filter(e => selectedShifts.has(e.id));
+      const shiftDetails = selectedEntries
+        .map(e => `${e.date} ${e.time} - ${e.studioName}`)
+        .join("\n");
+
+      alert(`Call out submitted for:\n\n${shiftDetails}\n\nYour producer will be notified.`);
+
+      setShowCallOut(false);
+      setSelectedShifts(new Set());
+    } catch (err) {
+      console.error("Error submitting call out:", err);
+      alert("Failed to submit call out. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -112,57 +157,151 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-dark">Upcoming Schedule</h3>
-        <a href="/schedule" className="text-accent text-sm font-medium hover:underline">
-          View All
-        </a>
+    <>
+      <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
+        {/* Header with Call Out button */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-dark">Upcoming Schedule</h3>
+          <button
+            onClick={() => setShowCallOut(true)}
+            className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+          >
+            Call Out
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          {entries.map((entry) => (
+            <div key={entry.id} className="flex items-start gap-3 group">
+              {/* Color indicator */}
+              <div
+                className="w-2 h-full min-h-[3rem] rounded-full flex-shrink-0"
+                style={{ backgroundColor: entry.studioColor }}
+              />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-dark text-sm sm:text-base">
+                    {entry.studioName}
+                  </span>
+                  <span
+                    className="px-2 py-0.5 text-xs rounded-full"
+                    style={{
+                      backgroundColor: `${entry.studioColor}15`,
+                      color: entry.studioColor,
+                    }}
+                  >
+                    {entry.date}
+                  </span>
+                </div>
+                <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
+                  {entry.time}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <a
+            href="/schedule"
+            className="inline-flex items-center text-accent font-medium hover:underline text-sm"
+          >
+            View Full Calendar
+            <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {entries.map((entry) => (
-          <div key={entry.id} className="flex items-start gap-3 group">
-            {/* Color indicator */}
-            <div
-              className="w-2 h-full min-h-[3rem] rounded-full flex-shrink-0"
-              style={{ backgroundColor: entry.studioColor }}
-            />
+      {/* Call Out Modal */}
+      {showCallOut && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[80vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-dark">Call Out</h2>
+              <button
+                onClick={() => {
+                  setShowCallOut(false);
+                  setSelectedShifts(new Set());
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-medium text-dark text-sm sm:text-base">
-                  {entry.studioName}
-                </span>
-                <span
-                  className="px-2 py-0.5 text-xs rounded-full"
-                  style={{
-                    backgroundColor: `${entry.studioColor}15`,
-                    color: entry.studioColor,
-                  }}
-                >
-                  {entry.date}
-                </span>
-              </div>
-              <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
-                {entry.time}
+            {/* Modal Body */}
+            <div className="p-4 overflow-y-auto flex-1">
+              <p className="text-sm text-gray-600 mb-4">
+                Select the shifts you need to call out from:
               </p>
+
+              <div className="space-y-2">
+                {allEntries.map((entry) => (
+                  <label
+                    key={entry.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedShifts.has(entry.id)
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedShifts.has(entry.id)}
+                      onChange={() => toggleShift(entry.id)}
+                      className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                    />
+                    <div
+                      className="w-2 h-8 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: entry.studioColor }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-dark text-sm">
+                        {entry.date}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {entry.time} • {entry.studioName}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {allEntries.length === 0 && (
+                <p className="text-center text-gray-500 py-4">
+                  No upcoming shifts to call out from
+                </p>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCallOut(false);
+                  setSelectedShifts(new Set());
+                }}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCallOut}
+                disabled={selectedShifts.size === 0 || submitting}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Submitting..." : `Call Out (${selectedShifts.size})`}
+              </button>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-gray-100">
-        <a
-          href="/schedule"
-          className="inline-flex items-center text-accent font-medium hover:underline text-sm"
-        >
-          View Full Calendar
-          <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </a>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
