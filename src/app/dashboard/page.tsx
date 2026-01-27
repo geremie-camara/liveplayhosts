@@ -6,6 +6,7 @@ import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import MessageCenter from "@/components/MessageCenter";
+import ScheduleWidget from "@/components/ScheduleWidget";
 
 async function syncUserRole(userId: string, email: string, currentRole?: string): Promise<{ role: Role; isApproved: boolean }> {
   // If user already has an active role set, they're approved
@@ -188,37 +189,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Upcoming Schedule */}
-          {canViewSchedule ? (
-            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-lg font-semibold text-dark mb-4">
-                Upcoming Schedule
-              </h3>
-              <div className="text-center py-8 text-gray-500">
-                <p>No upcoming sessions</p>
-                <a
-                  href="/schedule"
-                  className="inline-flex items-center text-accent font-medium hover:underline mt-2"
-                >
-                  View Schedule →
-                </a>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
-              <h3 className="text-lg font-semibold text-dark mb-4">
-                Schedule Access
-              </h3>
-              <div className="text-center py-8 text-gray-500">
-                <p className="mb-2">Schedule access is available for all active users</p>
-                <a
-                  href="/schedule"
-                  className="inline-flex items-center text-accent font-medium hover:underline mt-2"
-                >
-                  View Schedule →
-                </a>
-              </div>
-            </div>
-          )}
+          {canViewSchedule && <ScheduleWidget userEmail={primaryEmail} />}
 
           {/* Analytics - Only for producers and admins */}
           {canViewAnalytics && (

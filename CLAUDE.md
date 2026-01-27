@@ -45,6 +45,10 @@ src/
 │   │   │   ├── courses/        # Course CRUD
 │   │   │   ├── sections/       # Section CRUD
 │   │   │   └── lessons/        # Lesson CRUD
+│   │   ├── schedule/           # User schedule API
+│   │   │   └── widget/         # Dashboard widget data
+│   │   ├── admin/schedule/     # Admin schedule management
+│   │   │   └── sync/           # Google Calendar sync
 │   │   ├── hosts/              # Host management
 │   │   ├── profile/            # User profile
 │   │   ├── availability/       # Scheduling
@@ -58,6 +62,7 @@ src/
 │   ├── training/               # User-facing training
 │   │   ├── courses/[courseId]/ # Course detail
 │   │   └── lessons/[lessonId]/ # Lesson viewer
+│   ├── schedule/               # User schedule page
 │   ├── dashboard/
 │   ├── directory/
 │   ├── profile/
@@ -69,10 +74,16 @@ src/
 │   │   ├── LessonList.tsx
 │   │   ├── VideoPlayer.tsx
 │   │   └── ArticleContent.tsx
+│   ├── ScheduleWidget.tsx      # Dashboard schedule widget
+│   ├── ScheduleCalendar.tsx    # Full calendar view
 │   └── *.tsx
 └── lib/
     ├── types.ts                # Core types
     ├── training-types.ts       # LMS types
+    ├── schedule-types.ts       # Schedule types
+    ├── scheduler-db.ts         # MySQL scheduler DB client
+    ├── google-calendar.ts      # Google Calendar API
+    ├── mock-schedule-data.ts   # Mock data for dev
     ├── roles.ts                # RBAC
     ├── dynamodb.ts             # DynamoDB client
     └── s3.ts                   # S3 client
@@ -123,6 +134,62 @@ Users can set their work availability at `/availability`:
 - **Weekly Schedule**: Check days available (Mon-Sun), set start/end times per day
 - **Blocked Dates**: Add date ranges for vacations/time off with optional reason
 - Data stored in `liveplayhosts-availability` table keyed by Clerk userId
+
+## Schedule Integration (Aurora MySQL + Google Calendar)
+
+Integrates with external Aurora MySQL scheduler database to display host schedules and sync to Google Calendar.
+
+### Features
+- **Dashboard Widget**: Shows next 5 upcoming shifts with studio, date, time
+- **Schedule Page**: Full calendar view with list/month toggle, color-coded by studio
+- **Google Calendar Sync**: Admin-triggered sync to studio-based calendars, sends invites to hosts
+- **Mock Data Mode**: Works without DB connection for development
+
+### User Pages
+- `/schedule` - Full calendar view with month navigation
+- Dashboard ScheduleWidget shows upcoming shifts
+
+### API Routes
+- `GET /api/schedule` - Get user's schedule for a month (params: year, month)
+- `GET /api/schedule/widget` - Get upcoming schedule for dashboard widget
+- `GET /api/admin/schedule/sync` - Check sync configuration status
+- `POST /api/admin/schedule/sync` - Trigger Google Calendar sync (params: startDate, endDate)
+
+### Host Mapping
+User email from Clerk is matched to `talent.email` in MySQL to find their schedules.
+
+### New Files
+- `src/lib/schedule-types.ts` - Type definitions
+- `src/lib/mock-schedule-data.ts` - Mock data for development
+- `src/lib/scheduler-db.ts` - MySQL connection pool
+- `src/lib/google-calendar.ts` - Google Calendar API client
+- `src/components/ScheduleWidget.tsx` - Dashboard widget
+- `src/components/ScheduleCalendar.tsx` - Full calendar view
+- `src/app/schedule/page.tsx` - Schedule page
+- `src/app/api/schedule/` - Schedule API routes
+- `src/app/api/admin/schedule/sync/` - Admin sync route
+
+### Environment Variables (Scheduler DB)
+```
+SCHEDULER_DB_HOST=<aurora-proxy-endpoint>
+SCHEDULER_DB_NAME=<database-name>
+SCHEDULER_DB_USER=<username>
+SCHEDULER_DB_PASSWORD=<password>
+```
+
+### Environment Variables (Google Calendar)
+```
+GOOGLE_SERVICE_ACCOUNT_EMAIL=<service-account@project.iam.gserviceaccount.com>
+GOOGLE_PRIVATE_KEY=<private-key-from-json>
+GOOGLE_CALENDAR_STUDIO_A=<calendar-id>
+GOOGLE_CALENDAR_STUDIO_B=<calendar-id>
+GOOGLE_CALENDAR_STUDIO_C=<calendar-id>
+GOOGLE_CALENDAR_VIRTUAL=<calendar-id>
+```
+
+### New Dependencies
+- `googleapis` - Google Calendar API
+- `mysql2` - MySQL client (moved to production deps)
 
 ## Broadcast Messaging System
 

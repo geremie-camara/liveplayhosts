@@ -19,7 +19,14 @@ const isHostRoute = createRouteMatcher(["/schedule(.*)"]);
 export default clerkMiddleware(async (auth, req) => {
   // Protect authenticated routes
   if (isProtectedRoute(req)) {
-    const { userId, sessionClaims } = await auth.protect();
+    const { userId, sessionClaims } = await auth();
+
+    // Redirect to sign-in if not authenticated
+    if (!userId) {
+      const signInUrl = new URL("/sign-in", req.url);
+      signInUrl.searchParams.set("redirect_url", req.url);
+      return NextResponse.redirect(signInUrl);
+    }
 
     // Get user role from session claims (public metadata)
     const role = (sessionClaims?.metadata as { role?: string })?.role;
