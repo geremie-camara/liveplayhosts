@@ -140,10 +140,17 @@ Users can set their work availability at `/availability`:
 Integrates with external Aurora MySQL scheduler database to display host schedules and sync to Google Calendar.
 
 ### Features
-- **Dashboard Widget**: Shows next 5 upcoming shifts with studio, date, time
+- **Dashboard Widget**: Shows next 5 upcoming shifts with studio, date, time (positioned top-left as most important)
+- **Call Out**: Hosts can select shifts and submit a call out request (notifies producer)
 - **Schedule Page**: Full calendar view with list/month toggle, color-coded by studio
 - **Google Calendar Sync**: Admin-triggered sync to studio-based calendars, sends invites to hosts
 - **Mock Data Mode**: Works without DB connection for development
+- **Hourly Entries**: Schedules are tracked hourly - hosts move between rooms each hour
+
+### Rooms (Studios)
+- **Main Room** - Blue (#3B82F6)
+- **Speed Bingo** - Green (#10B981)
+- **Break** - Gray (#6B7280)
 
 ### User Pages
 - `/schedule` - Full calendar view with month navigation
@@ -284,6 +291,9 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-26 | 8d4e887 | Add Call Out button with shift selection modal, move schedule widget to top-left |
+| 2026-01-26 | 42c5baf | Simplify rooms to Main Room, Speed Bingo, and Break |
+| 2026-01-26 | beb815f | Update mock schedule data: hourly entries with room switching and breaks |
 | 2026-01-26 | c37e805 | Add schedule integration with Aurora MySQL and Google Calendar sync |
 | 2026-01-26 | a07e07a | Switch SMS from AWS SNS to Twilio |
 | 2026-01-26 | c1ee5a2 | Auto-populate SMS text from subject in broadcast form |
