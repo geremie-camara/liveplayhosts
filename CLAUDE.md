@@ -336,6 +336,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | 785aaa6 | Optimize Schedule page header for mobile (Call Out button visible) |
 | 2026-01-27 | cd6dc9a | Fix: typo odUserId -> userId in callouts API |
 | 2026-01-27 | 0d57821 | Fix: use crypto.randomUUID instead of uuid package |
 | 2026-01-27 | 927acc9 | Fix admin callouts page: remove duplicate AuthenticatedLayout |
