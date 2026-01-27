@@ -198,6 +198,49 @@ GOOGLE_CALENDAR_VIRTUAL=<calendar-id>
 - `googleapis` - Google Calendar API
 - `mysql2` - MySQL client (moved to production deps)
 
+## Call Out System
+
+Hosts can request to call out from scheduled shifts. Admins can approve or deny requests.
+
+### Features
+- **Call Out Button**: Red button on Dashboard widget and Schedule page
+- **Shift Selection**: Modal showing upcoming shifts with urgency indicators
+- **Urgency Levels**: Emergency (<48h), Reschedule (<2wk), Good Notice (>2wk)
+- **Status Tracking**: Pending, Approved, Denied statuses
+- **Pending Badge**: "Call Out Pending" shown on schedule entries
+- **Admin Management**: Review and approve/deny call out requests
+
+### User Flow
+1. User clicks "Call Out" button
+2. Selects shifts from upcoming schedule (already-pending shifts are disabled)
+3. Submits call out request
+4. Sees "Call Out Pending" badge on those shifts
+5. Admin reviews and approves/denies
+
+### Admin Page
+- `/admin/callouts` - View all call out requests
+- Tabs: Pending, Approved, Denied, All
+- Shows host name, shift details, urgency, submission time
+- Approve/Deny buttons for pending requests
+- Reset button to return to pending status
+
+### API Routes
+- `GET /api/callouts` - Get user's call outs (optional `?status=` filter)
+- `POST /api/callouts` - Submit call out request
+- `GET /api/admin/callouts` - List all call outs (admin)
+- `PATCH /api/admin/callouts/[id]` - Update call out status (admin)
+- `DELETE /api/admin/callouts/[id]` - Delete call out (admin)
+
+### DynamoDB Table: `liveplayhosts-callouts`
+- `id` (PK) - UUID
+- `userId` - Clerk user ID
+- `shiftId` - Schedule entry ID
+- `shiftDate`, `shiftTime`, `studioName` - Shift details
+- `status` - pending/approved/denied
+- `createdAt`, `updatedAt` - Timestamps
+- `reviewedBy`, `reviewedAt` - Admin review info
+- GSI: `userId-createdAt-index`, `status-createdAt-index`, `shiftId-index`
+
 ## Broadcast Messaging System
 
 Multi-channel broadcast system for admins to send targeted messages to hosts.
@@ -293,6 +336,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | 5225dca | Add admin Call Outs page for managing call out requests |
 | 2026-01-27 | f112d91 | Add call out tracking with DynamoDB, show "Call Out Pending" on schedule |
 | 2026-01-27 | 5b7f34b | Add urgency icons to Call Out modal (emergency <48h, reschedule <2wk, green >2wk) |
 | 2026-01-27 | be90261 | Add Call Out button to My Schedule page |
