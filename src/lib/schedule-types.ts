@@ -49,6 +49,25 @@ export interface ScheduleCalendarMonth {
   days: ScheduleCalendarDay[];
 }
 
+// Call out request status
+export type CallOutStatus = "pending" | "approved" | "denied";
+
+// Call out request stored in DynamoDB
+export interface CallOut {
+  id: string; // UUID
+  userId: string; // Clerk user ID
+  shiftId: number; // Schedule entry ID from MySQL
+  shiftDate: string; // ISO date string for the shift
+  shiftTime: string; // Time range string
+  studioName: string;
+  status: CallOutStatus;
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+  notes?: string; // Optional notes from user
+  reviewedBy?: string; // Admin who reviewed
+  reviewedAt?: string; // When it was reviewed
+}
+
 // Studio colors for calendar display
 export const STUDIO_COLORS: Record<string, string> = {
   "Main Room": "#3B82F6", // blue

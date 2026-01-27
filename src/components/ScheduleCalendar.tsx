@@ -30,6 +30,7 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
   const [selectedShifts, setSelectedShifts] = useState<Set<number>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [upcomingEntries, setUpcomingEntries] = useState<ScheduleWidgetEntry[]>([]);
+  const [pendingCallOuts, setPendingCallOuts] = useState<Set<number>>(new Set());
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -74,7 +75,7 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
     fetchSchedule();
   }, [currentYear, currentMonth, userEmail]);
 
-  // Fetch upcoming entries for call out modal
+  // Fetch upcoming entries for call out modal and pending call outs
   useEffect(() => {
     async function fetchUpcoming() {
       try {
@@ -87,7 +88,24 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
         console.error("Error fetching upcoming entries:", err);
       }
     }
+
+    async function fetchPendingCallOuts() {
+      try {
+        const response = await fetch("/api/callouts?status=pending");
+        if (response.ok) {
+          const data = await response.json();
+          const pendingIds = new Set<number>(
+            (data.callouts || []).map((c: { shiftId: number }) => c.shiftId)
+          );
+          setPendingCallOuts(pendingIds);
+        }
+      } catch (err) {
+        console.error("Error fetching pending call outs:", err);
+      }
+    }
+
     fetchUpcoming();
+    fetchPendingCallOuts();
   }, []);
 
   // Helper to determine urgency icon based on time until shift
@@ -143,8 +161,32 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
 
     setSubmitting(true);
     try {
-      // TODO: Implement actual call out API
       const selectedEntries = upcomingEntries.filter(e => selectedShifts.has(e.id));
+
+      // Submit to API
+      const response = await fetch("/api/callouts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          shifts: selectedEntries.map(e => ({
+            shiftId: e.id,
+            shiftDate: e.date,
+            shiftTime: e.time,
+            studioName: e.studioName,
+            startingOn: e.startingOn,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to submit call out");
+      }
+
+      // Update pending call outs state
+      const newPending = new Set(pendingCallOuts);
+      selectedEntries.forEach(e => newPending.add(e.id));
+      setPendingCallOuts(newPending);
+
       const shiftDetails = selectedEntries
         .map(e => `${e.date} ${e.time} - ${e.studioName}`)
         .join("\n");
@@ -366,7 +408,7 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
               {/* Entries for this day */}
               <div className="divide-y divide-gray-100">
                 {dayEntries.map((entry) => (
-                  <div key={entry.id} className="px-4 py-3 flex items-start gap-3">
+                  <div key={entry.id} className={`px-4 py-3 flex items-start gap-3 ${pendingCallOuts.has(entry.id) ? "bg-amber-50" : ""}`}>
                     <div
                       className="w-1 h-full min-h-[3rem] rounded-full flex-shrink-0"
                       style={{ backgroundColor: entry.studioColor }}
@@ -383,6 +425,14 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
                         >
                           {formatScheduleTime(entry.startingOn, entry.endingOn)}
                         </span>
+                        {pendingCallOuts.has(entry.id) && (
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-medium flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                            </svg>
+                            Call Out Pending
+                          </span>
+                        )}
                       </div>
                       {entry.notes && (
                         <p className="text-sm text-gray-500 mt-1">{entry.notes}</p>
@@ -563,36 +613,48 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
               </p>
 
               <div className="space-y-2">
-                {upcomingEntries.map((entry) => (
-                  <label
-                    key={entry.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      selectedShifts.has(entry.id)
-                        ? "border-red-300 bg-red-50"
-                        : "border-gray-200 hover:bg-gray-50"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedShifts.has(entry.id)}
-                      onChange={() => toggleShift(entry.id)}
-                      className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
-                    />
-                    <div
-                      className="w-2 h-8 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: entry.studioColor }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-dark text-sm">
-                        {entry.date}
+                {upcomingEntries.map((entry) => {
+                  const isPending = pendingCallOuts.has(entry.id);
+                  return (
+                    <label
+                      key={entry.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                        isPending
+                          ? "border-amber-300 bg-amber-50 cursor-not-allowed opacity-60"
+                          : selectedShifts.has(entry.id)
+                          ? "border-red-300 bg-red-50 cursor-pointer"
+                          : "border-gray-200 hover:bg-gray-50 cursor-pointer"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedShifts.has(entry.id)}
+                        onChange={() => !isPending && toggleShift(entry.id)}
+                        disabled={isPending}
+                        className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 disabled:opacity-50"
+                      />
+                      <div
+                        className="w-2 h-8 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: entry.studioColor }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-dark text-sm">
+                          {entry.date}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {entry.time} • {entry.studioName}
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        {entry.time} • {entry.studioName}
-                      </div>
-                    </div>
-                    {getUrgencyIcon(entry.startingOn)}
-                  </label>
-                ))}
+                      {isPending ? (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-700 font-medium">
+                          Already Pending
+                        </span>
+                      ) : (
+                        getUrgencyIcon(entry.startingOn)
+                      )}
+                    </label>
+                  );
+                })}
               </div>
 
               {upcomingEntries.length === 0 && (
