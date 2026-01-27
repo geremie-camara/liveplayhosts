@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { GetCommand, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { UserAvailability, WeeklyAvailability, BlockedDateRange } from "@/lib/types";
+import { UserAvailability, WeeklyAvailability, BlockedDateRange, AvailabilityChangeLog, Host } from "@/lib/types";
+import { v4 as uuidv4 } from "uuid";
 
 const DEFAULT_WEEKLY: WeeklyAvailability = {
   monday: { enabled: false, startTime: "09:00", endTime: "17:00" },
@@ -46,6 +47,86 @@ export async function GET() {
   }
 }
 
+// Helper to compare weekly availability and generate summary
+function compareWeeklyAvailability(
+  before: WeeklyAvailability,
+  after: WeeklyAvailability
+): { changed: boolean; summary: string } {
+  const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"] as const;
+  const changes: string[] = [];
+
+  for (const day of days) {
+    const b = before[day];
+    const a = after[day];
+    const dayName = day.charAt(0).toUpperCase() + day.slice(1);
+
+    if (b.enabled !== a.enabled) {
+      if (a.enabled) {
+        changes.push(`${dayName}: enabled (${a.startTime}-${a.endTime})`);
+      } else {
+        changes.push(`${dayName}: disabled`);
+      }
+    } else if (b.enabled && a.enabled) {
+      if (b.startTime !== a.startTime || b.endTime !== a.endTime) {
+        changes.push(`${dayName}: ${b.startTime}-${b.endTime} → ${a.startTime}-${a.endTime}`);
+      }
+    }
+  }
+
+  return {
+    changed: changes.length > 0,
+    summary: changes.length > 0 ? changes.join("; ") : "No changes",
+  };
+}
+
+// Helper to compare blocked dates and generate summary
+function compareBlockedDates(
+  before: BlockedDateRange[],
+  after: BlockedDateRange[]
+): { changed: boolean; added: BlockedDateRange[]; removed: BlockedDateRange[]; summary: string } {
+  const beforeIds = new Set(before.map(b => b.id));
+  const afterIds = new Set(after.map(a => a.id));
+
+  const added = after.filter(a => !beforeIds.has(a.id));
+  const removed = before.filter(b => !afterIds.has(b.id));
+
+  const changes: string[] = [];
+
+  for (const r of removed) {
+    changes.push(`Removed: ${r.startDate} to ${r.endDate}${r.reason ? ` (${r.reason})` : ""}`);
+  }
+
+  for (const a of added) {
+    changes.push(`Added: ${a.startDate} to ${a.endDate}${a.reason ? ` (${a.reason})` : ""}`);
+  }
+
+  return {
+    changed: changes.length > 0,
+    added,
+    removed,
+    summary: changes.length > 0 ? changes.join("; ") : "No changes",
+  };
+}
+
+// Helper to get host info by clerkUserId
+async function getHostByClerkId(clerkUserId: string): Promise<Host | null> {
+  try {
+    const result = await dynamoDb.send(
+      new ScanCommand({
+        TableName: TABLES.HOSTS,
+        FilterExpression: "clerkUserId = :clerkUserId",
+        ExpressionAttributeValues: {
+          ":clerkUserId": clerkUserId,
+        },
+        Limit: 1,
+      })
+    );
+    return (result.Items?.[0] as Host) || null;
+  } catch {
+    return null;
+  }
+}
+
 // PUT /api/availability - Update current user's availability
 export async function PUT(request: NextRequest) {
   const { userId } = await auth();
@@ -61,20 +142,103 @@ export async function PUT(request: NextRequest) {
   const weekly: WeeklyAvailability = body.weekly || DEFAULT_WEEKLY;
   const blockedDates: BlockedDateRange[] = body.blockedDates || [];
 
-  const availability: UserAvailability = {
-    userId,
-    weekly,
-    blockedDates,
-    updatedAt: now,
-  };
-
   try {
+    // Fetch current availability for comparison
+    const currentResult = await dynamoDb.send(
+      new GetCommand({
+        TableName: TABLES.AVAILABILITY,
+        Key: { userId },
+      })
+    );
+
+    const currentAvailability = currentResult.Item as UserAvailability | undefined;
+    const previousWeekly = currentAvailability?.weekly || DEFAULT_WEEKLY;
+    const previousBlockedDates = currentAvailability?.blockedDates || [];
+
+    // Compare changes
+    const weeklyComparison = compareWeeklyAvailability(previousWeekly, weekly);
+    const blockedComparison = compareBlockedDates(previousBlockedDates, blockedDates);
+
+    // Save the new availability
+    const availability: UserAvailability = {
+      userId,
+      weekly,
+      blockedDates,
+      updatedAt: now,
+    };
+
     await dynamoDb.send(
       new PutCommand({
         TableName: TABLES.AVAILABILITY,
         Item: availability,
       })
     );
+
+    // Log the change if anything changed
+    if (weeklyComparison.changed || blockedComparison.changed) {
+      // Get host info and user info
+      const [host, user] = await Promise.all([
+        getHostByClerkId(userId),
+        currentUser(),
+      ]);
+
+      const hostName = host
+        ? `${host.firstName} ${host.lastName}`
+        : user
+        ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unknown"
+        : "Unknown";
+
+      const hostEmail = host?.email || user?.emailAddresses?.[0]?.emailAddress || "unknown";
+
+      let changeType: "weekly" | "blocked_dates" | "both";
+      if (weeklyComparison.changed && blockedComparison.changed) {
+        changeType = "both";
+      } else if (weeklyComparison.changed) {
+        changeType = "weekly";
+      } else {
+        changeType = "blocked_dates";
+      }
+
+      const changeLog: AvailabilityChangeLog = {
+        id: uuidv4(),
+        odIndex: "ALL", // Used for global queries ordered by date
+        userId,
+        hostId: host?.id,
+        hostName,
+        hostEmail,
+        changeType,
+        changes: {
+          ...(weeklyComparison.changed && {
+            weekly: {
+              before: previousWeekly,
+              after: weekly,
+              summary: weeklyComparison.summary,
+            },
+          }),
+          ...(blockedComparison.changed && {
+            blockedDates: {
+              added: blockedComparison.added,
+              removed: blockedComparison.removed,
+              summary: blockedComparison.summary,
+            },
+          }),
+        },
+        createdAt: now,
+      };
+
+      // Save the change log (don't fail the request if this fails)
+      try {
+        await dynamoDb.send(
+          new PutCommand({
+            TableName: TABLES.AVAILABILITY_CHANGELOG,
+            Item: changeLog,
+          })
+        );
+      } catch (logError) {
+        console.error("Error saving availability change log:", logError);
+        // Don't fail the request, just log the error
+      }
+    }
 
     return NextResponse.json(availability);
   } catch (error) {

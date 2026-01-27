@@ -110,6 +110,30 @@ export interface UserAvailability {
   updatedAt: string;
 }
 
+// Availability change log entry (tracks host-initiated changes)
+export interface AvailabilityChangeLog {
+  id: string; // UUID
+  odIndex: string; // Global secondary index: odIndex for ordering
+  userId: string; // Host's Clerk userId
+  hostId?: string; // Host's DynamoDB id (if available)
+  hostName: string; // Host's name at time of change
+  hostEmail: string; // Host's email at time of change
+  changeType: "weekly" | "blocked_dates" | "both";
+  changes: {
+    weekly?: {
+      before: WeeklyAvailability;
+      after: WeeklyAvailability;
+      summary: string; // Human-readable summary of changes
+    };
+    blockedDates?: {
+      added: BlockedDateRange[];
+      removed: BlockedDateRange[];
+      summary: string;
+    };
+  };
+  createdAt: string; // ISO timestamp
+}
+
 // Form data for creating/updating a user
 export interface HostFormData {
   firstName: string;

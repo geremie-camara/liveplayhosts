@@ -34,4 +34,6 @@ export const TABLES = {
   LOCATIONS: "liveplayhosts-locations",
   // Call out requests
   CALLOUTS: "liveplayhosts-callouts",
+  // Availability change log
+  AVAILABILITY_CHANGELOG: "liveplayhosts-availability-changelog",
 };
