@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   ScheduleEntry,
+  ScheduleWidgetEntry,
   MONTH_NAMES,
   DAY_NAMES,
   DAY_NAMES_FULL,
@@ -23,6 +24,12 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  // Call Out modal state
+  const [showCallOut, setShowCallOut] = useState(false);
+  const [selectedShifts, setSelectedShifts] = useState<Set<number>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+  const [upcomingEntries, setUpcomingEntries] = useState<ScheduleWidgetEntry[]>([]);
 
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth();
@@ -66,6 +73,55 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
     setLoading(true);
     fetchSchedule();
   }, [currentYear, currentMonth, userEmail]);
+
+  // Fetch upcoming entries for call out modal
+  useEffect(() => {
+    async function fetchUpcoming() {
+      try {
+        const response = await fetch("/api/schedule/widget?limit=50");
+        if (response.ok) {
+          const data = await response.json();
+          setUpcomingEntries(data.entries || []);
+        }
+      } catch (err) {
+        console.error("Error fetching upcoming entries:", err);
+      }
+    }
+    fetchUpcoming();
+  }, []);
+
+  const toggleShift = (id: number) => {
+    const newSelected = new Set(selectedShifts);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedShifts(newSelected);
+  };
+
+  const handleCallOut = async () => {
+    if (selectedShifts.size === 0) return;
+
+    setSubmitting(true);
+    try {
+      // TODO: Implement actual call out API
+      const selectedEntries = upcomingEntries.filter(e => selectedShifts.has(e.id));
+      const shiftDetails = selectedEntries
+        .map(e => `${e.date} ${e.time} - ${e.studioName}`)
+        .join("\n");
+
+      alert(`Call out submitted for:\n\n${shiftDetails}\n\nYour producer will be notified.`);
+
+      setShowCallOut(false);
+      setSelectedShifts(new Set());
+    } catch (err) {
+      console.error("Error submitting call out:", err);
+      alert("Failed to submit call out. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const goToPreviousMonth = () => {
     setCurrentDate(new Date(currentYear, currentMonth - 1, 1));
@@ -387,6 +443,13 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
           >
             Today
           </button>
+
+          <button
+            onClick={() => setShowCallOut(true)}
+            className="px-3 py-1.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-500/50"
+          >
+            Call Out
+          </button>
         </div>
 
         {/* View toggle */}
@@ -434,6 +497,94 @@ export default function ScheduleCalendar({ userEmail }: ScheduleCalendarProps) {
 
       {/* Calendar view */}
       {viewMode === "month" ? renderCalendarGrid() : renderListView()}
+
+      {/* Call Out Modal */}
+      {showCallOut && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[80vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-dark">Call Out</h2>
+              <button
+                onClick={() => {
+                  setShowCallOut(false);
+                  setSelectedShifts(new Set());
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 overflow-y-auto flex-1">
+              <p className="text-sm text-gray-600 mb-4">
+                Select the shifts you need to call out from:
+              </p>
+
+              <div className="space-y-2">
+                {upcomingEntries.map((entry) => (
+                  <label
+                    key={entry.id}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedShifts.has(entry.id)
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedShifts.has(entry.id)}
+                      onChange={() => toggleShift(entry.id)}
+                      className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
+                    />
+                    <div
+                      className="w-2 h-8 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: entry.studioColor }}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-dark text-sm">
+                        {entry.date}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {entry.time} • {entry.studioName}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              {upcomingEntries.length === 0 && (
+                <p className="text-center text-gray-500 py-4">
+                  No upcoming shifts to call out from
+                </p>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowCallOut(false);
+                  setSelectedShifts(new Set());
+                }}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCallOut}
+                disabled={selectedShifts.size === 0 || submitting}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submitting ? "Submitting..." : `Call Out (${selectedShifts.size})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
