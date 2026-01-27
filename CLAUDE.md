@@ -291,6 +291,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | be90261 | Add Call Out button to My Schedule page |
 | 2026-01-26 | 8d4e887 | Add Call Out button with shift selection modal, move schedule widget to top-left |
 | 2026-01-26 | 42c5baf | Simplify rooms to Main Room, Speed Bingo, and Break |
 | 2026-01-26 | beb815f | Update mock schedule data: hourly entries with room switching and breaks |
