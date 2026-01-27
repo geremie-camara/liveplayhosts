@@ -251,6 +251,20 @@ export default async function DashboardPage() {
             </div>
           )}
         </div>
+
+        {/* Footer */}
+        <footer className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-500">
+          <p>
+            <a href="/sms-terms" className="hover:text-accent hover:underline">
+              SMS Terms & Opt-In
+            </a>
+            {" · "}
+            <a href="/privacy" className="hover:text-accent hover:underline">
+              Privacy Policy
+            </a>
+          </p>
+          <p className="mt-2">&copy; {new Date().getFullYear()} LivePlay Mobile. All rights reserved.</p>
+        </footer>
       </div>
     </AuthenticatedLayout>
   );
