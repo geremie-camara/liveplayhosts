@@ -6,7 +6,7 @@ frontend:
         - npm ci
     build:
       commands:
-        - env | grep -E '^(NEXT_|CLERK_|S3_|RESEND_|NOTIFICATION_|SLACK_|CRON_)' >> .env.production
+        - env | grep -E '^(NEXT_|CLERK_|S3_|RESEND_|NOTIFICATION_|SLACK_|CRON_|GOOGLE_|SCHEDULER_)' >> .env.production
         - npm run build
   artifacts:
     baseDirectory: .next
