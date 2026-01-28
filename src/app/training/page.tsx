@@ -6,6 +6,7 @@ import { Role, hasPermission, isActiveUser, getUserRole } from "@/lib/roles";
 import { Course, CourseProgressSummary, TrainingProgress, CATEGORY_CONFIG, CourseCategory } from "@/lib/training-types";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import CourseCard from "@/components/training/CourseCard";
+import { getEffectiveHost } from "@/lib/host-utils";
 
 async function getCourses(userRole: Role): Promise<Course[]> {
   try {
@@ -108,9 +109,16 @@ export default async function TrainingPage() {
     redirect("/dashboard");
   }
 
+  // Use effective host's ID for progress lookup (supports impersonation)
+  const effectiveResult = await getEffectiveHost();
+  const effectiveHostId = effectiveResult?.host?.id || user.id;
+  const effectiveRole = effectiveResult?.isImpersonating
+    ? (effectiveResult.host.role as Role)
+    : role;
+
   const [courses, userProgress] = await Promise.all([
-    getCourses(role),
-    getUserProgress(user.id),
+    getCourses(effectiveRole),
+    getUserProgress(effectiveHostId),
   ]);
 
   // Group courses by category

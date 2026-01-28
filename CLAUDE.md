@@ -47,6 +47,7 @@ src/
 │   │   │   └── lessons/        # Lesson CRUD
 │   │   ├── schedule/           # User schedule API
 │   │   │   └── widget/         # Dashboard widget data
+│   │   ├── admin/impersonate/   # Ghost login (admin impersonation)
 │   │   ├── admin/schedule/     # Admin schedule management
 │   │   │   └── sync/           # Google Calendar sync
 │   │   ├── hosts/              # Host management
@@ -76,6 +77,7 @@ src/
 │   │   └── ArticleContent.tsx
 │   ├── ScheduleWidget.tsx      # Dashboard schedule widget
 │   ├── ScheduleCalendar.tsx    # Full calendar view
+│   ├── ImpersonationBanner.tsx # Ghost login amber banner
 │   └── *.tsx
 └── lib/
     ├── types.ts                # Core types
@@ -84,6 +86,7 @@ src/
     ├── scheduler-db.ts         # MySQL scheduler DB client
     ├── google-calendar.ts      # Google Calendar API
     ├── mock-schedule-data.ts   # Mock data for dev
+    ├── host-utils.ts            # Shared host resolution + ghost login
     ├── roles.ts                # RBAC
     ├── dynamodb.ts             # DynamoDB client
     └── s3.ts                   # S3 client
@@ -275,6 +278,36 @@ Hosts can request to call out from scheduled shifts. Admins can approve or deny 
 - `reviewedBy`, `reviewedAt` - Admin review info
 - GSI: `userId-createdAt-index`, `status-createdAt-index`, `shiftId-index`
 
+## Ghost Login (Admin Impersonation)
+
+Admins (admin/owner/talent) can view and interact with the app as any host. A secure httpOnly cookie (`lph_ghost_host_id`) stores the impersonated host's DynamoDB `host.id`.
+
+### Features
+- **View As button** on `/admin/users` for each active host (both mobile card and desktop table)
+- **Amber banner** at top of every page showing "Viewing as **Name** (email) — Role" with Stop button
+- **Full interaction** enabled (not read-only) — all pages/APIs resolve the impersonated host
+- **Sidebar** shows impersonated host's role (hides admin nav during impersonation)
+- **Audit logging** — `[GHOST START]` and `[GHOST STOP]` console logs with admin + host details
+
+### Security
+- Cookie: `httpOnly: true`, `secure` in production, `sameSite: "lax"`, `path: "/"`, `maxAge: 4 hours`
+- Every request verifies the caller is an admin via Clerk before honoring the cookie
+- Route protection (`requireRole="admin"`) always uses the **actual** admin role
+
+### Architecture
+- **`src/lib/host-utils.ts`** — Shared module with `getEffectiveHost()` and `getEffectiveHostWithEmailFallback()` that check the ghost cookie + admin role, then return the impersonated or real host
+- All API routes and server component pages use these functions instead of local `getHostByClerkId` helpers
+
+### API Routes
+- `POST /api/admin/impersonate` — Start impersonation (body: `{ hostId }`)
+- `GET /api/admin/impersonate` — Check current impersonation status
+- `DELETE /api/admin/impersonate` — Stop impersonation (clears cookie)
+
+### Flow
+1. Admin clicks "View As" on `/admin/users` → POST sets cookie → redirect to `/dashboard`
+2. All pages/APIs call `getEffectiveHost()` which returns impersonated host data
+3. Admin clicks "Stop Viewing" → DELETE clears cookie → redirect to `/admin/users`
+
 ## Broadcast Messaging System
 
 Multi-channel broadcast system for admins to send targeted messages to hosts.
@@ -373,6 +406,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-28 | pending | Add ghost login: admin impersonation with cookie-based host switching |
 | 2026-01-27 | 12f0013 | Refactor: use host.id for all user data, Clerk ID for auth only (migration complete) |
 | 2026-01-27 | 0562606 | Add host availability change log (tracks when hosts update their avails) |
 | 2026-01-27 | 8c411e7 | Add admin host availability page with view/edit, bulk update script |

@@ -2,6 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import ScheduleCalendar from "@/components/ScheduleCalendar";
+import { getEffectiveHost } from "@/lib/host-utils";
 
 export default async function SchedulePage() {
   const user = await currentUser();
@@ -10,9 +11,12 @@ export default async function SchedulePage() {
     redirect("/sign-in");
   }
 
-  const primaryEmail = user.emailAddresses.find(
-    (e) => e.id === user.primaryEmailAddressId
-  )?.emailAddress;
+  // Use effective host's email (impersonated or real)
+  const effectiveResult = await getEffectiveHost();
+  const effectiveEmail = effectiveResult?.host?.email
+    || user.emailAddresses.find(
+        (e) => e.id === user.primaryEmailAddressId
+      )?.emailAddress;
 
   return (
     <AuthenticatedLayout>
@@ -28,7 +32,7 @@ export default async function SchedulePage() {
         </div>
 
         {/* Calendar */}
-        <ScheduleCalendar userEmail={primaryEmail} />
+        <ScheduleCalendar userEmail={effectiveEmail} />
       </div>
     </AuthenticatedLayout>
   );

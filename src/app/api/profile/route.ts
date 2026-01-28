@@ -1,50 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { GetCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { currentUser } from "@clerk/nextjs/server";
+import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { Host } from "@/lib/types";
+import { getEffectiveHostWithEmailFallback } from "@/lib/host-utils";
 
 // GET /api/profile - Get current user's profile
 export async function GET() {
-  const user = await currentUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const primaryEmail = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress || "";
-
   try {
-    // First try to find by clerkUserId
-    const scanResult = await dynamoDb.send(
-      new ScanCommand({
-        TableName: TABLES.HOSTS,
-        FilterExpression: "clerkUserId = :clerkUserId",
-        ExpressionAttributeValues: {
-          ":clerkUserId": user.id,
-        },
-      })
-    );
-
-    let host = scanResult.Items?.[0] as Host | undefined;
-
-    // If not found by clerkUserId, try by email
-    if (!host && primaryEmail) {
-      const emailResult = await dynamoDb.send(
-        new ScanCommand({
-          TableName: TABLES.HOSTS,
-          FilterExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": primaryEmail.toLowerCase(),
-          },
-        })
-      );
-      host = emailResult.Items?.[0] as Host | undefined;
-    }
-
-    if (!host) {
+    const effectiveResult = await getEffectiveHostWithEmailFallback();
+    if (!effectiveResult) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
+
+    const host = effectiveResult.host;
 
     // Remove sensitive fields before returning
     const { slackId, slackChannelId, notes, ...safeHost } = host;
@@ -58,47 +27,16 @@ export async function GET() {
 
 // PUT /api/profile - Update current user's profile
 export async function PUT(request: NextRequest) {
-  const user = await currentUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const effectiveResult = await getEffectiveHostWithEmailFallback();
+  if (!effectiveResult) {
+    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
+  const host = effectiveResult.host;
 
-  const primaryEmail = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress || "";
   const body = await request.json();
   const now = new Date().toISOString();
 
   try {
-    // Find the user's host record
-    const scanResult = await dynamoDb.send(
-      new ScanCommand({
-        TableName: TABLES.HOSTS,
-        FilterExpression: "clerkUserId = :clerkUserId",
-        ExpressionAttributeValues: {
-          ":clerkUserId": user.id,
-        },
-      })
-    );
-
-    let host = scanResult.Items?.[0] as Host | undefined;
-
-    // If not found by clerkUserId, try by email
-    if (!host && primaryEmail) {
-      const emailResult = await dynamoDb.send(
-        new ScanCommand({
-          TableName: TABLES.HOSTS,
-          FilterExpression: "email = :email",
-          ExpressionAttributeValues: {
-            ":email": primaryEmail.toLowerCase(),
-          },
-        })
-      );
-      host = emailResult.Items?.[0] as Host | undefined;
-    }
-
-    if (!host) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
 
     // Build update expression dynamically
     const updateFields: string[] = [];

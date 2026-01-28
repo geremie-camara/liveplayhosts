@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import { ScanCommand, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { UserRole, Host } from "@/lib/types";
 import { hasPermission } from "@/lib/roles";
 import { getUserDeliveries } from "@/lib/broadcast-sender";
 import { Broadcast, UserMessage } from "@/lib/broadcast-types";
 import { getPresignedVideoUrl } from "@/lib/s3";
+import { getEffectiveHostWithEmailFallback } from "@/lib/host-utils";
 
 // Cache for sender names to avoid repeated lookups
 const senderNameCache: Record<string, string> = {};
@@ -94,7 +95,6 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const userId = user.id;
   const userRole = user.publicMetadata?.role as UserRole | undefined;
 
   if (!userRole || !hasPermission(userRole, "viewMessages")) {
@@ -102,54 +102,11 @@ export async function GET() {
   }
 
   try {
-    // Find the user's host record by clerkUserId
-    let hostResult = await dynamoDb.send(
-      new ScanCommand({
-        TableName: TABLES.HOSTS,
-        FilterExpression: "clerkUserId = :clerkUserId",
-        ExpressionAttributeValues: {
-          ":clerkUserId": userId,
-        },
-      })
-    );
-
-    let host = hostResult.Items?.[0];
-
-    // Fallback: if not found by clerkUserId, try by email
-    if (!host) {
-      const userEmail = user.emailAddresses[0]?.emailAddress;
-      if (userEmail) {
-        hostResult = await dynamoDb.send(
-          new ScanCommand({
-            TableName: TABLES.HOSTS,
-            FilterExpression: "email = :email",
-            ExpressionAttributeValues: {
-              ":email": userEmail.toLowerCase(),
-            },
-          })
-        );
-        host = hostResult.Items?.[0];
-
-        // Auto-fix: Update the host record with clerkUserId for future lookups
-        if (host && !host.clerkUserId) {
-          await dynamoDb.send(
-            new UpdateCommand({
-              TableName: TABLES.HOSTS,
-              Key: { id: host.id },
-              UpdateExpression: "SET clerkUserId = :clerkUserId",
-              ExpressionAttributeValues: {
-                ":clerkUserId": userId,
-              },
-            })
-          );
-          console.log(`Auto-fixed clerkUserId for host ${host.id} (${userEmail})`);
-        }
-      }
-    }
-
-    if (!host) {
+    const effectiveResult = await getEffectiveHostWithEmailFallback();
+    if (!effectiveResult) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
+    const host = effectiveResult.host;
 
     // Get user's deliveries
     const deliveries = await getUserDeliveries(host.id);

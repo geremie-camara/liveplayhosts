@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
 import {
   getTalentIdByEmail,
   getUpcomingSchedule,
@@ -7,18 +6,16 @@ import {
 } from "@/lib/scheduler-db";
 import { toWidgetEntry } from "@/lib/schedule-types";
 import { getUpcomingMockEntries, USING_MOCK_DATA } from "@/lib/mock-schedule-data";
+import { getEffectiveHost } from "@/lib/host-utils";
 
 // GET /api/schedule/widget - Get upcoming schedule for dashboard widget
 export async function GET(request: NextRequest) {
-  const user = await currentUser();
-
-  if (!user) {
+  const effectiveResult = await getEffectiveHost();
+  if (!effectiveResult) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const primaryEmail = user.emailAddresses.find(
-    (e) => e.id === user.primaryEmailAddressId
-  )?.emailAddress;
+  const primaryEmail = effectiveResult.host.email;
 
   if (!primaryEmail) {
     return NextResponse.json({ error: "No email found" }, { status: 400 });

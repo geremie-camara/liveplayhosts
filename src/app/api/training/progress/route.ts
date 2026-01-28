@@ -3,26 +3,9 @@ import { currentUser } from "@clerk/nextjs/server";
 import { PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
 import { TrainingProgress, ProgressStatus } from "@/lib/training-types";
-import { UserRole, Host } from "@/lib/types";
+import { UserRole } from "@/lib/types";
 import { isActiveUser } from "@/lib/roles";
-
-// Helper to get host by clerkUserId
-async function getHostByClerkId(clerkUserId: string): Promise<Host | null> {
-  try {
-    const result = await dynamoDb.send(
-      new ScanCommand({
-        TableName: TABLES.HOSTS,
-        FilterExpression: "clerkUserId = :clerkUserId",
-        ExpressionAttributeValues: {
-          ":clerkUserId": clerkUserId,
-        },
-      })
-    );
-    return (result.Items?.[0] as Host) || null;
-  } catch {
-    return null;
-  }
-}
+import { getEffectiveHost } from "@/lib/host-utils";
 
 // POST /api/training/progress - Save lesson progress
 export async function POST(request: NextRequest) {
@@ -39,11 +22,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Look up host by clerkUserId
-  const host = await getHostByClerkId(user.id);
-  if (!host) {
+  const effectiveResult = await getEffectiveHost();
+  if (!effectiveResult) {
     return NextResponse.json({ error: "Host record not found" }, { status: 404 });
   }
+  const { host } = effectiveResult;
 
   try {
     const body = await request.json();
@@ -111,11 +94,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Look up host by clerkUserId
-  const host = await getHostByClerkId(user.id);
-  if (!host) {
+  const effectiveResult = await getEffectiveHost();
+  if (!effectiveResult) {
     return NextResponse.json([]);
   }
+  const { host } = effectiveResult;
 
   const { searchParams } = new URL(request.url);
   const courseId = searchParams.get("courseId");

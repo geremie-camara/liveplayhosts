@@ -1,42 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
 import { CallOut } from "@/lib/schedule-types";
-import { Host } from "@/lib/types";
 import { randomUUID } from "crypto";
-
-// Helper to get host by clerkUserId
-async function getHostByClerkId(clerkUserId: string): Promise<Host | null> {
-  try {
-    const result = await dynamoDb.send(
-      new ScanCommand({
-        TableName: TABLES.HOSTS,
-        FilterExpression: "clerkUserId = :clerkUserId",
-        ExpressionAttributeValues: {
-          ":clerkUserId": clerkUserId,
-        },
-      })
-    );
-    return (result.Items?.[0] as Host) || null;
-  } catch {
-    return null;
-  }
-}
+import { getEffectiveHost } from "@/lib/host-utils";
 
 // GET - Fetch user's call out requests
 export async function GET(request: NextRequest) {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Look up host by clerkUserId
-    const host = await getHostByClerkId(clerkUserId);
-    if (!host) {
+    const result = await getEffectiveHost();
+    if (!result) {
       return NextResponse.json({ callouts: [] });
     }
+    const { host } = result;
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // Optional filter by status
@@ -64,8 +40,8 @@ export async function GET(request: NextRequest) {
       params.ExpressionAttributeNames = { "#status": "status" };
     }
 
-    const result = await dynamoDb.send(new QueryCommand(params));
-    const callouts = (result.Items || []) as CallOut[];
+    const queryResult = await dynamoDb.send(new QueryCommand(params));
+    const callouts = (queryResult.Items || []) as CallOut[];
 
     return NextResponse.json({ callouts });
   } catch (error) {
@@ -80,16 +56,11 @@ export async function GET(request: NextRequest) {
 // POST - Submit new call out request(s)
 export async function POST(request: NextRequest) {
   try {
-    const { userId: clerkUserId } = await auth();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Look up host by clerkUserId
-    const host = await getHostByClerkId(clerkUserId);
-    if (!host) {
+    const effectiveResult = await getEffectiveHost();
+    if (!effectiveResult) {
       return NextResponse.json({ error: "Host record not found" }, { status: 404 });
     }
+    const { host } = effectiveResult;
 
     const body = await request.json();
     const { shifts } = body as {

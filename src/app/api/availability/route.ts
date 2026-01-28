@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { GetCommand, PutCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { currentUser } from "@clerk/nextjs/server";
+import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { UserAvailability, WeeklyAvailability, BlockedDateRange, AvailabilityChangeLog, Host } from "@/lib/types";
+import { UserAvailability, WeeklyAvailability, BlockedDateRange, AvailabilityChangeLog } from "@/lib/types";
 import { v4 as uuidv4 } from "uuid";
+import { getEffectiveHost } from "@/lib/host-utils";
 
 const DEFAULT_WEEKLY: WeeklyAvailability = {
   monday: { enabled: false, startTime: "09:00", endTime: "17:00" },
@@ -17,16 +18,9 @@ const DEFAULT_WEEKLY: WeeklyAvailability = {
 
 // GET /api/availability - Get current user's availability
 export async function GET() {
-  const { userId: clerkUserId } = await auth();
-
-  if (!clerkUserId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
-    // Look up host by clerkUserId to get host.id
-    const host = await getHostByClerkId(clerkUserId);
-    if (!host) {
+    const effectiveResult = await getEffectiveHost();
+    if (!effectiveResult) {
       // Return default availability if host not found
       return NextResponse.json({
         userId: "",
@@ -34,6 +28,7 @@ export async function GET() {
         blockedDates: [],
       });
     }
+    const { host } = effectiveResult;
 
     const result = await dynamoDb.send(
       new GetCommand({
@@ -119,37 +114,13 @@ function compareBlockedDates(
   };
 }
 
-// Helper to get host info by clerkUserId
-async function getHostByClerkId(clerkUserId: string): Promise<Host | null> {
-  try {
-    const result = await dynamoDb.send(
-      new ScanCommand({
-        TableName: TABLES.HOSTS,
-        FilterExpression: "clerkUserId = :clerkUserId",
-        ExpressionAttributeValues: {
-          ":clerkUserId": clerkUserId,
-        },
-      })
-    );
-    return (result.Items?.[0] as Host) || null;
-  } catch {
-    return null;
-  }
-}
-
 // PUT /api/availability - Update current user's availability
 export async function PUT(request: NextRequest) {
-  const { userId: clerkUserId } = await auth();
-
-  if (!clerkUserId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Look up host by clerkUserId to get host.id
-  const host = await getHostByClerkId(clerkUserId);
-  if (!host) {
+  const effectiveResult = await getEffectiveHost();
+  if (!effectiveResult) {
     return NextResponse.json({ error: "Host record not found" }, { status: 404 });
   }
+  const { host } = effectiveResult;
 
   const body = await request.json();
   const now = new Date().toISOString();

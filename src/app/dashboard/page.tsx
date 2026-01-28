@@ -7,6 +7,7 @@ import { Host } from "@/lib/types";
 import AuthenticatedLayout from "@/components/AuthenticatedLayout";
 import MessageCenter from "@/components/MessageCenter";
 import ScheduleWidget from "@/components/ScheduleWidget";
+import { getEffectiveHost } from "@/lib/host-utils";
 
 async function syncUserRole(userId: string, email: string, currentRole?: string): Promise<{ role: Role; isApproved: boolean }> {
   // If user already has an active role set, they're approved
@@ -69,9 +70,25 @@ export default async function DashboardPage() {
     redirect("/pending");
   }
 
-  const canViewSchedule = hasPermission(role, "viewSchedule");
-  const canViewAnalytics = hasPermission(role, "viewAnalytics");
-  const canManageUsers = hasPermission(role, "manageUsers");
+  // Check for impersonation
+  const effectiveResult = await getEffectiveHost();
+  const isImpersonating = effectiveResult?.isImpersonating ?? false;
+  const effectiveHost = effectiveResult?.host;
+  const displayName = isImpersonating && effectiveHost
+    ? effectiveHost.firstName || effectiveHost.email
+    : user.firstName || "there";
+  const effectiveEmail = isImpersonating && effectiveHost
+    ? effectiveHost.email
+    : primaryEmail;
+  // When impersonating, use the impersonated host's role for display/content
+  // but keep admin permissions for admin-only UI elements
+  const effectiveRole = isImpersonating && effectiveHost
+    ? effectiveHost.role as Role
+    : role;
+
+  const canViewSchedule = hasPermission(effectiveRole, "viewSchedule");
+  const canViewAnalytics = isImpersonating ? false : hasPermission(role, "viewAnalytics");
+  const canManageUsers = isImpersonating ? false : hasPermission(role, "manageUsers");
 
   // Fetch pending applicant count for admins
   let pendingApplicants = 0;
@@ -103,15 +120,15 @@ export default async function DashboardPage() {
         <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-primary">
-              Welcome back, {user.firstName || "there"}!
+              Welcome back, {displayName}!
             </h1>
             <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">
               Here&apos;s your dashboard. Manage your schedule, access training,
               and more.
             </p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium self-start ${ROLE_COLORS[role]}`}>
-            {ROLE_NAMES[role]}
+          <span className={`px-3 py-1 rounded-full text-sm font-medium self-start ${ROLE_COLORS[effectiveRole]}`}>
+            {ROLE_NAMES[effectiveRole]}
           </span>
         </div>
 
@@ -143,7 +160,7 @@ export default async function DashboardPage() {
         {/* Dashboard Cards */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Upcoming Schedule - Most Important, Top Left */}
-          {canViewSchedule && <ScheduleWidget userEmail={primaryEmail} />}
+          {canViewSchedule && <ScheduleWidget userEmail={effectiveEmail} />}
 
           {/* Training Progress */}
           <div className="bg-white rounded-2xl shadow-sm p-4 sm:p-6">
@@ -243,7 +260,7 @@ export default async function DashboardPage() {
               <div className="bg-primary-50 border border-primary-100 rounded-lg p-4">
                 <p className="text-primary font-medium">Welcome to LivePlay Hosts!</p>
                 <p className="text-gray-600 mt-1">
-                  {role === "host"
+                  {effectiveRole === "host"
                     ? "You're ready to host! Check your schedule and start your first session."
                     : "Welcome to the team! Explore your dashboard and training materials."}
                 </p>

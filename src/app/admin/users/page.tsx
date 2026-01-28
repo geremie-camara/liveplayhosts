@@ -60,6 +60,7 @@ export default function AdminUsersPage() {
   });
   const [deleteConfirm, setDeleteConfirm] = useState<Host | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [viewingAs, setViewingAs] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCounts();
@@ -237,6 +238,28 @@ export default function AdminUsersPage() {
       }
     } catch (error) {
       console.error("Error rejecting user:", error);
+    }
+  }
+
+  async function handleViewAs(hostId: string) {
+    setViewingAs(hostId);
+    try {
+      const response = await fetch("/api/admin/impersonate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hostId }),
+      });
+      if (response.ok) {
+        window.location.href = "/dashboard";
+      } else {
+        const data = await response.json();
+        alert(data.error || "Failed to start impersonation");
+        setViewingAs(null);
+      }
+    } catch (error) {
+      console.error("Error starting impersonation:", error);
+      alert("Failed to start impersonation");
+      setViewingAs(null);
     }
   }
 
@@ -539,6 +562,15 @@ export default function AdminUsersPage() {
                       Approve
                     </button>
                   )}
+                  {host.role !== "applicant" && host.role !== "rejected" && (
+                    <button
+                      onClick={() => handleViewAs(host.id)}
+                      disabled={viewingAs === host.id}
+                      className="flex-1 px-3 py-2 text-sm font-medium text-amber-700 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 transition-colors disabled:opacity-50"
+                    >
+                      {viewingAs === host.id ? "Loading..." : "View As"}
+                    </button>
+                  )}
                   <Link
                     href={`/admin/users/${host.id}`}
                     className="flex-1 px-3 py-2 text-sm font-medium text-center text-primary border border-primary rounded-lg"
@@ -687,6 +719,16 @@ export default function AdminUsersPage() {
                               className="px-3 py-1 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                             >
                               Approve
+                            </button>
+                          )}
+                          {host.role !== "applicant" && host.role !== "rejected" && (
+                            <button
+                              onClick={() => handleViewAs(host.id)}
+                              disabled={viewingAs === host.id}
+                              className="px-3 py-1 text-sm font-medium text-amber-700 bg-amber-100 border border-amber-300 rounded-lg hover:bg-amber-200 transition-colors disabled:opacity-50"
+                              title="View app as this user"
+                            >
+                              {viewingAs === host.id ? "..." : "View As"}
                             </button>
                           )}
                           <Link
