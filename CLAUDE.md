@@ -220,12 +220,13 @@ SCHEDULER_DB_PASSWORD=<password>
 ### Environment Variables (Google Calendar)
 ```
 GOOGLE_SERVICE_ACCOUNT_EMAIL=<service-account@project.iam.gserviceaccount.com>
-GOOGLE_PRIVATE_KEY=<private-key-from-json>
-GOOGLE_CALENDAR_STUDIO_A=<calendar-id>
-GOOGLE_CALENDAR_STUDIO_B=<calendar-id>
-GOOGLE_CALENDAR_STUDIO_C=<calendar-id>
-GOOGLE_CALENDAR_VIRTUAL=<calendar-id>
+GOOGLE_PRIVATE_KEY=<private-key-with-newlines>
+GOOGLE_CALENDAR_MAIN_ROOM=<calendar-id>
+GOOGLE_CALENDAR_SPEED_BINGO=<calendar-id>
+GOOGLE_CALENDAR_BREAK=<calendar-id>
 ```
+
+**Note:** For `GOOGLE_PRIVATE_KEY` in Amplify, paste the key exactly as it appears in the JSON file (with `\n` escaped newlines). The code handles converting `\n` to actual newlines.
 
 ### New Dependencies
 - `googleapis` - Google Calendar API
