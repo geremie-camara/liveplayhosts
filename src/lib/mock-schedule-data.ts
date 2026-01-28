@@ -17,24 +17,40 @@ function dateAtHour(daysFromNow: number, hour: number): Date {
   return date;
 }
 
-// Create a single hourly entry
+// Generate a deterministic ID based on host, date, and time
+// This ensures the same shift always has the same ID across sessions
+function generateDeterministicId(hostId: number, date: Date, studioId: number): number {
+  // Create a hash-like ID from: hostId + year + month + day + hour + studioId
+  const year = date.getFullYear();
+  const month = date.getMonth();
+  const day = date.getDate();
+  const hour = date.getHours();
+
+  // Combine into a unique number (unique for practical purposes)
+  // Format: HYYYYMMDDHHSS where H=hostId, SS=studioId
+  return hostId * 100000000 + year * 10000 + (month + 1) * 100 + day * 1 + hour * 1000000 + studioId;
+}
+
+// Create a single hourly entry with deterministic ID
 function createHourlyEntry(
-  id: number,
   userEmail: string,
   daysFromNow: number,
   hour: number,
-  studioName: string
+  studioName: string,
+  talentId: number = 1
 ): ScheduleEntry {
   const studio = MOCK_STUDIOS.find(s => s.name === studioName) || MOCK_STUDIOS[0];
+  const startDate = dateAtHour(daysFromNow, hour);
+
   return {
-    id,
-    talentId: 1,
+    id: generateDeterministicId(talentId, startDate, studio.id),
+    talentId,
     talentName: "Test Host",
     talentEmail: userEmail,
     studioId: studio.id,
     studioName: studio.name,
     studioColor: getStudioColor(studio.name),
-    startingOn: dateAtHour(daysFromNow, hour),
+    startingOn: startDate,
     endingOn: dateAtHour(daysFromNow, hour + 1),
   };
 }
@@ -43,56 +59,55 @@ function createHourlyEntry(
 // Pattern: Hosts rotate between Main Room, Speed Bingo, and Break
 export function getMockScheduleEntries(userEmail: string): ScheduleEntry[] {
   const entries: ScheduleEntry[] = [];
-  let id = 1;
 
   // Today: 10am-3pm
-  entries.push(createHourlyEntry(id++, userEmail, 0, 10, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 0, 11, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 0, 12, "Break"));
-  entries.push(createHourlyEntry(id++, userEmail, 0, 13, "Speed Bingo"));
-  entries.push(createHourlyEntry(id++, userEmail, 0, 14, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 0, 10, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 0, 11, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 0, 12, "Break"));
+  entries.push(createHourlyEntry(userEmail, 0, 13, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 0, 14, "Main Room"));
 
   // Tomorrow: 2pm-7pm
-  entries.push(createHourlyEntry(id++, userEmail, 1, 14, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 1, 15, "Speed Bingo"));
-  entries.push(createHourlyEntry(id++, userEmail, 1, 16, "Break"));
-  entries.push(createHourlyEntry(id++, userEmail, 1, 17, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 1, 18, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 1, 14, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 1, 15, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 1, 16, "Break"));
+  entries.push(createHourlyEntry(userEmail, 1, 17, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 1, 18, "Main Room"));
 
   // Day 2: 9am-2pm
-  entries.push(createHourlyEntry(id++, userEmail, 2, 9, "Speed Bingo"));
-  entries.push(createHourlyEntry(id++, userEmail, 2, 10, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 2, 11, "Break"));
-  entries.push(createHourlyEntry(id++, userEmail, 2, 12, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 2, 13, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 2, 9, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 2, 10, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 2, 11, "Break"));
+  entries.push(createHourlyEntry(userEmail, 2, 12, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 2, 13, "Speed Bingo"));
 
   // Day 5: 11am-4pm
-  entries.push(createHourlyEntry(id++, userEmail, 5, 11, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 5, 12, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 5, 13, "Break"));
-  entries.push(createHourlyEntry(id++, userEmail, 5, 14, "Speed Bingo"));
-  entries.push(createHourlyEntry(id++, userEmail, 5, 15, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 5, 11, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 5, 12, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 5, 13, "Break"));
+  entries.push(createHourlyEntry(userEmail, 5, 14, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 5, 15, "Main Room"));
 
   // Day 7: 1pm-6pm
-  entries.push(createHourlyEntry(id++, userEmail, 7, 13, "Speed Bingo"));
-  entries.push(createHourlyEntry(id++, userEmail, 7, 14, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 7, 15, "Break"));
-  entries.push(createHourlyEntry(id++, userEmail, 7, 16, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 7, 17, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 7, 13, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 7, 14, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 7, 15, "Break"));
+  entries.push(createHourlyEntry(userEmail, 7, 16, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 7, 17, "Speed Bingo"));
 
   // Day 10: 10am-3pm
-  entries.push(createHourlyEntry(id++, userEmail, 10, 10, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 10, 11, "Speed Bingo"));
-  entries.push(createHourlyEntry(id++, userEmail, 10, 12, "Break"));
-  entries.push(createHourlyEntry(id++, userEmail, 10, 13, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 10, 14, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 10, 10, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 10, 11, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 10, 12, "Break"));
+  entries.push(createHourlyEntry(userEmail, 10, 13, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 10, 14, "Main Room"));
 
   // Day 14: 3pm-8pm
-  entries.push(createHourlyEntry(id++, userEmail, 14, 15, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 14, 16, "Speed Bingo"));
-  entries.push(createHourlyEntry(id++, userEmail, 14, 17, "Break"));
-  entries.push(createHourlyEntry(id++, userEmail, 14, 18, "Main Room"));
-  entries.push(createHourlyEntry(id++, userEmail, 14, 19, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 14, 15, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 14, 16, "Speed Bingo"));
+  entries.push(createHourlyEntry(userEmail, 14, 17, "Break"));
+  entries.push(createHourlyEntry(userEmail, 14, 18, "Main Room"));
+  entries.push(createHourlyEntry(userEmail, 14, 19, "Speed Bingo"));
 
   // Sort by start time
   return entries.sort((a, b) => a.startingOn.getTime() - b.startingOn.getTime());
@@ -141,7 +156,6 @@ export const TEST_HOSTS: MockHost[] = [
 // Generate mock schedule for multiple hosts
 export function getAllMockScheduleEntries(hosts: MockHost[]): ScheduleEntry[] {
   const entries: ScheduleEntry[] = [];
-  let id = 1;
 
   // Different shift patterns for variety
   const patterns = [
@@ -168,16 +182,17 @@ export function getAllMockScheduleEntries(hosts: MockHost[]): ScheduleEntry[] {
       // Each shift is 5 hours with room rotation
       hours.forEach((hour, hourIndex) => {
         const studio = MOCK_STUDIOS.find(s => s.name === roomRotation[hourIndex]) || MOCK_STUDIOS[0];
+        const startDate = dateAtHour(dayOffset, hour);
 
         entries.push({
-          id: id++,
+          id: generateDeterministicId(host.id, startDate, studio.id),
           talentId: host.id,
           talentName: host.name,
           talentEmail: host.email,
           studioId: studio.id,
           studioName: studio.name,
           studioColor: getStudioColor(studio.name),
-          startingOn: dateAtHour(dayOffset, hour),
+          startingOn: startDate,
           endingOn: dateAtHour(dayOffset, hour + 1),
         });
       });
