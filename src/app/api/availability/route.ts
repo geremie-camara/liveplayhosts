@@ -129,7 +129,6 @@ async function getHostByClerkId(clerkUserId: string): Promise<Host | null> {
         ExpressionAttributeValues: {
           ":clerkUserId": clerkUserId,
         },
-        Limit: 1,
       })
     );
     return (result.Items?.[0] as Host) || null;
