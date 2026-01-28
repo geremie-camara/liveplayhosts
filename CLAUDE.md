@@ -406,7 +406,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
-| 2026-01-28 | pending | Add urgency warnings to call out confirmation (48h emergency, 2wk notice) |
+| 2026-01-28 | c21cbf9 | Add urgency warnings to call out confirmation (48h emergency, 2wk notice) |
 | 2026-01-28 | 03953bf | Add ghost login: admin impersonation with cookie-based host switching |
 | 2026-01-27 | 12f0013 | Refactor: use host.id for all user data, Clerk ID for auth only (migration complete) |
 | 2026-01-27 | 0562606 | Add host availability change log (tracks when hosts update their avails) |
