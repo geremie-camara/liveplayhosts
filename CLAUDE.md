@@ -87,7 +87,9 @@ src/
     ├── training-types.ts       # LMS types
     ├── schedule-types.ts       # Schedule types
     ├── finance-types.ts        # Finance pay review types
-    ├── scheduler-db.ts         # MySQL scheduler DB client
+    ├── scheduler-db.ts         # MySQL scheduler DB client (legacy)
+    ├── lps-client.ts           # LPS Dungeon Data Service HTTP client
+    ├── lps-schedule.ts         # LPS schedule data access layer
     ├── google-calendar.ts      # Google Calendar API
     ├── mock-schedule-data.ts   # Mock data for dev
     ├── host-utils.ts            # Shared host resolution + ghost login
@@ -239,7 +241,69 @@ GOOGLE_IMPERSONATE_USER=<user-with-calendar-write-access@domain.com>
 
 ### New Dependencies
 - `googleapis` - Google Calendar API
-- `mysql2` - MySQL client (moved to production deps)
+- `mysql2` - MySQL client (legacy, moved to production deps)
+
+## LPS Dungeon Data Service Integration
+
+Replaces direct MySQL connection with LPS REST API for schedule data reads. Read-only — no writes to LPS.
+
+### Three-Tier Fallback
+
+All 4 schedule API routes use this priority order:
+1. **Mock data** — when `USING_MOCK_DATA = true` (dev mode)
+2. **LPS API** — when `LPS_API_URL` + `LPS_API_KEY` are set
+3. **MySQL** — legacy fallback via `scheduler-db.ts`
+4. **Mock data** — if no data source is configured
+
+### Host ID Linking
+
+LPS host IDs are stored as `lpsHostId` on DynamoDB host records (mirrors the `clerkUserId` auto-fix pattern in `host-utils.ts`):
+1. Check `host.lpsHostId` in DynamoDB — if set, use it directly
+2. If not — email-match against LPS `host` table, then auto-save `lpsHostId` back to DynamoDB
+3. Future lookups use the cached ID — survives email changes
+
+### Table Mapping (MySQL → LPS API)
+
+| MySQL Table | LPS API Table | Key Fields |
+|-------------|---------------|------------|
+| `talent` | `host` | `idHost`, `email`, `firstName`, `lastName` |
+| `talent_schedule` | `host_schedule` | `idHostSchedule`, `idHost`, `idRoom`, `startingOn`, `endingOn` |
+| `studio` | `room` | `idRoom`, `name` |
+
+**Note:** Field names are PLACEHOLDER — run `scripts/probe-lps-schema.mjs` with a valid API key to confirm exact column names and date formats.
+
+### LPS API Protocol
+
+All requests are `POST` to the base URL with `x-api-key` header:
+```json
+{ "action": "read", "params": { "table": "host", "where": [{"field":"email","condition":"=","value":"host@example.com"}] } }
+```
+
+### New Files
+- `src/lib/lps-client.ts` — Generic HTTP client (`isLpsConfigured()`, `lpsPost()`, `lpsRead()`, `lpsDescribe()`)
+- `src/lib/lps-schedule.ts` — Business logic layer (same function signatures as `scheduler-db.ts`)
+- `scripts/probe-lps-schema.mjs` — One-time schema discovery script
+
+### Environment Variables (LPS)
+```
+LPS_API_URL=https://5vc0hpsw48.execute-api.us-west-2.amazonaws.com/develop/
+LPS_API_KEY=<key>
+```
+
+### Schema Probe
+
+Run before first production use to confirm field names and date formats:
+```bash
+LPS_API_URL=https://5vc0hpsw48.execute-api.us-west-2.amazonaws.com/develop/ \
+LPS_API_KEY=<key> \
+node scripts/probe-lps-schema.mjs
+```
+
+### Future Cleanup (after verified in production)
+- Set `USING_MOCK_DATA = false`
+- Remove MySQL fallback branches from routes
+- Remove `scheduler-db.ts` and `mysql2` dependency
+- Remove `SCHEDULER_DB_*` env vars
 
 ## Call Out System
 
@@ -423,6 +487,41 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - `liveplayhosts-callouts` (call out requests with status tracking)
 - `liveplayhosts-availability-changelog` (host availability change audit log)
 - `liveplayhosts-finance-reviews` (host pay review accept/dispute tracking)
+- `liveplayhosts-role-permissions` (dynamic role-based security permissions)
+
+## Role-Based Security Management
+
+Owner-only admin page at `/admin/security` for managing dynamic role permissions per feature.
+
+### Architecture
+
+- **DynamoDB table**: `liveplayhosts-role-permissions` — PK: `role` (String)
+- **In-memory cache**: `roles.ts` loads permissions from DynamoDB with 5-min TTL
+- **`hasPermission()`** stays synchronous — reads from cache, falls back to hardcoded `PERMISSIONS`
+- **`loadPermissions()`** — async function called in `AuthenticatedLayout` to populate cache
+- **`invalidatePermissionCache()`** — called after saves on the security page
+
+### Permission Model
+
+Each role has read/write access per feature. Features are grouped into User Features (dashboard, messages, availability, training, schedule, finance, profile, directory) and Admin Features (manageUsers, callOuts, hostPriority, hostAvailability, availabilityChangelog, calendarSync, broadcasts, trainingContent, locations, analytics).
+
+- **Owner** always has full access (hardcoded, never stored in DynamoDB)
+- **applicant/rejected** are excluded from the security page
+- All other roles (host, producer, talent, finance, hr, admin) are individually configurable
+
+### API Routes
+
+- `GET /api/admin/security` — Load all role permissions (owner only)
+- `PUT /api/admin/security` — Save permissions for a single role (owner only)
+
+### New Files
+
+- `src/lib/security-types.ts` — Type definitions and constants
+- `src/app/api/admin/security/route.ts` — API route
+- `src/app/admin/security/layout.tsx` — Owner-only gate
+- `src/app/admin/security/page.tsx` — Permission matrix UI
+- `scripts/create-role-permissions-table.mjs` — Create DynamoDB table
+- `scripts/seed-role-permissions.mjs` — Seed initial data from hardcoded permissions
 
 ## Scripts
 
@@ -438,6 +537,9 @@ node scripts/migrate-to-hostid.mjs       # Migrate data from userId to hostId (r
 node scripts/create-availability-changelog-table.mjs # Create availability changelog table
 node scripts/create-finance-reviews-table.mjs # Create finance reviews table
 node scripts/seed-training-data.mjs      # Seed sample courses
+node scripts/probe-lps-schema.mjs       # Probe LPS API schema (requires LPS_API_URL + LPS_API_KEY)
+node scripts/create-role-permissions-table.mjs # Create role permissions table
+node scripts/seed-role-permissions.mjs   # Seed initial role permissions from hardcoded defaults
 ```
 
 ## Environment Variables

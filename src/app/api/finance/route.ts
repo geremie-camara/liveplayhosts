@@ -4,6 +4,11 @@ import {
   getScheduleForTalent,
   isSchedulerDbConfigured,
 } from "@/lib/scheduler-db";
+import {
+  getTalentIdByEmail as lpsGetTalentIdByEmail,
+  getScheduleForTalent as lpsGetScheduleForTalent,
+  isLpsScheduleConfigured,
+} from "@/lib/lps-schedule";
 import { getMockEntriesForMonth, USING_MOCK_DATA } from "@/lib/mock-schedule-data";
 import { getEffectiveHost } from "@/lib/host-utils";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
@@ -16,6 +21,52 @@ import {
   getPayCycleDateRange,
 } from "@/lib/finance-types";
 import { ScheduleEntry } from "@/lib/schedule-types";
+
+// Helper: resolve schedule entries for a given email + date range using three-tier fallback
+async function resolveScheduleEntries(
+  primaryEmail: string,
+  startDate: string,
+  endDate: string,
+  year: number,
+  month: number
+): Promise<{ entries: ScheduleEntry[]; notFound?: boolean }> {
+  if (USING_MOCK_DATA) {
+    const monthEntries = getMockEntriesForMonth(primaryEmail, year, month);
+    const entries = monthEntries.filter((e) => {
+      const dateStr = e.startingOn.toISOString().split("T")[0];
+      return dateStr >= startDate && dateStr <= endDate;
+    });
+    return { entries };
+  }
+
+  if (isLpsScheduleConfigured()) {
+    const talentId = await lpsGetTalentIdByEmail(primaryEmail);
+    if (!talentId) return { entries: [], notFound: true };
+
+    const start = new Date(startDate + "T00:00:00");
+    const end = new Date(endDate + "T23:59:59");
+    const entries = await lpsGetScheduleForTalent(talentId, { startDate: start, endDate: end });
+    return { entries };
+  }
+
+  if (isSchedulerDbConfigured()) {
+    const talentId = await getTalentIdByEmail(primaryEmail);
+    if (!talentId) return { entries: [], notFound: true };
+
+    const start = new Date(startDate + "T00:00:00");
+    const end = new Date(endDate + "T23:59:59");
+    const entries = await getScheduleForTalent(talentId, { startDate: start, endDate: end });
+    return { entries };
+  }
+
+  // No data source — mock fallback
+  const monthEntries = getMockEntriesForMonth(primaryEmail, year, month);
+  const entries = monthEntries.filter((e) => {
+    const dateStr = e.startingOn.toISOString().split("T")[0];
+    return dateStr >= startDate && dateStr <= endDate;
+  });
+  return { entries };
+}
 
 // GET /api/finance - Get schedule entries and reviews for a pay period
 export async function GET(request: NextRequest) {
@@ -46,33 +97,17 @@ export async function GET(request: NextRequest) {
     const { startDate, endDate } = getPayCycleDateRange(year, month, half);
     const payCycleKey = getPayCycleKey(year, month, half);
 
-    // Fetch schedule entries
-    let entries: ScheduleEntry[] = [];
-    const useMockData = USING_MOCK_DATA || !isSchedulerDbConfigured();
-
-    if (useMockData) {
-      // Use mock data — filter to pay period date range
-      const monthEntries = getMockEntriesForMonth(primaryEmail, year, month);
-      entries = monthEntries.filter((e) => {
-        const dateStr = e.startingOn.toISOString().split("T")[0];
-        return dateStr >= startDate && dateStr <= endDate;
-      });
-    } else {
-      const talentId = await getTalentIdByEmail(primaryEmail);
-      if (!talentId) {
-        return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
-      }
-
-      // Parse date strings into Date objects for the query
-      const start = new Date(startDate + "T00:00:00");
-      const end = new Date(endDate + "T23:59:59");
-      entries = await getScheduleForTalent(talentId, { startDate: start, endDate: end });
+    // Fetch schedule entries using three-tier fallback
+    const result = await resolveScheduleEntries(primaryEmail, startDate, endDate, year, month);
+    if (result.notFound) {
+      return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
     }
+    const entries = result.entries;
 
     // Fetch reviews from DynamoDB for this host + date range
     let reviews: FinanceReview[] = [];
     try {
-      const result = await dynamoDb.send(
+      const dbResult = await dynamoDb.send(
         new QueryCommand({
           TableName: TABLES.FINANCE_REVIEWS,
           KeyConditionExpression: "hostId = :hostId AND #d BETWEEN :start AND :end",
@@ -84,7 +119,7 @@ export async function GET(request: NextRequest) {
           },
         })
       );
-      reviews = (result.Items || []) as FinanceReview[];
+      reviews = (dbResult.Items || []) as FinanceReview[];
     } catch (err) {
       console.error("Error fetching finance reviews:", err);
       // Continue without reviews — they may not exist yet
@@ -188,32 +223,11 @@ export async function POST(request: NextRequest) {
     const payCycleKey = getPayCycleKey(cycleYear, cycleMonth, cycleHalf);
 
     // Get schedule entries for this specific day to compute hours
-    let dayHours = 0;
     const primaryEmail = host.email;
-    const useMockData = USING_MOCK_DATA || !isSchedulerDbConfigured();
-
-    if (useMockData) {
-      const monthEntries = getMockEntriesForMonth(primaryEmail, cycleYear, cycleMonth);
-      const dayEntries = monthEntries.filter(
-        (e) => e.startingOn.toISOString().split("T")[0] === date
-      );
-      dayHours = dayEntries.reduce((sum, e) => {
-        return sum + (e.endingOn.getTime() - e.startingOn.getTime()) / (1000 * 60 * 60);
-      }, 0);
-    } else {
-      const talentId = await getTalentIdByEmail(primaryEmail);
-      if (talentId) {
-        const dayStart = new Date(date + "T00:00:00");
-        const dayEnd = new Date(date + "T23:59:59");
-        const dayEntries = await getScheduleForTalent(talentId, {
-          startDate: dayStart,
-          endDate: dayEnd,
-        });
-        dayHours = dayEntries.reduce((sum, e) => {
-          return sum + (e.endingOn.getTime() - e.startingOn.getTime()) / (1000 * 60 * 60);
-        }, 0);
-      }
-    }
+    const result = await resolveScheduleEntries(primaryEmail, date, date, cycleYear, cycleMonth);
+    const dayHours = result.entries.reduce((sum, e) => {
+      return sum + (e.endingOn.getTime() - e.startingOn.getTime()) / (1000 * 60 * 60);
+    }, 0);
 
     const now = new Date().toISOString();
     const review: FinanceReview = {

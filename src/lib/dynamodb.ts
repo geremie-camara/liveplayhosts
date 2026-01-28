@@ -38,4 +38,6 @@ export const TABLES = {
   AVAILABILITY_CHANGELOG: "liveplayhosts-availability-changelog",
   // Finance pay reviews
   FINANCE_REVIEWS: "liveplayhosts-finance-reviews",
+  // Role-based security permissions
+  ROLE_PERMISSIONS: "liveplayhosts-role-permissions",
 };

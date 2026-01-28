@@ -1,19 +1,22 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { Role, isAdmin, isActiveUser } from "@/lib/roles";
+import { Role, isAdmin, isActiveUser, hasAdminAccess, loadPermissions } from "@/lib/roles";
 import { getGhostHostId, getHostById } from "@/lib/host-utils";
 import Sidebar from "./Sidebar";
 import ImpersonationBanner from "./ImpersonationBanner";
 
 interface AuthenticatedLayoutProps {
   children: React.ReactNode;
-  requireRole?: "admin" | "active"; // admin requires admin/owner, active requires host/producer/admin/owner
+  requireRole?: "admin" | "adminAccess" | "active"; // admin = admin/owner/talent only, adminAccess = any role with admin permissions, active = any approved user
 }
 
 export default async function AuthenticatedLayout({
   children,
   requireRole,
 }: AuthenticatedLayoutProps) {
+  // Load dynamic permissions cache (5-min TTL, safe to call repeatedly)
+  await loadPermissions();
+
   const user = await currentUser();
 
   if (!user) {
@@ -31,6 +34,9 @@ export default async function AuthenticatedLayout({
 
   // Check role requirement if specified — always uses actual admin role
   if (requireRole === "admin" && !isAdmin(actualRole)) {
+    redirect("/dashboard");
+  }
+  if (requireRole === "adminAccess" && !hasAdminAccess(actualRole)) {
     redirect("/dashboard");
   }
 

@@ -1,6 +1,9 @@
 // Role definitions for LivePlay Hosts
 // Import from types.ts for consistency
 import { UserRole, ROLE_CONFIG } from "./types";
+import { dynamoDb, TABLES } from "./dynamodb";
+import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import type { PermissionKey, PermissionEntry } from "./security-types";
 
 // Re-export for convenience
 export type Role = UserRole;
@@ -62,7 +65,7 @@ export function getUserRole(publicMetadata: Record<string, unknown> | undefined)
   return role && ROLE_HIERARCHY.includes(role) ? role : "applicant";
 }
 
-// Permission definitions by feature
+// Permission definitions by feature (hardcoded fallback)
 export const PERMISSIONS = {
   // Dashboard access (only active users)
   viewDashboard: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
@@ -105,11 +108,145 @@ export const PERMISSIONS = {
   viewFinance: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
 };
 
-// Check if user has permission
+// --- Dynamic permission cache ---
+
+// Maps role -> PermissionKey -> PermissionEntry
+let _dynamicPermissions: Map<string, Record<PermissionKey, PermissionEntry>> | null = null;
+let _cacheLoadedAt: number = 0;
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+// Old permission key -> new { feature, access } mapping
+const OLD_KEY_MAP: Record<string, { feature: PermissionKey; access: "read" | "write" }> = {
+  viewDashboard: { feature: "dashboard", access: "read" },
+  viewMessages: { feature: "messages", access: "read" },
+  viewSchedule: { feature: "schedule", access: "read" },
+  viewFinance: { feature: "finance", access: "read" },
+  viewBasicTraining: { feature: "training", access: "read" },
+  viewAdvancedTraining: { feature: "training", access: "read" },
+  viewAllTraining: { feature: "trainingContent", access: "read" },
+  viewAnalytics: { feature: "analytics", access: "read" },
+  viewTrainingAnalytics: { feature: "analytics", access: "read" },
+  manageTraining: { feature: "trainingContent", access: "write" },
+  manageSchedule: { feature: "calendarSync", access: "write" },
+  manageUsers: { feature: "manageUsers", access: "write" },
+  manageBroadcasts: { feature: "broadcasts", access: "write" },
+  manageLocations: { feature: "locations", access: "write" },
+  manageCallOuts: { feature: "callOuts", access: "write" },
+  manageHostPriority: { feature: "hostPriority", access: "write" },
+  manageAvailability: { feature: "hostAvailability", access: "write" },
+  manageContent: { feature: "trainingContent", access: "write" },
+};
+
+/**
+ * Load dynamic permissions from DynamoDB into the in-memory cache.
+ * Safe to call multiple times — respects TTL.
+ */
+export async function loadPermissions(): Promise<void> {
+  const now = Date.now();
+  if (_dynamicPermissions && now - _cacheLoadedAt < CACHE_TTL_MS) {
+    return; // Cache still fresh
+  }
+
+  try {
+    const result = await dynamoDb.send(
+      new ScanCommand({ TableName: TABLES.ROLE_PERMISSIONS })
+    );
+
+    if (result.Items && result.Items.length > 0) {
+      const map = new Map<string, Record<PermissionKey, PermissionEntry>>();
+      for (const item of result.Items) {
+        if (item.role && item.permissions) {
+          map.set(item.role as string, item.permissions as Record<PermissionKey, PermissionEntry>);
+        }
+      }
+      _dynamicPermissions = map;
+    } else {
+      // Table exists but is empty — keep null so fallback is used
+      _dynamicPermissions = null;
+    }
+    _cacheLoadedAt = now;
+  } catch {
+    // DynamoDB error — keep existing cache or null (fallback will be used)
+    console.error("[roles] Failed to load dynamic permissions, using fallback");
+    _cacheLoadedAt = now; // Avoid hammering on repeated failures
+  }
+}
+
+/**
+ * Clear the in-memory cache so the next hasPermission() call will reload.
+ */
+export function invalidatePermissionCache(): void {
+  _dynamicPermissions = null;
+  _cacheLoadedAt = 0;
+}
+
+/**
+ * Map an old permission key to its dynamic feature + access type.
+ */
+function mapOldPermissionKey(
+  oldKey: string
+): { feature: PermissionKey; access: "read" | "write" } | null {
+  return OLD_KEY_MAP[oldKey] ?? null;
+}
+
+// Check if user has access to the /admin section (any admin-level permission)
+// Broader than isAdmin() — includes producer, finance, hr who have specific admin features
+export function hasAdminAccess(userRole: Role | undefined): boolean {
+  if (!userRole) return false;
+  if (userRole === "owner") return true;
+
+  // Check dynamic cache first
+  if (_dynamicPermissions) {
+    const rolePerms = _dynamicPermissions.get(userRole);
+    if (rolePerms) {
+      const adminFeatures: PermissionKey[] = [
+        "manageUsers", "callOuts", "hostPriority",
+        "hostAvailability", "calendarSync", "broadcasts",
+        "trainingContent", "locations", "analytics",
+        "availabilityChangelog",
+      ];
+      return adminFeatures.some((f) => {
+        const entry = rolePerms[f];
+        return entry && (entry.read || entry.write);
+      });
+    }
+  }
+
+  // Hardcoded fallback
+  const adminPermissions: (keyof typeof PERMISSIONS)[] = [
+    "manageUsers", "manageCallOuts", "manageHostPriority",
+    "manageAvailability", "manageSchedule", "manageBroadcasts",
+    "manageTraining", "manageLocations", "viewAnalytics",
+  ];
+  return adminPermissions.some((p) => PERMISSIONS[p].includes(userRole));
+}
+
+// Check if user has permission (synchronous — reads from cache or falls back to hardcoded)
 export function hasPermission(
   userRole: Role | undefined,
   permission: keyof typeof PERMISSIONS
 ): boolean {
   if (!userRole) return false;
+
+  // Owner always has full access
+  if (userRole === "owner") return true;
+
+  // Try dynamic cache
+  if (_dynamicPermissions) {
+    const rolePerms = _dynamicPermissions.get(userRole);
+    if (rolePerms) {
+      const mapped = mapOldPermissionKey(permission);
+      if (mapped) {
+        const entry = rolePerms[mapped.feature];
+        if (entry) {
+          // For "read" access, just check read; for "write" access, check write
+          return mapped.access === "read" ? entry.read : entry.write;
+        }
+      }
+      // If no mapping exists for this key, fall through to hardcoded
+    }
+  }
+
+  // Hardcoded fallback
   return PERMISSIONS[permission].includes(userRole);
 }

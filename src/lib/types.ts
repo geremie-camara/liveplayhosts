@@ -49,6 +49,9 @@ export interface Host {
   // Clerk Integration
   clerkUserId?: string;
 
+  // LPS Dungeon Data Service Integration
+  lpsHostId?: string;
+
   // Timestamps
   appliedAt: string;
   invitedAt?: string;

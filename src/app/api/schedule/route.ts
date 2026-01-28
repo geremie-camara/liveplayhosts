@@ -4,6 +4,11 @@ import {
   getScheduleForMonth,
   isSchedulerDbConfigured,
 } from "@/lib/scheduler-db";
+import {
+  getTalentIdByEmail as lpsGetTalentIdByEmail,
+  getScheduleForMonth as lpsGetScheduleForMonth,
+  isLpsScheduleConfigured,
+} from "@/lib/lps-schedule";
 import { getMockEntriesForMonth, USING_MOCK_DATA } from "@/lib/mock-schedule-data";
 import { getEffectiveHost } from "@/lib/host-utils";
 
@@ -26,10 +31,8 @@ export async function GET(request: NextRequest) {
   const month = parseInt(searchParams.get("month") || new Date().getMonth().toString());
 
   try {
-    // Check if we should use mock data or real database
-    const useMockData = USING_MOCK_DATA || !isSchedulerDbConfigured();
-
-    if (useMockData) {
+    // Three-tier fallback: mock → LPS API → MySQL
+    if (USING_MOCK_DATA) {
       // Use mock data for development
       const entries = getMockEntriesForMonth(primaryEmail, year, month);
 
@@ -43,16 +46,46 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Look up talent by email in scheduler database
-    const talentId = await getTalentIdByEmail(primaryEmail);
+    if (isLpsScheduleConfigured()) {
+      // Use LPS Dungeon Data Service API
+      const talentId = await lpsGetTalentIdByEmail(primaryEmail);
 
-    if (!talentId) {
-      // User not found in scheduler database
-      return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
+      if (!talentId) {
+        return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
+      }
+
+      const entries = await lpsGetScheduleForMonth(talentId, year, month);
+
+      return NextResponse.json({
+        entries: entries.map((e) => ({
+          ...e,
+          startingOn: e.startingOn.toISOString(),
+          endingOn: e.endingOn.toISOString(),
+        })),
+      });
     }
 
-    // Get schedule for the specified month
-    const entries = await getScheduleForMonth(talentId, year, month);
+    if (isSchedulerDbConfigured()) {
+      // Legacy MySQL fallback
+      const talentId = await getTalentIdByEmail(primaryEmail);
+
+      if (!talentId) {
+        return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
+      }
+
+      const entries = await getScheduleForMonth(talentId, year, month);
+
+      return NextResponse.json({
+        entries: entries.map((e) => ({
+          ...e,
+          startingOn: e.startingOn.toISOString(),
+          endingOn: e.endingOn.toISOString(),
+        })),
+      });
+    }
+
+    // No data source available — fall back to mock
+    const entries = getMockEntriesForMonth(primaryEmail, year, month);
 
     return NextResponse.json({
       entries: entries.map((e) => ({
@@ -60,6 +93,7 @@ export async function GET(request: NextRequest) {
         startingOn: e.startingOn.toISOString(),
         endingOn: e.endingOn.toISOString(),
       })),
+      usingMockData: true,
     });
   } catch (error) {
     console.error("Error fetching schedule:", error);

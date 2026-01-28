@@ -3,6 +3,10 @@ import { auth } from "@clerk/nextjs/server";
 import { hasPermission } from "@/lib/roles";
 import { getAllSchedulesForRange, isSchedulerDbConfigured } from "@/lib/scheduler-db";
 import {
+  getAllSchedulesForRange as lpsGetAllSchedulesForRange,
+  isLpsScheduleConfigured,
+} from "@/lib/lps-schedule";
+import {
   syncSchedulesToCalendar,
   isGoogleCalendarConfigured,
   getCalendarMappings,
@@ -57,8 +61,11 @@ export async function POST(request: NextRequest) {
     let schedules;
     let usingMock = false;
 
-    // Try to use real DB, fall back to mock data
-    if (isSchedulerDbConfigured() && !useMockData) {
+    // Three-tier fallback: LPS API → MySQL → mock data
+    if (!useMockData && isLpsScheduleConfigured()) {
+      // Fetch all schedules from LPS API
+      schedules = await lpsGetAllSchedulesForRange(start, end);
+    } else if (!useMockData && isSchedulerDbConfigured()) {
       // Fetch all schedules from MySQL
       schedules = await getAllSchedulesForRange(start, end);
     } else {
@@ -111,6 +118,7 @@ export async function GET() {
   }
 
   const schedulerConfigured = isSchedulerDbConfigured();
+  const lpsConfigured = isLpsScheduleConfigured();
   const calendarConfigured = isGoogleCalendarConfigured();
   const calendarMappings = getCalendarMappings();
 
@@ -119,6 +127,7 @@ export async function GET() {
 
   return NextResponse.json({
     configured: {
+      lpsApi: lpsConfigured,
       schedulerDb: schedulerConfigured,
       googleCalendar: calendarConfigured,
       calendarMappings: calendarMappings.size > 0,
@@ -127,9 +136,10 @@ export async function GET() {
       studio,
       calendarId: id.substring(0, 20) + "...", // Partial ID for security
     })),
-    // Ready if Google Calendar is set up - can use mock data if scheduler DB not available
+    // Ready if Google Calendar is set up - can use mock data if no schedule source available
     ready: calendarConfigured && calendarMappings.size > 0,
-    willUseMockData: !schedulerConfigured,
+    willUseMockData: !lpsConfigured && !schedulerConfigured,
+    scheduleSource: lpsConfigured ? "lps" : schedulerConfigured ? "mysql" : "mock",
     envVarsNeeded: {
       googleCalendar: ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_PRIVATE_KEY"],
       calendarMappings: ["GOOGLE_CALENDAR_MAIN_ROOM", "GOOGLE_CALENDAR_SPEED_BINGO", "GOOGLE_CALENDAR_BREAK"],

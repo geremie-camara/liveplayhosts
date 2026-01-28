@@ -4,6 +4,11 @@ import {
   getUpcomingSchedule,
   isSchedulerDbConfigured,
 } from "@/lib/scheduler-db";
+import {
+  getTalentIdByEmail as lpsGetTalentIdByEmail,
+  getUpcomingSchedule as lpsGetUpcomingSchedule,
+  isLpsScheduleConfigured,
+} from "@/lib/lps-schedule";
 import { toWidgetEntry } from "@/lib/schedule-types";
 import { getUpcomingMockEntries, USING_MOCK_DATA } from "@/lib/mock-schedule-data";
 import { getEffectiveHost } from "@/lib/host-utils";
@@ -27,10 +32,8 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(Math.max(parseInt(limitParam || "5") || 5, 1), 100);
 
   try {
-    // Check if we should use mock data or real database
-    const useMockData = USING_MOCK_DATA || !isSchedulerDbConfigured();
-
-    if (useMockData) {
+    // Three-tier fallback: mock → LPS API → MySQL
+    if (USING_MOCK_DATA) {
       // Use mock data for development
       const entries = getUpcomingMockEntries(primaryEmail, limit);
       const widgetEntries = entries.map(toWidgetEntry);
@@ -41,20 +44,45 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Look up talent by email in scheduler database
-    const talentId = await getTalentIdByEmail(primaryEmail);
+    if (isLpsScheduleConfigured()) {
+      // Use LPS Dungeon Data Service API
+      const talentId = await lpsGetTalentIdByEmail(primaryEmail);
 
-    if (!talentId) {
-      // User not found in scheduler database
-      return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
+      if (!talentId) {
+        return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
+      }
+
+      const entries = await lpsGetUpcomingSchedule(talentId, limit);
+      const widgetEntries = entries.map(toWidgetEntry);
+
+      return NextResponse.json({
+        entries: widgetEntries,
+      });
     }
 
-    // Get upcoming schedule entries
-    const entries = await getUpcomingSchedule(talentId, limit);
+    if (isSchedulerDbConfigured()) {
+      // Legacy MySQL fallback
+      const talentId = await getTalentIdByEmail(primaryEmail);
+
+      if (!talentId) {
+        return NextResponse.json({ error: "Not found in scheduling system" }, { status: 404 });
+      }
+
+      const entries = await getUpcomingSchedule(talentId, limit);
+      const widgetEntries = entries.map(toWidgetEntry);
+
+      return NextResponse.json({
+        entries: widgetEntries,
+      });
+    }
+
+    // No data source available — fall back to mock
+    const entries = getUpcomingMockEntries(primaryEmail, limit);
     const widgetEntries = entries.map(toWidgetEntry);
 
     return NextResponse.json({
       entries: widgetEntries,
+      usingMockData: true,
     });
   } catch (error) {
     console.error("Error fetching schedule widget data:", error);
