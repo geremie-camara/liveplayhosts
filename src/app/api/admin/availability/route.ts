@@ -52,9 +52,10 @@ export async function GET() {
     }
 
     // Combine hosts with their availability
+    // Note: availability is stored by Clerk userId, not host.id
     const hostsWithAvailability: HostWithAvailability[] = hosts.map((host) => ({
       ...host,
-      availability: availMap.get(host.id),
+      availability: host.clerkUserId ? availMap.get(host.clerkUserId) : undefined,
     }));
 
     // Sort alphabetically by last name, then first name

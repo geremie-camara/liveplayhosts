@@ -67,10 +67,14 @@ export default function AdminAvailabilityPage() {
 
   const saveAvailability = async () => {
     if (!editingHost) return;
+    if (!editingHost.clerkUserId) {
+      alert("Cannot save: This host has not signed in yet (no Clerk user ID)");
+      return;
+    }
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/admin/availability/${editingHost.id}`, {
+      const res = await fetch(`/api/admin/availability/${editingHost.clerkUserId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,7 +92,7 @@ export default function AdminAvailabilityPage() {
               ? {
                   ...h,
                   availability: {
-                    userId: h.id,
+                    userId: h.clerkUserId || h.id,
                     weekly: editWeekly,
                     blockedDates: editBlocked,
                     updatedAt: new Date().toISOString(),
