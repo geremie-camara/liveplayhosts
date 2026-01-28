@@ -187,7 +187,25 @@ export async function deleteEventFromCalendar(
   }
 }
 
+// Helper to process items in parallel with concurrency limit
+async function processInBatches<T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  concurrency: number = 10
+): Promise<R[]> {
+  const results: R[] = [];
+
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency);
+    const batchResults = await Promise.all(batch.map(processor));
+    results.push(...batchResults);
+  }
+
+  return results;
+}
+
 // Sync all schedule entries for a date range to Google Calendar
+// Uses parallel processing for speed (10 concurrent requests)
 export async function syncSchedulesToCalendar(
   entries: ScheduleEntry[]
 ): Promise<SyncResult> {
@@ -210,31 +228,34 @@ export async function syncSchedulesToCalendar(
     return result;
   }
 
-  // Group entries by studio
-  const entriesByStudio = new Map<string, ScheduleEntry[]>();
+  // Prepare all sync tasks with their calendar IDs
+  const syncTasks: Array<{ entry: ScheduleEntry; calendarId: string }> = [];
+
   for (const entry of entries) {
-    const studioEntries = entriesByStudio.get(entry.studioName) || [];
-    studioEntries.push(entry);
-    entriesByStudio.set(entry.studioName, studioEntries);
+    const calendarId = calendarMappings.get(entry.studioName);
+    if (calendarId) {
+      syncTasks.push({ entry, calendarId });
+    } else {
+      result.errors.push(`No calendar configured for ${entry.studioName}`);
+    }
   }
 
-  // Sync each studio's entries to its calendar
-  const studioEntries = Array.from(entriesByStudio.entries());
-  for (const [studioName, studioSchedules] of studioEntries) {
-    const calendarId = calendarMappings.get(studioName);
-
-    if (!calendarId) {
-      result.errors.push(`No calendar configured for ${studioName}`);
-      continue;
-    }
-
-    for (const entry of studioSchedules) {
+  // Process all tasks in parallel batches (10 concurrent)
+  const syncResults = await processInBatches(
+    syncTasks,
+    async ({ entry, calendarId }) => {
       const syncResult = await syncEventToCalendar(entry, calendarId);
-      if (syncResult.success) {
-        result.created++; // We count all successful syncs as created for simplicity
-      } else if (syncResult.error) {
-        result.errors.push(`${entry.talentName} at ${studioName}: ${syncResult.error}`);
-      }
+      return { entry, syncResult };
+    },
+    10 // 10 concurrent requests - respects Google rate limits
+  );
+
+  // Tally results
+  for (const { entry, syncResult } of syncResults) {
+    if (syncResult.success) {
+      result.created++;
+    } else if (syncResult.error) {
+      result.errors.push(`${entry.talentName} at ${entry.studioName}: ${syncResult.error}`);
     }
   }
 
