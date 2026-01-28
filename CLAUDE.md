@@ -451,6 +451,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-28 | d61717a | Change Call Out buttons from red to blue |
 | 2026-01-28 | a0156ce | Add finance page for host pay review with accept/dispute workflow |
 | 2026-01-28 | 7f217d1 | Reorder header buttons: Apply Now first, rename Host Login to Login |
 | 2026-01-28 | 7218173 | Reorder directory desktop table: Communication before social profiles |
