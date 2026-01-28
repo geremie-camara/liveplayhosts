@@ -17,24 +17,35 @@ const DEFAULT_WEEKLY: WeeklyAvailability = {
 
 // GET /api/availability - Get current user's availability
 export async function GET() {
-  const { userId } = await auth();
+  const { userId: clerkUserId } = await auth();
 
-  if (!userId) {
+  if (!clerkUserId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
+    // Look up host by clerkUserId to get host.id
+    const host = await getHostByClerkId(clerkUserId);
+    if (!host) {
+      // Return default availability if host not found
+      return NextResponse.json({
+        hostId: "",
+        weekly: DEFAULT_WEEKLY,
+        blockedDates: [],
+      });
+    }
+
     const result = await dynamoDb.send(
       new GetCommand({
         TableName: TABLES.AVAILABILITY,
-        Key: { userId },
+        Key: { hostId: host.id },
       })
     );
 
     if (!result.Item) {
       // Return default availability if none exists
       return NextResponse.json({
-        userId,
+        hostId: host.id,
         weekly: DEFAULT_WEEKLY,
         blockedDates: [],
       });
@@ -129,10 +140,16 @@ async function getHostByClerkId(clerkUserId: string): Promise<Host | null> {
 
 // PUT /api/availability - Update current user's availability
 export async function PUT(request: NextRequest) {
-  const { userId } = await auth();
+  const { userId: clerkUserId } = await auth();
 
-  if (!userId) {
+  if (!clerkUserId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Look up host by clerkUserId to get host.id
+  const host = await getHostByClerkId(clerkUserId);
+  if (!host) {
+    return NextResponse.json({ error: "Host record not found" }, { status: 404 });
   }
 
   const body = await request.json();
@@ -147,7 +164,7 @@ export async function PUT(request: NextRequest) {
     const currentResult = await dynamoDb.send(
       new GetCommand({
         TableName: TABLES.AVAILABILITY,
-        Key: { userId },
+        Key: { hostId: host.id },
       })
     );
 
@@ -161,7 +178,7 @@ export async function PUT(request: NextRequest) {
 
     // Save the new availability
     const availability: UserAvailability = {
-      userId,
+      hostId: host.id,
       weekly,
       blockedDates,
       updatedAt: now,
@@ -176,19 +193,11 @@ export async function PUT(request: NextRequest) {
 
     // Log the change if anything changed
     if (weeklyComparison.changed || blockedComparison.changed) {
-      // Get host info and user info
-      const [host, user] = await Promise.all([
-        getHostByClerkId(userId),
-        currentUser(),
-      ]);
+      // Get user info for additional context
+      const user = await currentUser();
 
-      const hostName = host
-        ? `${host.firstName} ${host.lastName}`
-        : user
-        ? `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Unknown"
-        : "Unknown";
-
-      const hostEmail = host?.email || user?.emailAddresses?.[0]?.emailAddress || "unknown";
+      const hostName = `${host.firstName} ${host.lastName}`;
+      const hostEmail = host.email || user?.emailAddresses?.[0]?.emailAddress || "unknown";
 
       let changeType: "weekly" | "blocked_dates" | "both";
       if (weeklyComparison.changed && blockedComparison.changed) {
@@ -202,8 +211,7 @@ export async function PUT(request: NextRequest) {
       const changeLog: AvailabilityChangeLog = {
         id: uuidv4(),
         odIndex: "ALL", // Used for global queries ordered by date
-        userId,
-        hostId: host?.id,
+        hostId: host.id,
         hostName,
         hostEmail,
         changeType,

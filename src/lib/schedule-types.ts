@@ -55,7 +55,7 @@ export type CallOutStatus = "pending" | "approved" | "denied";
 // Call out request stored in DynamoDB
 export interface CallOut {
   id: string; // UUID
-  userId: string; // Clerk user ID
+  hostId: string; // Host's DynamoDB id (primary key for host data)
   shiftId: number; // Schedule entry ID from MySQL
   shiftDate: string; // ISO date string for the shift
   shiftTime: string; // Time range string

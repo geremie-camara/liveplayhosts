@@ -96,8 +96,8 @@ export interface FAQ {
 
 // Training progress - tracks user progress through lessons
 export interface TrainingProgress {
-  id: string;                    // `${userId}#${lessonId}`
-  oduserId: string;
+  id: string;                    // `${hostId}#${lessonId}`
+  hostId: string;                // Host's DynamoDB id (primary key for host data)
   courseId: string;
   sectionId: string;
   lessonId: string;
@@ -111,7 +111,7 @@ export interface TrainingProgress {
 // Quiz attempt - records a user's attempt at a quiz
 export interface QuizAttempt {
   id: string;
-  oduserId: string;
+  hostId: string;                // Host's DynamoDB id (primary key for host data)
   quizId: string;
   lessonId: string;
   answers: Record<string, string[]>;  // questionId -> selected answers

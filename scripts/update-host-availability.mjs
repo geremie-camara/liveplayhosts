@@ -337,14 +337,9 @@ function findAvailabilityData(host) {
 
 // Update availability for a host
 async function updateAvailability(host, data) {
-  // Availability is keyed by Clerk userId, not host.id
-  if (!host.clerkUserId) {
-    console.log(`  ⚠️  Skipping - no clerkUserId (host hasn't signed in yet)`);
-    return null;
-  }
-
+  // Availability is keyed by host.id (DynamoDB id)
   const availability = {
-    userId: host.clerkUserId,
+    hostId: host.id,
     weekly: data.weekly,
     blockedDates: data.blockedDates,
     updatedAt: new Date().toISOString(),

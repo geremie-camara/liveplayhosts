@@ -104,7 +104,7 @@ export interface BlockedDateRange {
 
 // User availability record
 export interface UserAvailability {
-  userId: string; // Reference to Host.id
+  hostId: string; // Reference to Host.id (DynamoDB primary key)
   weekly: WeeklyAvailability;
   blockedDates: BlockedDateRange[];
   updatedAt: string;
@@ -114,8 +114,7 @@ export interface UserAvailability {
 export interface AvailabilityChangeLog {
   id: string; // UUID
   odIndex: string; // Global secondary index: odIndex for ordering
-  userId: string; // Host's Clerk userId
-  hostId?: string; // Host's DynamoDB id (if available)
+  hostId: string; // Host's DynamoDB id (primary key for host data)
   hostName: string; // Host's name at time of change
   hostEmail: string; // Host's email at time of change
   changeType: "weekly" | "blocked_dates" | "both";

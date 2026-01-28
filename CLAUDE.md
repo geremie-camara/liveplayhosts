@@ -133,14 +133,27 @@ Defined in `src/lib/types.ts`:
 Users can set their work availability at `/availability`:
 - **Weekly Schedule**: Check days available (Mon-Sun), set start/end times per day
 - **Blocked Dates**: Add date ranges for vacations/time off with optional reason
-- Data stored in `liveplayhosts-availability` table keyed by Clerk userId
+- Data stored in `liveplayhosts-availability` table keyed by `hostId` (DynamoDB host.id)
+
+### Data Architecture: hostId vs clerkUserId
+
+All user data is keyed by `host.id` (DynamoDB UUID), not Clerk userId:
+- **Authentication**: Clerk userId is used ONLY for auth, then looked up to get `host.id`
+- **Data storage**: All tables use `hostId` as the key
+- **External integration**: Other systems can reference hosts by `host.id` without needing Clerk
+
+**Tables using hostId as key:**
+- `liveplayhosts-availability` - `hostId`
+- `liveplayhosts-availability-changelog` - `hostId`
+- `liveplayhosts-callouts` - `hostId`
+- `liveplayhosts-training-progress` - `hostId`
 
 ### Availability Change Log
 
 Tracks when hosts (not admins) update their availability. Useful for auditing and producer awareness.
 
 - **Admin Page**: `/admin/availability-changelog` - View all host availability changes
-- **API**: `GET /api/admin/availability-changelog` - Paginated changelog with optional userId filter
+- **API**: `GET /api/admin/availability-changelog` - Paginated changelog with optional `hostId` filter
 - **Table**: `liveplayhosts-availability-changelog`
 
 Each log entry includes:
@@ -343,6 +356,7 @@ node scripts/create-training-tables.mjs  # Create training DynamoDB tables
 node scripts/create-broadcast-tables.mjs # Create broadcast DynamoDB tables
 node scripts/create-locations-table.mjs  # Create locations table with seed data
 node scripts/create-callouts-table.mjs   # Create call outs table
+node scripts/migrate-to-hostid.mjs       # Migrate data from userId to hostId (run after deploy)
 node scripts/create-availability-changelog-table.mjs # Create availability changelog table
 node scripts/seed-training-data.mjs      # Seed sample courses
 ```
@@ -358,6 +372,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-27 | pending | Refactor: use hostId instead of clerkUserId for all user data tables |
 | 2026-01-27 | 0562606 | Add host availability change log (tracks when hosts update their avails) |
 | 2026-01-27 | 8c411e7 | Add admin host availability page with view/edit, bulk update script |
 | 2026-01-27 | 9916340 | Add host scheduling priority admin page (high/medium/low, admin-only) |

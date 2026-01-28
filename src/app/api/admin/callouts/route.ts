@@ -63,16 +63,14 @@ export async function GET(request: NextRequest) {
       })
     );
     const hosts = (hostsResult.Items || []) as Host[];
-    const hostsByClerkId = new Map<string, Host>();
+    const hostsById = new Map<string, Host>();
     hosts.forEach(h => {
-      if (h.clerkUserId) {
-        hostsByClerkId.set(h.clerkUserId, h);
-      }
+      hostsById.set(h.id, h);
     });
 
     // Enrich call outs with user details
     const calloutsWithUsers: CallOutWithUser[] = callouts.map(callout => {
-      const host = hostsByClerkId.get(callout.userId);
+      const host = hostsById.get(callout.hostId);
       return {
         ...callout,
         userName: host ? `${host.firstName} ${host.lastName}` : "Unknown User",

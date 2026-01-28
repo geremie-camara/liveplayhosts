@@ -19,22 +19,22 @@ export async function GET(request: NextRequest) {
   }
 
   const searchParams = request.nextUrl.searchParams;
-  const userId = searchParams.get("userId"); // Optional: filter by specific host
+  const hostId = searchParams.get("hostId"); // Optional: filter by specific host
   const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 100);
   const startKey = searchParams.get("startKey");
 
   try {
     let result;
 
-    if (userId) {
-      // Query for specific user's changes
+    if (hostId) {
+      // Query for specific host's changes
       result = await dynamoDb.send(
         new QueryCommand({
           TableName: TABLES.AVAILABILITY_CHANGELOG,
-          IndexName: "userId-createdAt-index",
-          KeyConditionExpression: "userId = :userId",
+          IndexName: "hostId-createdAt-index",
+          KeyConditionExpression: "hostId = :hostId",
           ExpressionAttributeValues: {
-            ":userId": userId,
+            ":hostId": hostId,
           },
           ScanIndexForward: false, // Most recent first
           Limit: limit,

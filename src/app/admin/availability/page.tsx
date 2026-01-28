@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Host, UserAvailability, WeeklyAvailability, DayAvailability, BlockedDateRange } from "@/lib/types";
-import { randomUUID } from "crypto";
 
 interface HostWithAvailability extends Host {
   availability?: UserAvailability & { notes?: string };
@@ -67,14 +66,11 @@ export default function AdminAvailabilityPage() {
 
   const saveAvailability = async () => {
     if (!editingHost) return;
-    if (!editingHost.clerkUserId) {
-      alert("Cannot save: This host has not signed in yet (no Clerk user ID)");
-      return;
-    }
     setSaving(true);
 
     try {
-      const res = await fetch(`/api/admin/availability/${editingHost.clerkUserId}`, {
+      // Use host.id as the key (not clerkUserId)
+      const res = await fetch(`/api/admin/availability/${editingHost.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -92,7 +88,7 @@ export default function AdminAvailabilityPage() {
               ? {
                   ...h,
                   availability: {
-                    userId: h.clerkUserId || h.id,
+                    hostId: h.id,
                     weekly: editWeekly,
                     blockedDates: editBlocked,
                     updatedAt: new Date().toISOString(),

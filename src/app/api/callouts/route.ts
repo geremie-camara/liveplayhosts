@@ -1,22 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, QueryCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { CallOut } from "@/lib/schedule-types";
+import { Host } from "@/lib/types";
 import { randomUUID } from "crypto";
+
+// Helper to get host by clerkUserId
+async function getHostByClerkId(clerkUserId: string): Promise<Host | null> {
+  try {
+    const result = await dynamoDb.send(
+      new ScanCommand({
+        TableName: TABLES.HOSTS,
+        FilterExpression: "clerkUserId = :clerkUserId",
+        ExpressionAttributeValues: {
+          ":clerkUserId": clerkUserId,
+        },
+        Limit: 1,
+      })
+    );
+    return (result.Items?.[0] as Host) || null;
+  } catch {
+    return null;
+  }
+}
 
 // GET - Fetch user's call out requests
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Look up host by clerkUserId
+    const host = await getHostByClerkId(clerkUserId);
+    if (!host) {
+      return NextResponse.json({ callouts: [] });
     }
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // Optional filter by status
 
-    // Query call outs for this user
+    // Query call outs for this host
     const params: {
       TableName: string;
       IndexName: string;
@@ -25,10 +51,10 @@ export async function GET(request: NextRequest) {
       ExpressionAttributeValues: Record<string, string>;
     } = {
       TableName: TABLES.CALLOUTS,
-      IndexName: "userId-createdAt-index",
-      KeyConditionExpression: "userId = :userId",
+      IndexName: "hostId-createdAt-index",
+      KeyConditionExpression: "hostId = :hostId",
       ExpressionAttributeValues: {
-        ":userId": userId,
+        ":hostId": host.id,
       },
     };
 
@@ -55,9 +81,15 @@ export async function GET(request: NextRequest) {
 // POST - Submit new call out request(s)
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const { userId: clerkUserId } = await auth();
+    if (!clerkUserId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Look up host by clerkUserId
+    const host = await getHostByClerkId(clerkUserId);
+    if (!host) {
+      return NextResponse.json({ error: "Host record not found" }, { status: 404 });
     }
 
     const body = await request.json();
@@ -85,7 +117,7 @@ export async function POST(request: NextRequest) {
     for (const shift of shifts) {
       const callout: CallOut = {
         id: randomUUID(),
-        userId: userId,
+        hostId: host.id,
         shiftId: shift.shiftId,
         shiftDate: shift.startingOn,
         shiftTime: shift.shiftTime,
