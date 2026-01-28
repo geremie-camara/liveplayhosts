@@ -66,9 +66,11 @@ export function getCalendarMappings(): Map<string, string> {
 }
 
 // Generate a unique event ID for a schedule entry
+// Google Calendar event IDs must only contain lowercase letters a-v and digits 0-9
 function generateEventId(entry: ScheduleEntry): string {
   // Create a consistent ID based on the schedule entry
-  return `lph_${entry.id}`;
+  // Use "lph" prefix + entry id, all lowercase alphanumeric
+  return `lph${entry.id}`.toLowerCase().replace(/[^a-v0-9]/g, "");
 }
 
 // Create a Google Calendar event from a schedule entry
