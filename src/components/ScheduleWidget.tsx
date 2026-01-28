@@ -249,7 +249,7 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
           <h3 className="text-lg font-semibold text-dark">Upcoming Schedule</h3>
           <button
             onClick={() => setShowCallOut(true)}
-            className="px-3 py-1.5 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/50"
+            className="px-3 py-1.5 text-sm font-bold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors shadow-lg shadow-red-500/50"
           >
             Call Out
           </button>
@@ -344,7 +344,7 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
                         isPending
                           ? "border-amber-300 bg-amber-50 cursor-not-allowed opacity-60"
                           : selectedShifts.has(entry.id)
-                          ? "border-blue-300 bg-blue-50 cursor-pointer"
+                          ? "border-red-300 bg-red-50 cursor-pointer"
                           : "border-gray-200 hover:bg-gray-50 cursor-pointer"
                       }`}
                     >
@@ -353,7 +353,7 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
                         checked={selectedShifts.has(entry.id)}
                         onChange={() => !isPending && toggleShift(entry.id)}
                         disabled={isPending}
-                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 disabled:opacity-50"
+                        className="w-4 h-4 text-red-600 rounded border-gray-300 focus:ring-red-500 disabled:opacity-50"
                       />
                       <div
                         className="w-2 h-8 rounded-full flex-shrink-0"
@@ -400,7 +400,7 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
               <button
                 onClick={handleCallOut}
                 disabled={selectedShifts.size === 0 || submitting}
-                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? "Submitting..." : `Call Out (${selectedShifts.size})`}
               </button>
