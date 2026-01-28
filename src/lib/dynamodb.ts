@@ -36,4 +36,6 @@ export const TABLES = {
   CALLOUTS: "liveplayhosts-callouts",
   // Availability change log
   AVAILABILITY_CHANGELOG: "liveplayhosts-availability-changelog",
+  // Finance pay reviews
+  FINANCE_REVIEWS: "liveplayhosts-finance-reviews",
 };

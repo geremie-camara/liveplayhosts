@@ -100,6 +100,9 @@ export const PERMISSIONS = {
 
   // Host availability management (view/edit all host availabilities)
   manageAvailability: ["producer", "talent", "admin", "owner"] as Role[],
+
+  // Finance pay review
+  viewFinance: ["host", "producer", "talent", "finance", "hr", "admin", "owner"] as Role[],
 };
 
 // Check if user has permission
