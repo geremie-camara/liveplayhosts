@@ -48,15 +48,17 @@ export function getCalendarMappings(): Map<string, string> {
   const mappings = new Map<string, string>();
 
   // Read calendar IDs from environment variables
-  // Format: GOOGLE_CALENDAR_STUDIO_A=calendar-id@group.calendar.google.com
-  const studioNames = ["A", "B", "C", "D", "E", "VIRTUAL"];
+  // Room name -> env var key mapping
+  const roomMappings: Record<string, string> = {
+    "Main Room": "GOOGLE_CALENDAR_MAIN_ROOM",
+    "Speed Bingo": "GOOGLE_CALENDAR_SPEED_BINGO",
+    "Break": "GOOGLE_CALENDAR_BREAK",
+  };
 
-  for (const name of studioNames) {
-    const envKey = `GOOGLE_CALENDAR_STUDIO_${name}`;
+  for (const [roomName, envKey] of Object.entries(roomMappings)) {
     const calendarId = process.env[envKey];
     if (calendarId) {
-      const studioName = name === "VIRTUAL" ? "Virtual" : `Studio ${name}`;
-      mappings.set(studioName, calendarId);
+      mappings.set(roomName, calendarId);
     }
   }
 
@@ -97,12 +99,9 @@ function createCalendarEvent(entry: ScheduleEntry): calendar_v3.Schema$Event {
 // Map studio names to Google Calendar color IDs
 function getColorIdForStudio(studioName: string): string {
   const colorMap: Record<string, string> = {
-    "Studio A": "1", // Lavender
-    "Studio B": "2", // Sage
-    "Studio C": "3", // Grape
-    "Studio D": "4", // Flamingo
-    "Studio E": "5", // Banana
-    Virtual: "9", // Blueberry
+    "Main Room": "9", // Blueberry (blue)
+    "Speed Bingo": "10", // Basil (green)
+    "Break": "8", // Graphite (gray)
   };
   return colorMap[studioName] || "8"; // Graphite as default
 }

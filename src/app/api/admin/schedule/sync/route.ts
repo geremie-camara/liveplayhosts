@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { hasPermission } from "@/lib/roles";
+import { dynamoDb, TABLES } from "@/lib/dynamodb";
+import { Host } from "@/lib/types";
 import { getAllSchedulesForRange, isSchedulerDbConfigured } from "@/lib/scheduler-db";
 import {
   syncSchedulesToCalendar,
   isGoogleCalendarConfigured,
   getCalendarMappings,
 } from "@/lib/google-calendar";
+import { getMockScheduleEntriesForRange, MockHost } from "@/lib/mock-schedule-data";
 
 // POST /api/admin/schedule/sync - Trigger Google Calendar sync
 export async function POST(request: NextRequest) {
@@ -22,17 +26,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // Check configuration
-  if (!isSchedulerDbConfigured()) {
-    return NextResponse.json(
-      { error: "Scheduler database not configured" },
-      { status: 503 }
-    );
-  }
-
+  // Check Google Calendar configuration
   if (!isGoogleCalendarConfigured()) {
     return NextResponse.json(
-      { error: "Google Calendar not configured" },
+      { error: "Google Calendar not configured. Set GOOGLE_SERVICE_ACCOUNT_EMAIL and GOOGLE_PRIVATE_KEY." },
       { status: 503 }
     );
   }
@@ -40,33 +37,69 @@ export async function POST(request: NextRequest) {
   const calendarMappings = getCalendarMappings();
   if (calendarMappings.size === 0) {
     return NextResponse.json(
-      { error: "No calendar mappings configured" },
+      { error: "No calendar mappings configured. Set GOOGLE_CALENDAR_MAIN_ROOM, GOOGLE_CALENDAR_SPEED_BINGO, GOOGLE_CALENDAR_BREAK." },
       { status: 503 }
     );
   }
 
   try {
-    // Parse request body for date range
+    // Parse request body for date range and options
     const body = await request.json().catch(() => ({}));
     const {
       startDate = new Date().toISOString(),
       endDate,
-    } = body as { startDate?: string; endDate?: string };
+      useMockData = false, // Option to force mock data
+    } = body as { startDate?: string; endDate?: string; useMockData?: boolean };
 
-    // Default to syncing next 30 days
+    // Default to syncing next 14 days
     const start = new Date(startDate);
     const end = endDate
       ? new Date(endDate)
-      : new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000);
+      : new Date(start.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    // Fetch all schedules from MySQL
-    const schedules = await getAllSchedulesForRange(start, end);
+    let schedules;
+    let usingMock = false;
+
+    // Try to use real DB, fall back to mock data
+    if (isSchedulerDbConfigured() && !useMockData) {
+      // Fetch all schedules from MySQL
+      schedules = await getAllSchedulesForRange(start, end);
+    } else {
+      // Use mock data - fetch hosts from DynamoDB
+      usingMock = true;
+      const hostsResult = await dynamoDb.send(
+        new ScanCommand({
+          TableName: TABLES.HOSTS,
+          FilterExpression: "#role = :role",
+          ExpressionAttributeNames: { "#role": "role" },
+          ExpressionAttributeValues: { ":role": "host" },
+        })
+      );
+
+      const hosts = (hostsResult.Items || []) as Host[];
+      const mockHosts: MockHost[] = hosts.slice(0, 10).map((h, idx) => ({
+        id: idx + 1,
+        name: `${h.firstName} ${h.lastName}`,
+        email: h.email,
+      }));
+
+      if (mockHosts.length === 0) {
+        return NextResponse.json({
+          message: "No hosts found to generate mock schedules",
+          synced: 0,
+          usingMockData: true,
+        });
+      }
+
+      schedules = getMockScheduleEntriesForRange(mockHosts, start, end);
+    }
 
     if (schedules.length === 0) {
       return NextResponse.json({
         message: "No schedules found for the specified date range",
         synced: 0,
         dateRange: { start: start.toISOString(), end: end.toISOString() },
+        usingMockData: usingMock,
       });
     }
 
@@ -79,6 +112,8 @@ export async function POST(request: NextRequest) {
       errors: result.errors.length > 0 ? result.errors : undefined,
       dateRange: { start: start.toISOString(), end: end.toISOString() },
       calendars: Array.from(calendarMappings.keys()),
+      usingMockData: usingMock,
+      hostsIncluded: Array.from(new Set(schedules.map(s => s.talentName))).length,
     });
   } catch (error) {
     console.error("Error syncing to Google Calendar:", error);
@@ -116,6 +151,12 @@ export async function GET() {
       studio,
       calendarId: id.substring(0, 20) + "...", // Partial ID for security
     })),
-    ready: schedulerConfigured && calendarConfigured && calendarMappings.size > 0,
+    // Ready if Google Calendar is set up - can use mock data if scheduler DB not available
+    ready: calendarConfigured && calendarMappings.size > 0,
+    willUseMockData: !schedulerConfigured,
+    envVarsNeeded: {
+      googleCalendar: ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_PRIVATE_KEY"],
+      calendarMappings: ["GOOGLE_CALENDAR_MAIN_ROOM", "GOOGLE_CALENDAR_SPEED_BINGO", "GOOGLE_CALENDAR_BREAK"],
+    },
   });
 }

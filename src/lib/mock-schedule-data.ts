@@ -123,3 +123,73 @@ export function getMockEntriesForMonth(
 
 // Flag to indicate we're using mock data
 export const USING_MOCK_DATA = true;
+
+// Mock host data for sync testing
+export interface MockHost {
+  id: number;
+  name: string;
+  email: string;
+}
+
+// Generate mock schedule for multiple hosts
+export function getAllMockScheduleEntries(hosts: MockHost[]): ScheduleEntry[] {
+  const entries: ScheduleEntry[] = [];
+  let id = 1;
+
+  // Different shift patterns for variety
+  const patterns = [
+    // Morning shift: 9am-2pm
+    [9, 10, 11, 12, 13],
+    // Afternoon shift: 1pm-6pm
+    [13, 14, 15, 16, 17],
+    // Evening shift: 4pm-9pm
+    [16, 17, 18, 19, 20],
+    // Split shift: 10am-3pm
+    [10, 11, 12, 13, 14],
+  ];
+
+  const roomRotation = ["Main Room", "Main Room", "Break", "Speed Bingo", "Main Room"];
+
+  hosts.forEach((host, hostIndex) => {
+    // Each host gets shifts on different days
+    const daysOffset = hostIndex % 3; // Stagger start days
+    const patternIndex = hostIndex % patterns.length;
+    const hours = patterns[patternIndex];
+
+    // Generate shifts for the next 14 days
+    for (let dayOffset = daysOffset; dayOffset < 14; dayOffset += 2 + (hostIndex % 2)) {
+      // Each shift is 5 hours with room rotation
+      hours.forEach((hour, hourIndex) => {
+        const studio = MOCK_STUDIOS.find(s => s.name === roomRotation[hourIndex]) || MOCK_STUDIOS[0];
+
+        entries.push({
+          id: id++,
+          talentId: host.id,
+          talentName: host.name,
+          talentEmail: host.email,
+          studioId: studio.id,
+          studioName: studio.name,
+          studioColor: getStudioColor(studio.name),
+          startingOn: dateAtHour(dayOffset, hour),
+          endingOn: dateAtHour(dayOffset, hour + 1),
+        });
+      });
+    }
+  });
+
+  // Sort by start time
+  return entries.sort((a, b) => a.startingOn.getTime() - b.startingOn.getTime());
+}
+
+// Get mock schedule entries for a date range (for sync)
+export function getMockScheduleEntriesForRange(
+  hosts: MockHost[],
+  startDate: Date,
+  endDate: Date
+): ScheduleEntry[] {
+  const allEntries = getAllMockScheduleEntries(hosts);
+
+  return allEntries.filter(entry =>
+    entry.startingOn >= startDate && entry.startingOn <= endDate
+  );
+}
