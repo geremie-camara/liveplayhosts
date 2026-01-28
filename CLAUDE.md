@@ -135,18 +135,18 @@ Users can set their work availability at `/availability`:
 - **Blocked Dates**: Add date ranges for vacations/time off with optional reason
 - Data stored in `liveplayhosts-availability` table keyed by `hostId` (DynamoDB host.id)
 
-### Data Architecture: hostId vs clerkUserId
+### Data Architecture: host.id vs clerkUserId
 
 All user data is keyed by `host.id` (DynamoDB UUID), not Clerk userId:
 - **Authentication**: Clerk userId is used ONLY for auth, then looked up to get `host.id`
-- **Data storage**: All tables use `hostId` as the key
+- **Data storage**: All tables use `host.id` as the VALUE (field name may be `userId` due to DynamoDB key constraints)
 - **External integration**: Other systems can reference hosts by `host.id` without needing Clerk
 
-**Tables using hostId as key:**
-- `liveplayhosts-availability` - `hostId`
-- `liveplayhosts-availability-changelog` - `hostId`
-- `liveplayhosts-callouts` - `hostId`
-- `liveplayhosts-training-progress` - `hostId`
+**Tables using host.id as key value:**
+- `liveplayhosts-availability` - `userId` field stores `host.id`
+- `liveplayhosts-availability-changelog` - `userId` field stores `host.id`
+- `liveplayhosts-callouts` - `userId` field stores `host.id`
+- `liveplayhosts-training-progress` - `oduserId` field stores `host.id`
 
 ### Availability Change Log
 
@@ -372,7 +372,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
-| 2026-01-27 | f4fa76c | Refactor: use hostId instead of clerkUserId for all user data tables |
+| 2026-01-27 | 12f0013 | Refactor: use host.id for all user data, Clerk ID for auth only (migration complete) |
 | 2026-01-27 | 0562606 | Add host availability change log (tracks when hosts update their avails) |
 | 2026-01-27 | 8c411e7 | Add admin host availability page with view/edit, bulk update script |
 | 2026-01-27 | 9916340 | Add host scheduling priority admin page (high/medium/low, admin-only) |
