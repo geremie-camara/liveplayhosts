@@ -145,7 +145,20 @@ export default function ScheduleWidget({ userEmail }: ScheduleWidgetProps) {
         .map(e => `${e.date} ${e.time} - ${e.studioName}`)
         .join("\n");
 
-      alert(`Call out submitted for:\n\n${shiftDetails}\n\nYour producer will be notified.`);
+      // Determine urgency warning based on closest shift
+      const now = new Date();
+      const minHours = Math.min(
+        ...selectedEntries.map(e => (new Date(e.startingOn).getTime() - now.getTime()) / (1000 * 60 * 60))
+      );
+
+      let warning = "";
+      if (minHours < 48) {
+        warning = "\n\n⚠️ Calling out within 48 hours of a shift is for personal emergencies or illness only, call outs for any other reason could result in loss of shifts.";
+      } else if (minHours < 14 * 24) {
+        warning = "\n\n⚠️ Calling out within two weeks of a shift could result in loss of future shifts.";
+      }
+
+      alert(`Call out submitted for:\n\n${shiftDetails}\n\nYour producer will be notified.${warning}`);
 
       setShowCallOut(false);
       setSelectedShifts(new Set());
