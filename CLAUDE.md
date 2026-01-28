@@ -45,6 +45,7 @@ src/
 │   │   │   ├── courses/        # Course CRUD
 │   │   │   ├── sections/       # Section CRUD
 │   │   │   └── lessons/        # Lesson CRUD
+│   │   ├── finance/            # Host pay review API
 │   │   ├── schedule/           # User schedule API
 │   │   │   └── widget/         # Dashboard widget data
 │   │   ├── admin/impersonate/   # Ghost login (admin impersonation)
@@ -64,6 +65,7 @@ src/
 │   │   ├── courses/[courseId]/ # Course detail
 │   │   └── lessons/[lessonId]/ # Lesson viewer
 │   ├── schedule/               # User schedule page
+│   ├── finance/                # Host pay review page
 │   ├── dashboard/
 │   ├── directory/
 │   ├── profile/
@@ -77,12 +79,14 @@ src/
 │   │   └── ArticleContent.tsx
 │   ├── ScheduleWidget.tsx      # Dashboard schedule widget
 │   ├── ScheduleCalendar.tsx    # Full calendar view
+│   ├── FinanceReview.tsx       # Pay review with accept/dispute
 │   ├── ImpersonationBanner.tsx # Ghost login amber banner
 │   └── *.tsx
 └── lib/
     ├── types.ts                # Core types
     ├── training-types.ts       # LMS types
     ├── schedule-types.ts       # Schedule types
+    ├── finance-types.ts        # Finance pay review types
     ├── scheduler-db.ts         # MySQL scheduler DB client
     ├── google-calendar.ts      # Google Calendar API
     ├── mock-schedule-data.ts   # Mock data for dev
@@ -150,6 +154,7 @@ All user data is keyed by `host.id` (DynamoDB UUID), not Clerk userId:
 - `liveplayhosts-availability-changelog` - `userId` field stores `host.id`
 - `liveplayhosts-callouts` - `userId` field stores `host.id`
 - `liveplayhosts-training-progress` - `oduserId` field stores `host.id`
+- `liveplayhosts-finance-reviews` - `hostId` field stores `host.id`
 
 ### Availability Change Log
 
@@ -279,6 +284,43 @@ Hosts can request to call out from scheduled shifts. Admins can approve or deny 
 - `reviewedBy`, `reviewedAt` - Admin review info
 - GSI: `userId-createdAt-index`, `status-createdAt-index`, `shiftId-index`
 
+## Finance Pay Review
+
+Host-facing finance page where hosts review past shifts by pay period and confirm or dispute their pay.
+
+### Features
+- **Pay Period Navigation**: Month selector (prev/next arrows) + pay period toggle (1st-15th or 16th-31st)
+- **Default View**: Most recent completed pay period
+- **Shift Display**: Past shifts grouped by date with studio color bars, time ranges, $65/hr rate
+- **Summary Card**: Total hours, total pay, accepted/pending/disputed counts
+- **Accept/Dispute**: Per-day accept (green) or dispute (red) buttons
+- **Dispute Flow**: Textarea opens inline for entering dispute reason
+- **Status Badges**: Green "Accepted" / Red "Disputed" / Gray "Pending Review"
+
+### User Page
+- `/finance` - Pay review page with pay period navigation
+
+### API Routes
+- `GET /api/finance` - Get schedule entries + reviews for a pay period (params: year, month, half)
+- `POST /api/finance` - Accept or dispute a day's pay (body: date, action, disputeText?)
+
+### DynamoDB Table: `liveplayhosts-finance-reviews`
+- `hostId` (PK) - host.id (DynamoDB UUID)
+- `date` (SK) - "YYYY-MM-DD"
+- `payCycleKey` - "2026-01-H1" or "2026-01-H2"
+- `status` - pending/accepted/disputed
+- `disputeText` - reason for dispute (optional)
+- `hoursWorked`, `totalPay` - computed from schedule data
+- `reviewedAt`, `createdAt`, `updatedAt` - Timestamps
+- GSI: `payCycleKey-hostId-index` (for admin/finance queries)
+
+### New Files
+- `src/lib/finance-types.ts` - Type definitions and pay cycle helpers
+- `src/components/FinanceReview.tsx` - Client component with pay review UI
+- `src/app/finance/page.tsx` - Server component (auth + layout)
+- `src/app/api/finance/route.ts` - GET + POST API handlers
+- `scripts/create-finance-reviews-table.mjs` - DynamoDB table creation
+
 ## Ghost Login (Admin Impersonation)
 
 Admins (admin/owner/talent) can view and interact with the app as any host. A secure httpOnly cookie (`lph_ghost_host_id`) stores the impersonated host's DynamoDB `host.id`.
@@ -380,6 +422,7 @@ Multi-channel broadcast system for admins to send targeted messages to hosts.
 - `liveplayhosts-locations` (location tags for users)
 - `liveplayhosts-callouts` (call out requests with status tracking)
 - `liveplayhosts-availability-changelog` (host availability change audit log)
+- `liveplayhosts-finance-reviews` (host pay review accept/dispute tracking)
 
 ## Scripts
 
@@ -393,6 +436,7 @@ node scripts/create-locations-table.mjs  # Create locations table with seed data
 node scripts/create-callouts-table.mjs   # Create call outs table
 node scripts/migrate-to-hostid.mjs       # Migrate data from userId to hostId (run after deploy)
 node scripts/create-availability-changelog-table.mjs # Create availability changelog table
+node scripts/create-finance-reviews-table.mjs # Create finance reviews table
 node scripts/seed-training-data.mjs      # Seed sample courses
 ```
 
@@ -407,6 +451,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-28 | a0156ce | Add finance page for host pay review with accept/dispute workflow |
 | 2026-01-28 | 7f217d1 | Reorder header buttons: Apply Now first, rename Host Login to Login |
 | 2026-01-28 | 7218173 | Reorder directory desktop table: Communication before social profiles |
 | 2026-01-28 | 292899e | Fix Google Calendar sync: use domain-wide delegation to impersonate user |
