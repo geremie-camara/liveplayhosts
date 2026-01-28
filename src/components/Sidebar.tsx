@@ -193,10 +193,13 @@ export default function Sidebar({ userRole, userName }: SidebarProps) {
   );
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") {
-      return pathname === "/dashboard";
+    // Exact match
+    if (pathname === href) {
+      return true;
     }
-    return pathname.startsWith(href);
+    // Check if pathname starts with href followed by a slash (for nested routes)
+    // This prevents /admin/availability from matching /admin/availability-changelog
+    return pathname.startsWith(href + "/");
   };
 
   const NavLink = ({ item }: { item: NavItem }) => (
