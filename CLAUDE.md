@@ -372,7 +372,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
-| 2026-01-27 | pending | Refactor: use hostId instead of clerkUserId for all user data tables |
+| 2026-01-27 | f4fa76c | Refactor: use hostId instead of clerkUserId for all user data tables |
 | 2026-01-27 | 0562606 | Add host availability change log (tracks when hosts update their avails) |
 | 2026-01-27 | 8c411e7 | Add admin host availability page with view/edit, bulk update script |
 | 2026-01-27 | 9916340 | Add host scheduling priority admin page (high/medium/low, admin-only) |
