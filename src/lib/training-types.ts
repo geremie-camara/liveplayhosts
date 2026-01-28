@@ -95,9 +95,10 @@ export interface FAQ {
 }
 
 // Training progress - tracks user progress through lessons
+// Note: oduserId stores the host.id (DynamoDB UUID), NOT the Clerk userId
 export interface TrainingProgress {
-  id: string;                    // `${hostId}#${lessonId}`
-  hostId: string;                // Host's DynamoDB id (primary key for host data)
+  id: string;                    // `${oduserId}#${lessonId}`
+  oduserId: string;              // Host.id (DynamoDB UUID) - NOT Clerk userId (legacy field name)
   courseId: string;
   sectionId: string;
   lessonId: string;
@@ -109,9 +110,10 @@ export interface TrainingProgress {
 }
 
 // Quiz attempt - records a user's attempt at a quiz
+// Note: oduserId stores the host.id (DynamoDB UUID), NOT the Clerk userId
 export interface QuizAttempt {
   id: string;
-  hostId: string;                // Host's DynamoDB id (primary key for host data)
+  oduserId: string;              // Host.id (DynamoDB UUID) - NOT Clerk userId (legacy field name)
   quizId: string;
   lessonId: string;
   answers: Record<string, string[]>;  // questionId -> selected answers

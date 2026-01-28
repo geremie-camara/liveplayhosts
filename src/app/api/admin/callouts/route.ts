@@ -68,9 +68,9 @@ export async function GET(request: NextRequest) {
       hostsById.set(h.id, h);
     });
 
-    // Enrich call outs with user details
+    // Enrich call outs with user details (userId stores host.id)
     const calloutsWithUsers: CallOutWithUser[] = callouts.map(callout => {
-      const host = hostsById.get(callout.hostId);
+      const host = hostsById.get(callout.userId);
       return {
         ...callout,
         userName: host ? `${host.firstName} ${host.lastName}` : "Unknown User",

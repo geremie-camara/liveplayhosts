@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const progressItem: TrainingProgress = {
       id: progressId,
-      hostId: host.id,
+      oduserId: host.id, // oduserId stores host.id (legacy field name)
       courseId,
       sectionId,
       lessonId,
@@ -122,9 +122,9 @@ export async function GET(request: NextRequest) {
   const courseId = searchParams.get("courseId");
 
   try {
-    let filterExpression = "hostId = :hostId";
+    let filterExpression = "oduserId = :oduserId";
     const expressionValues: Record<string, string> = {
-      ":hostId": host.id,
+      ":oduserId": host.id,
     };
 
     if (courseId) {

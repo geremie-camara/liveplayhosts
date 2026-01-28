@@ -29,7 +29,7 @@ export async function GET() {
     if (!host) {
       // Return default availability if host not found
       return NextResponse.json({
-        hostId: "",
+        userId: "",
         weekly: DEFAULT_WEEKLY,
         blockedDates: [],
       });
@@ -38,14 +38,14 @@ export async function GET() {
     const result = await dynamoDb.send(
       new GetCommand({
         TableName: TABLES.AVAILABILITY,
-        Key: { hostId: host.id },
+        Key: { userId: host.id },
       })
     );
 
     if (!result.Item) {
       // Return default availability if none exists
       return NextResponse.json({
-        hostId: host.id,
+        userId: host.id,
         weekly: DEFAULT_WEEKLY,
         blockedDates: [],
       });
@@ -164,7 +164,7 @@ export async function PUT(request: NextRequest) {
     const currentResult = await dynamoDb.send(
       new GetCommand({
         TableName: TABLES.AVAILABILITY,
-        Key: { hostId: host.id },
+        Key: { userId: host.id },
       })
     );
 
@@ -176,9 +176,9 @@ export async function PUT(request: NextRequest) {
     const weeklyComparison = compareWeeklyAvailability(previousWeekly, weekly);
     const blockedComparison = compareBlockedDates(previousBlockedDates, blockedDates);
 
-    // Save the new availability
+    // Save the new availability (userId stores host.id, not Clerk userId)
     const availability: UserAvailability = {
-      hostId: host.id,
+      userId: host.id,
       weekly,
       blockedDates,
       updatedAt: now,
@@ -211,7 +211,7 @@ export async function PUT(request: NextRequest) {
       const changeLog: AvailabilityChangeLog = {
         id: uuidv4(),
         odIndex: "ALL", // Used for global queries ordered by date
-        hostId: host.id,
+        userId: host.id, // userId stores host.id, not Clerk userId
         hostName,
         hostEmail,
         changeType,

@@ -337,9 +337,9 @@ function findAvailabilityData(host) {
 
 // Update availability for a host
 async function updateAvailability(host, data) {
-  // Availability is keyed by host.id (DynamoDB id)
+  // Availability is keyed by userId, which stores host.id (not Clerk userId)
   const availability = {
-    hostId: host.id,
+    userId: host.id, // userId stores host.id (DynamoDB id)
     weekly: data.weekly,
     blockedDates: data.blockedDates,
     updatedAt: new Date().toISOString(),

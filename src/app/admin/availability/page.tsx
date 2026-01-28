@@ -88,7 +88,7 @@ export default function AdminAvailabilityPage() {
               ? {
                   ...h,
                   availability: {
-                    hostId: h.id,
+                    userId: h.id, // userId stores host.id
                     weekly: editWeekly,
                     blockedDates: editBlocked,
                     updatedAt: new Date().toISOString(),

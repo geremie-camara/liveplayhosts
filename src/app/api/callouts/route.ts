@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status"); // Optional filter by status
 
-    // Query call outs for this host
+    // Query call outs for this host (userId stores host.id)
     const params: {
       TableName: string;
       IndexName: string;
@@ -51,10 +51,10 @@ export async function GET(request: NextRequest) {
       ExpressionAttributeValues: Record<string, string>;
     } = {
       TableName: TABLES.CALLOUTS,
-      IndexName: "hostId-createdAt-index",
-      KeyConditionExpression: "hostId = :hostId",
+      IndexName: "userId-createdAt-index",
+      KeyConditionExpression: "userId = :userId",
       ExpressionAttributeValues: {
-        ":hostId": host.id,
+        ":userId": host.id,
       },
     };
 
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     for (const shift of shifts) {
       const callout: CallOut = {
         id: randomUUID(),
-        hostId: host.id,
+        userId: host.id, // userId stores host.id, not Clerk userId
         shiftId: shift.shiftId,
         shiftDate: shift.startingOn,
         shiftTime: shift.shiftTime,

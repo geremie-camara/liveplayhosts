@@ -29,7 +29,7 @@ export async function GET(
     const result = await dynamoDb.send(
       new GetCommand({
         TableName: TABLES.AVAILABILITY,
-        Key: { hostId },
+        Key: { userId: hostId }, // userId stores host.id
       })
     );
 
@@ -78,7 +78,7 @@ export async function PUT(
     }
 
     const availability: UserAvailability & { notes?: string } = {
-      hostId,
+      userId: hostId, // userId stores host.id
       weekly,
       blockedDates: blockedDates || [],
       updatedAt: new Date().toISOString(),
@@ -126,7 +126,7 @@ export async function DELETE(
     await dynamoDb.send(
       new DeleteCommand({
         TableName: TABLES.AVAILABILITY,
-        Key: { hostId },
+        Key: { userId: hostId }, // userId stores host.id
       })
     );
 

@@ -53,9 +53,10 @@ export interface ScheduleCalendarMonth {
 export type CallOutStatus = "pending" | "approved" | "denied";
 
 // Call out request stored in DynamoDB
+// Note: userId stores the host.id (DynamoDB UUID), NOT the Clerk userId
 export interface CallOut {
   id: string; // UUID
-  hostId: string; // Host's DynamoDB id (primary key for host data)
+  userId: string; // Host.id (DynamoDB UUID) - NOT Clerk userId
   shiftId: number; // Schedule entry ID from MySQL
   shiftDate: string; // ISO date string for the shift
   shiftTime: string; // Time range string

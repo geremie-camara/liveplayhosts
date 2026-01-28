@@ -45,14 +45,14 @@ export async function GET() {
     );
     const availabilities = (availResult.Items || []) as UserAvailability[];
 
-    // Create a map of hostId -> availability
+    // Create a map of userId (which stores host.id) -> availability
     const availMap = new Map<string, UserAvailability>();
     for (const avail of availabilities) {
-      availMap.set(avail.hostId, avail);
+      availMap.set(avail.userId, avail);
     }
 
     // Combine hosts with their availability
-    // Note: availability is now keyed by host.id (DynamoDB id)
+    // Note: availability.userId stores host.id, not Clerk userId
     const hostsWithAvailability: HostWithAvailability[] = hosts.map((host) => ({
       ...host,
       availability: availMap.get(host.id),

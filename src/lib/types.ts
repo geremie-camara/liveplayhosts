@@ -103,18 +103,20 @@ export interface BlockedDateRange {
 }
 
 // User availability record
+// Note: userId stores the host.id (DynamoDB UUID), NOT the Clerk userId
 export interface UserAvailability {
-  hostId: string; // Reference to Host.id (DynamoDB primary key)
+  userId: string; // Host.id (DynamoDB primary key) - NOT Clerk userId
   weekly: WeeklyAvailability;
   blockedDates: BlockedDateRange[];
   updatedAt: string;
 }
 
 // Availability change log entry (tracks host-initiated changes)
+// Note: userId stores the host.id (DynamoDB UUID), NOT the Clerk userId
 export interface AvailabilityChangeLog {
   id: string; // UUID
   odIndex: string; // Global secondary index: odIndex for ordering
-  hostId: string; // Host's DynamoDB id (primary key for host data)
+  userId: string; // Host.id (DynamoDB UUID) - NOT Clerk userId
   hostName: string; // Host's name at time of change
   hostEmail: string; // Host's email at time of change
   changeType: "weekly" | "blocked_dates" | "both";
