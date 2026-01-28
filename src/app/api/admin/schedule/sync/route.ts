@@ -114,6 +114,9 @@ export async function GET() {
   const calendarConfigured = isGoogleCalendarConfigured();
   const calendarMappings = getCalendarMappings();
 
+  // Debug: check what env vars are actually set
+  const allGoogleEnvKeys = Object.keys(process.env).filter(key => key.startsWith("GOOGLE_"));
+
   return NextResponse.json({
     configured: {
       schedulerDb: schedulerConfigured,
@@ -130,6 +133,18 @@ export async function GET() {
     envVarsNeeded: {
       googleCalendar: ["GOOGLE_SERVICE_ACCOUNT_EMAIL", "GOOGLE_PRIVATE_KEY"],
       calendarMappings: ["GOOGLE_CALENDAR_MAIN_ROOM", "GOOGLE_CALENDAR_SPEED_BINGO", "GOOGLE_CALENDAR_BREAK"],
+    },
+    // Debug info
+    debug: {
+      allGoogleEnvKeys,
+      serviceAccountEmailExists: !!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      serviceAccountEmailLength: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.length || 0,
+      privateKeyExists: !!process.env.GOOGLE_PRIVATE_KEY,
+      privateKeyLength: process.env.GOOGLE_PRIVATE_KEY?.length || 0,
+      privateKeyStartsCorrectly: process.env.GOOGLE_PRIVATE_KEY?.startsWith("-----BEGIN") || false,
+      mainRoomExists: !!process.env.GOOGLE_CALENDAR_MAIN_ROOM,
+      speedBingoExists: !!process.env.GOOGLE_CALENDAR_SPEED_BINGO,
+      breakExists: !!process.env.GOOGLE_CALENDAR_BREAK,
     },
   });
 }
