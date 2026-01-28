@@ -66,8 +66,8 @@ export default function AvailabilityForm() {
   const [newBlockedEnd, setNewBlockedEnd] = useState("");
   const [newBlockedReason, setNewBlockedReason] = useState("");
 
-  // Auto-save function
-  const autoSave = useCallback(async (weeklyData: WeeklyAvailability, blockedData: BlockedDateRange[]) => {
+  // Save function (used by auto-save and manual save)
+  const saveAvailability = useCallback(async (weeklyData: WeeklyAvailability, blockedData: BlockedDateRange[]) => {
     setSaveStatus("saving");
 
     try {
@@ -81,14 +81,26 @@ export default function AvailabilityForm() {
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error("Save failed:", response.status, errorData);
         setSaveStatus("error");
-        setTimeout(() => setSaveStatus("idle"), 3000);
+        setTimeout(() => setSaveStatus("idle"), 5000);
       }
     } catch (error) {
+      console.error("Save error:", error);
       setSaveStatus("error");
-      setTimeout(() => setSaveStatus("idle"), 3000);
+      setTimeout(() => setSaveStatus("idle"), 5000);
     }
   }, []);
+
+  // Force save function for manual button
+  const handleForceSave = useCallback(() => {
+    // Clear any pending auto-save
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveAvailability(weekly, blockedDates);
+  }, [weekly, blockedDates, saveAvailability]);
 
   // Debounced auto-save when weekly or blockedDates change
   useEffect(() => {
@@ -99,17 +111,17 @@ export default function AvailabilityForm() {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout for auto-save (500ms debounce)
+    // Set new timeout for auto-save (1s debounce)
     saveTimeoutRef.current = setTimeout(() => {
-      autoSave(weekly, blockedDates);
-    }, 500);
+      saveAvailability(weekly, blockedDates);
+    }, 1000);
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [weekly, blockedDates, autoSave]);
+  }, [weekly, blockedDates, saveAvailability]);
 
   useEffect(() => {
     fetchAvailability();
@@ -181,15 +193,16 @@ export default function AvailabilityForm() {
   return (
     <div className="max-w-4xl pb-6">
       <div className="mb-6 sm:mb-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-primary">Availability</h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">
               Set your weekly schedule and block off dates when you&apos;re not available.
             </p>
           </div>
-          {/* Auto-save status indicator */}
-          <div className="flex-shrink-0">
+          {/* Save button and status */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {/* Status indicator */}
             {saveStatus === "saving" && (
               <span className="flex items-center gap-2 text-sm text-gray-500">
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -212,9 +225,20 @@ export default function AvailabilityForm() {
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                <span className="hidden sm:inline">Error saving</span>
+                <span className="hidden sm:inline">Error</span>
               </span>
             )}
+            {/* Save button */}
+            <button
+              onClick={handleForceSave}
+              disabled={saveStatus === "saving"}
+              className="px-4 py-2 bg-accent text-white text-sm font-medium rounded-lg hover:bg-accent-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+              </svg>
+              <span className="hidden sm:inline">Save</span>
+            </button>
           </div>
         </div>
       </div>
