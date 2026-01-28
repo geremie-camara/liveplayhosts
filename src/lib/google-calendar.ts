@@ -18,9 +18,11 @@ interface SyncResult {
 }
 
 // Get authenticated Google Calendar client
+// Uses domain-wide delegation to impersonate a user with calendar write access
 function getCalendarClient(): calendar_v3.Calendar {
   const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const impersonateUser = process.env.GOOGLE_IMPERSONATE_USER;
 
   if (!serviceAccountEmail || !privateKey) {
     throw new Error("Google Calendar credentials not configured");
@@ -30,6 +32,7 @@ function getCalendarClient(): calendar_v3.Calendar {
     email: serviceAccountEmail,
     key: privateKey,
     scopes: ["https://www.googleapis.com/auth/calendar"],
+    subject: impersonateUser,
   });
 
   return google.calendar({ version: "v3", auth });

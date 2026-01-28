@@ -227,6 +227,7 @@ GOOGLE_PRIVATE_KEY=<private-key-with-newlines>
 GOOGLE_CALENDAR_MAIN_ROOM=<calendar-id>
 GOOGLE_CALENDAR_SPEED_BINGO=<calendar-id>
 GOOGLE_CALENDAR_BREAK=<calendar-id>
+GOOGLE_IMPERSONATE_USER=<user-with-calendar-write-access@domain.com>
 ```
 
 **Note:** For `GOOGLE_PRIVATE_KEY` in Amplify, paste the key exactly as it appears in the JSON file (with `\n` escaped newlines). The code handles converting `\n` to actual newlines.
@@ -406,6 +407,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-28 | pending | Fix Google Calendar sync: use domain-wide delegation to impersonate user |
 | 2026-01-28 | c21cbf9 | Add urgency warnings to call out confirmation (48h emergency, 2wk notice) |
 | 2026-01-28 | 03953bf | Add ghost login: admin impersonation with cookie-based host switching |
 | 2026-01-27 | 12f0013 | Refactor: use host.id for all user data, Clerk ID for auth only (migration complete) |
