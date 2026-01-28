@@ -375,9 +375,9 @@ export default function DirectoryList() {
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">First Name</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Last Name</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Email</th>
+                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Communication</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Instagram</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">TikTok</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Communication</th>
                     <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Location</th>
                   </tr>
                 </thead>
@@ -418,34 +418,6 @@ export default function DirectoryList() {
                         <a href={`mailto:${host.email}`} className="text-accent underline">
                           {host.email}
                         </a>
-                      </td>
-                      <td className="px-6 py-4">
-                        {host.socialProfiles?.instagram ? (
-                          <a
-                            href={`https://instagram.com/${host.socialProfiles.instagram.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-accent underline"
-                          >
-                            {host.socialProfiles.instagram}
-                          </a>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        {host.socialProfiles?.tiktok ? (
-                          <a
-                            href={`https://tiktok.com/${host.socialProfiles.tiktok.replace('@', '')}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-accent underline"
-                          >
-                            {host.socialProfiles.tiktok}
-                          </a>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
@@ -489,6 +461,34 @@ export default function DirectoryList() {
                             <span className="text-gray-400 text-sm">-</span>
                           )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        {host.socialProfiles?.instagram ? (
+                          <a
+                            href={`https://instagram.com/${host.socialProfiles.instagram.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent underline"
+                          >
+                            {host.socialProfiles.instagram}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {host.socialProfiles?.tiktok ? (
+                          <a
+                            href={`https://tiktok.com/${host.socialProfiles.tiktok.replace('@', '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-accent underline"
+                          >
+                            {host.socialProfiles.tiktok}
+                          </a>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-gray-600">
                         {host.location || <span className="text-gray-400">-</span>}
