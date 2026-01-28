@@ -131,6 +131,13 @@ export interface MockHost {
   email: string;
 }
 
+// Test hosts for calendar sync testing
+export const TEST_HOSTS: MockHost[] = [
+  { id: 1, name: "Geremie Camara", email: "geremie@liveplaymobile.com" },
+  { id: 2, name: "Geremie Test", email: "geremie@rypl.tv" },
+  { id: 3, name: "Geremie Personal", email: "geremie@me.com" },
+];
+
 // Generate mock schedule for multiple hosts
 export function getAllMockScheduleEntries(hosts: MockHost[]): ScheduleEntry[] {
   const entries: ScheduleEntry[] = [];

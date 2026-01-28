@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { hasPermission } from "@/lib/roles";
-import { dynamoDb, TABLES } from "@/lib/dynamodb";
-import { Host } from "@/lib/types";
 import { getAllSchedulesForRange, isSchedulerDbConfigured } from "@/lib/scheduler-db";
 import {
   syncSchedulesToCalendar,
   isGoogleCalendarConfigured,
   getCalendarMappings,
 } from "@/lib/google-calendar";
-import { getMockScheduleEntriesForRange, MockHost } from "@/lib/mock-schedule-data";
+import { getMockScheduleEntriesForRange, TEST_HOSTS } from "@/lib/mock-schedule-data";
 
 // POST /api/admin/schedule/sync - Trigger Google Calendar sync
 export async function POST(request: NextRequest) {
@@ -65,33 +62,9 @@ export async function POST(request: NextRequest) {
       // Fetch all schedules from MySQL
       schedules = await getAllSchedulesForRange(start, end);
     } else {
-      // Use mock data - fetch hosts from DynamoDB
+      // Use mock data with test hosts
       usingMock = true;
-      const hostsResult = await dynamoDb.send(
-        new ScanCommand({
-          TableName: TABLES.HOSTS,
-          FilterExpression: "#role = :role",
-          ExpressionAttributeNames: { "#role": "role" },
-          ExpressionAttributeValues: { ":role": "host" },
-        })
-      );
-
-      const hosts = (hostsResult.Items || []) as Host[];
-      const mockHosts: MockHost[] = hosts.slice(0, 10).map((h, idx) => ({
-        id: idx + 1,
-        name: `${h.firstName} ${h.lastName}`,
-        email: h.email,
-      }));
-
-      if (mockHosts.length === 0) {
-        return NextResponse.json({
-          message: "No hosts found to generate mock schedules",
-          synced: 0,
-          usingMockData: true,
-        });
-      }
-
-      schedules = getMockScheduleEntriesForRange(mockHosts, start, end);
+      schedules = getMockScheduleEntriesForRange(TEST_HOSTS, start, end);
     }
 
     if (schedules.length === 0) {
