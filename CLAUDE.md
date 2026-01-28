@@ -553,6 +553,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-28 | 46e73bd | Add role-based security management page with dynamic permissions |
 | 2026-01-28 | 3a021c3 | Revert Call Out buttons back to red |
 | 2026-01-28 | d61717a | Change Call Out buttons from red to blue |
 | 2026-01-28 | a0156ce | Add finance page for host pay review with accept/dispute workflow |
