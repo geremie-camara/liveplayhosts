@@ -407,6 +407,7 @@ See `.env.example` for required variables:
 
 | Date | Commit | Description |
 |------|--------|-------------|
+| 2026-01-28 | 7f217d1 | Reorder header buttons: Apply Now first, rename Host Login to Login |
 | 2026-01-28 | 7218173 | Reorder directory desktop table: Communication before social profiles |
 | 2026-01-28 | 292899e | Fix Google Calendar sync: use domain-wide delegation to impersonate user |
 | 2026-01-28 | c21cbf9 | Add urgency warnings to call out confirmation (48h emergency, 2wk notice) |
