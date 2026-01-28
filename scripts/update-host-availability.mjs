@@ -337,8 +337,14 @@ function findAvailabilityData(host) {
 
 // Update availability for a host
 async function updateAvailability(host, data) {
+  // Availability is keyed by Clerk userId, not host.id
+  if (!host.clerkUserId) {
+    console.log(`  ⚠️  Skipping - no clerkUserId (host hasn't signed in yet)`);
+    return null;
+  }
+
   const availability = {
-    userId: host.id,
+    userId: host.clerkUserId,
     weekly: data.weekly,
     blockedDates: data.blockedDates,
     updatedAt: new Date().toISOString(),
