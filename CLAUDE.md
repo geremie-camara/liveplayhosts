@@ -523,6 +523,11 @@ Each role has read/write access per feature. Features are grouped into User Feat
 - `scripts/create-role-permissions-table.mjs` — Create DynamoDB table
 - `scripts/seed-role-permissions.mjs` — Seed initial data from hardcoded permissions
 
+### Setup Complete
+
+- DynamoDB table `liveplayhosts-role-permissions` created (2026-01-28)
+- Initial permissions seeded for all 6 editable roles (host, producer, talent, finance, hr, admin)
+
 ## Scripts
 
 ```bash
